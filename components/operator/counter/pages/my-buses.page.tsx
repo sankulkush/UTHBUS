@@ -1,15 +1,16 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { BusIcon, SettingsIcon, EyeIcon, PlusIcon } from "lucide-react"
+import { BusIcon, SettingsIcon, EyeIcon, PlusIcon, UploadIcon } from "lucide-react"
 import { useCounter } from "../context/counter-context"
 import CitySelect from "@/components/city-select"
 import type { IBus, BusType } from "../types/counter.types"
@@ -105,30 +106,69 @@ export function MyBusesPage() {
     }
   }
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setAddFormData({
+      ...addFormData,
+      [e.target.name]: e.target.value,
+    })
+  }
+
+  const handleSelectChange = (name: string, value: string) => {
+    setAddFormData({
+      ...addFormData,
+      [name]: value,
+    })
+  }
+
+  const handleStartPointChange = (city: string) => {
+    console.log('Setting start point:', city);
+    setAddFormData(prev => ({
+      ...prev,
+      startPoint: city
+    }));
+  }
+
+  const handleEndPointChange = (city: string) => {
+    console.log('Setting end point:', city);
+    setAddFormData(prev => ({
+      ...prev,
+      endPoint: city
+    }));
+  };
+
   const handleAddBus = async () => {
-    if (!operator) return
+    if (!operator) return;
 
     if (!addFormData.name || !addFormData.type || !addFormData.startPoint || !addFormData.endPoint) {
-      alert("Please fill in all required fields")
-      return
+      alert("Please fill in all required fields");
+      return;
     }
 
-
-    
     try {
-      await busService.createBus({
-        ...addFormData,
-        type: addFormData.type as BusType,
-        operatorId: operator.id,
-        routes: [`${addFormData.startPoint}-${addFormData.endPoint}`],
-        status: "Active",
-        nextRoute: `${addFormData.startPoint}-${addFormData.endPoint}`,
-        nextDeparture: addFormData.departureTime,
-      })
+      const response = await fetch('/api/buses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...addFormData,
+          type: addFormData.type as BusType,
+          operatorId: operator.id,
+          routes: [`${addFormData.startPoint}-${addFormData.endPoint}`],
+          status: "Active",
+          nextRoute: `${addFormData.startPoint}-${addFormData.endPoint}`,
+          nextDeparture: addFormData.departureTime,
+        }),
+      });
 
-      alert("Bus added successfully!")
-      setIsAddModalOpen(false)
-      await refreshData()
+      if (!response.ok) {
+        throw new Error('Failed to add bus');
+      }
+
+      const newBus = await response.json();
+      alert("Bus added successfully!");
+      setIsAddModalOpen(false);
+      await refreshData();
 
       // Reset form
       setAddFormData({
@@ -149,12 +189,12 @@ export function MyBusesPage() {
         duration: "",
         price: 0,
         seatCapacity: 0,
-      })
+      });
     } catch (error) {
-      console.error("Error adding bus:", error)
-      alert("Error adding bus")
+      console.error("Error adding bus:", error);
+      alert("Error adding bus");
     }
-  }
+  };
 
   const handleAmenityChange = (amenityId: string, checked: boolean, isEdit = false) => {
     if (isEdit) {
@@ -253,224 +293,238 @@ export function MyBusesPage() {
             </DialogHeader>
             <div className="space-y-6">
               {/* Basic Information */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Basic Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="add-name">Bus Name *</Label>
-                    <Input
-                      id="add-name"
-                      placeholder="e.g., Greenline Express 001"
-                      value={addFormData.name}
-                      onChange={(e) => setAddFormData({ ...addFormData, name: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="add-model">Bus Model</Label>
-                    <Input
-                      id="add-model"
-                      placeholder="e.g., Volvo 9400"
-                      value={addFormData.model}
-                      onChange={(e) => setAddFormData({ ...addFormData, model: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Bus Type *</Label>
-                    <Select onValueChange={(value) => setAddFormData({ ...addFormData, type: value })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select bus type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Mini">Micro</SelectItem>
-                        <SelectItem value="Hiace">Deluxe</SelectItem>
-                        <SelectItem value="Deluxe">AC Deluxe</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>AC / Non-AC *</Label>
-                    <div className="flex space-x-4">
-                      <label className="flex items-center space-x-2">
-                        <input
-                          type="radio"
-                          name="add-isAC"
-                          checked={addFormData.isAC === true}
-                          onChange={() => setAddFormData({ ...addFormData, isAC: true })}
-                        />
-                        <span>AC</span>
-                      </label>
-                      <label className="flex items-center space-x-2">
-                        <input
-                          type="radio"
-                          name="add-isAC"
-                          checked={addFormData.isAC === false}
-                          onChange={() => setAddFormData({ ...addFormData, isAC: false })}
-                        />
-                        <span>Non-AC</span>
-                      </label>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="add-seatCapacity">Seat Capacity *</Label>
-                    <Input
-                      id="add-seatCapacity"
-                      type="number"
-                      placeholder="e.g., 40"
-                      value={addFormData.seatCapacity}
-                      onChange={(e) => setAddFormData({ ...addFormData, seatCapacity: Number(e.target.value) })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="add-price">Price (Rs.) *</Label>
-                    <Input
-                      id="add-price"
-                      type="number"
-                      placeholder="e.g., 1200"
-                      value={addFormData.price}
-                      onChange={(e) => setAddFormData({ ...addFormData, price: Number(e.target.value) })}
-                    />
-                  </div>
-                </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Basic Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="name">Bus Name *</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  placeholder="e.g., Greenline Express 001"
+                  value={addFormData.name}
+                  onChange={handleInputChange}
+                  required
+                />
               </div>
 
-              {/* Timing Information */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Timing Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="add-departureTime">Departure Time *</Label>
-                    <Input
-                      id="add-departureTime"
-                      type="time"
-                      value={addFormData.departureTime}
-                      onChange={(e) => setAddFormData({ ...addFormData, departureTime: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="add-arrivalTime">Arrival Time *</Label>
-                    <Input
-                      id="add-arrivalTime"
-                      type="time"
-                      value={addFormData.arrivalTime}
-                      onChange={(e) => setAddFormData({ ...addFormData, arrivalTime: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="add-duration">Duration</Label>
-                    <Input
-                      id="add-duration"
-                      placeholder="e.g., 6h 30m"
-                      value={addFormData.duration}
-                      onChange={(e) => setAddFormData({ ...addFormData, duration: e.target.value })}
-                    />
-                  </div>
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="model">Bus Model</Label>
+                <Input
+                  id="model"
+                  name="model"
+                  placeholder="e.g., Volvo 9400"
+                  value={addFormData.model}
+                  onChange={handleInputChange}
+                />
               </div>
 
-      
-              {/* Route Information */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Route Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Start Point */}
-                  <div className="space-y-2">
-                    <Label htmlFor="add-startPoint">Start Point *</Label>
-                    <CitySelect
-                      value={addFormData.startPoint}
-                      onChange={(city) => {
-                        console.log("[Parent] onChange startPoint:", city);
-                        setAddFormData({ ...addFormData, startPoint: city });
-                      }}
-                      placeholder="Select start city"
-                      label=""
-                    />
-                  </div>
-
-                  {/* End Point */}
-                  <div className="space-y-2">
-                    <Label htmlFor="add-endPoint">End Point *</Label>
-                    <CitySelect
-                      value={addFormData.endPoint}
-                      onChange={(city) => {
-                        console.log("Modal endPoint onChange:", city);
-                        setAddFormData({ ...addFormData, endPoint: city });
-                      }}
-                      placeholder="Select end city"
-                      label=""
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Boarding Points</Label>
-                    <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded-md p-3">
-                      {boardingPoints.map((point) => (
-                        <div key={point} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`add-boarding-${point}`}
-                            checked={addFormData.boardingPoints.includes(point)}
-                            onCheckedChange={(checked) =>
-                              handleMultiSelectChange("boardingPoints", point, checked as boolean)
-                            }
-                          />
-                          <Label htmlFor={`add-boarding-${point}`} className="text-sm font-normal">
-                            {point}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Dropping Points</Label>
-                    <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded-md p-3">
-                      {droppingPoints.map((point) => (
-                        <div key={point} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`add-dropping-${point}`}
-                            checked={addFormData.droppingPoints.includes(point)}
-                            onCheckedChange={(checked) =>
-                              handleMultiSelectChange("droppingPoints", point, checked as boolean)
-                            }
-                          />
-                          <Label htmlFor={`add-dropping-${point}`} className="text-sm font-normal">
-                            {point}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+              <div className="space-y-2">
+                <Label>Bus Type *</Label>
+                <Select onValueChange={(value) => handleSelectChange("type", value)} value={addFormData.type}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select bus type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Mini">Mini</SelectItem>
+                    <SelectItem value="Coach">Coach</SelectItem>
+                    <SelectItem value="Hiace">Hiace</SelectItem>
+                    <SelectItem value="Deluxe">Deluxe</SelectItem>
+                    <SelectItem value="Super Deluxe">Super Deluxe</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
-              {/* Amenities */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Amenities</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {amenitiesList.map((amenity) => (
-                    <div key={amenity.id} className="flex items-center space-x-2">
+              <div className="space-y-2">
+                <Label>AC / Non-AC *</Label>
+                <div className="flex space-x-4">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      name="isAC"
+                      checked={addFormData.isAC === true}
+                      onChange={() => setAddFormData({ ...addFormData, isAC: true })}
+                    />
+                    <span>AC</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      name="isAC"
+                      checked={addFormData.isAC === false}
+                      onChange={() => setAddFormData({ ...addFormData, isAC: false })}
+                    />
+                    <span>Non-AC</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Route Information */}
+// ... keep existing imports
+
+        // Inside your form JSX, update the Route Information card:
+        <Card>
+          <CardHeader>
+            <CardTitle>Route Information</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              {/* Start Point */}
+              <div>
+                <Label htmlFor="startPoint">Start Point *</Label>
+                <CitySelect
+                  value={addFormData.startPoint}
+                  onChange={(value) => {
+                    console.log('Start point selected:', value);
+                    setAddFormData((prev) => ({
+                      ...prev,
+                      startPoint: value,
+                      routes: [`${value}-${prev.endPoint}`]
+                    }));
+                  }}
+                  placeholder="Select start city"
+                  label=""
+                />
+              </div>
+
+              {/* End Point */}
+              <div>
+                <Label htmlFor="endPoint">End Point *</Label>
+                <CitySelect
+                  value={addFormData.endPoint}
+                  onChange={(value) => {
+                    console.log('End point selected:', value);
+                    setAddFormData((prev) => ({
+                      ...prev,
+                      endPoint: value,
+                      routes: [`${prev.startPoint}-${value}`]
+                    }));
+                  }}
+                  placeholder="Select end city"
+                  label=""
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Keep your existing boarding points and dropping points code */}
+              <div className="space-y-2">
+                <Label>Boarding Points</Label>
+                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded-md p-3">
+                  {boardingPoints.map((point) => (
+                    <div key={point} className="flex items-center space-x-2">
                       <Checkbox
-                        id={`add-${amenity.id}`}
-                        checked={addFormData.amenities.includes(amenity.id)}
-                        onCheckedChange={(checked) => handleAmenityChange(amenity.id, checked as boolean)}
+                        id={`boarding-${point}`}
+                        checked={addFormData.boardingPoints.includes(point)}
+                        onCheckedChange={(checked) =>
+                          handleMultiSelectChange("boardingPoints", point, checked as boolean)
+                        }
                       />
-                      <Label htmlFor={`add-${amenity.id}`} className="text-sm font-normal">
-                        {amenity.label}
+                      <Label htmlFor={`boarding-${point}`} className="text-sm font-normal">
+                        {point}
                       </Label>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="flex justify-end space-x-4">
-                <Button type="button" variant="outline" onClick={() => setIsAddModalOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleAddBus} className="bg-red-600 hover:bg-red-700">
-                  Add Bus
-                </Button>
+              <div className="space-y-2">
+                <Label>Dropping Points</Label>
+                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded-md p-3">
+                  {droppingPoints.map((point) => (
+                    <div key={point} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`dropping-${point}`}
+                        checked={addFormData.droppingPoints.includes(point)}
+                        onCheckedChange={(checked) =>
+                          handleMultiSelectChange("droppingPoints", point, checked as boolean)
+                        }
+                      />
+                      <Label htmlFor={`dropping-${point}`} className="text-sm font-normal">
+                        {point}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Amenities */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Amenities & Features</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {amenitiesList.map((amenity) => (
+                <div key={amenity.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={amenity.id}
+                    checked={addFormData.amenities.includes(amenity.id)}
+                    onCheckedChange={(checked) => handleAmenityChange(amenity.id, checked as boolean)}
+                  />
+                  <Label htmlFor={amenity.id} className="text-sm font-normal">
+                    {amenity.label}
+                  </Label>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Photos */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Upload Photos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+              <UploadIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600 mb-2">Drag and drop photos here, or click to browse</p>
+              <Button type="button" variant="outline">
+                Choose Files
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Description */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Additional Information</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                name="description"
+                placeholder="Additional details about the bus..."
+                rows={4}
+                value={addFormData.description}
+                onChange={handleInputChange}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Submit Buttons */}
+        <div className="flex items-center justify-end space-x-4">
+          <Button type="button" variant="outline">
+            Save as Draft
+          </Button>
+          <Button type="submit" className="bg-red-600 hover:bg-red-700">
+            Add Bus
+          </Button>
+        </div>
             </div>
           </DialogContent>
         </Dialog>

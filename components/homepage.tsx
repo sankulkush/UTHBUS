@@ -41,18 +41,13 @@ export default function Homepage() {
   const router = useRouter()
 
   const handleSearch = () => {
-    if (!from || !to) {
-      alert("Please select both departure and destination cities")
-      return
-    }
-
-    const searchParams = new URLSearchParams({
-      from,
-      to,
-      date,
-    })
-    router.push(`/search?${searchParams.toString()}`)
+  if (!from || !to || !date) {
+    alert("Please fill in all fields");
+    return;
   }
+  
+  router.push(`/search?from=${from}&to=${to}&date=${date}`);
+}
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % Math.ceil(popularRoutes.length / 4))

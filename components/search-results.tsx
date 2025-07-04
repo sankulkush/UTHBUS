@@ -1,75 +1,55 @@
 "use client"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { BusIcon, AirVentIcon, TvIcon, WifiIcon, ArrowLeftRightIcon } from "lucide-react"
+import { BusIcon, AirVentIcon, TvIcon, WifiIcon, ArrowLeftRightIcon, Loader2 } from "lucide-react"
 
-const mockBuses = [
-  {
-    id: 1,
-    name: "Sapana Yatayat",
-    route: "Ashok Leyland AC/Sofa Seater",
-    departureTime: "14:30",
-    arrivalTime: "6:30",
-    duration: "14h 0m",
-    price: 1500,
-    rating: 4.1,
-    amenities: ["Sofa seat", "Air Condition", "TV"],
-    departureDate: "21 Nov",
-    arrivalDate: "22 Nov",
-    busType: "AC"
-  },
-  {
-    id: 2,
-    name: "Sundar Birat Yatra",
-    route: "Ashok Leyland AC/Sofa Seater",
-    departureTime: "14:30",
-    arrivalTime: "6:30",
-    duration: "14h 0m",
-    price: 1500,
-    rating: 4.1,
-    amenities: ["Sofa seat", "Air Condition", "TV"],
-    departureDate: "21 Nov",
-    arrivalDate: "22 Nov",
-    busType: "AC"
-  },
-  {
-    id: 3,
-    name: "Apsara Yatayat",
-    route: "Ashok Leyland AC/Sofa Seater",
-    departureTime: "14:30",
-    arrivalTime: "6:30",
-    duration: "14h 0m",
-    price: 1500,
-    rating: 4.1,
-    amenities: ["Sofa seat", "Air Condition", "TV"],
-    departureDate: "21 Nov",
-    arrivalDate: "22 Nov",
-    busType: "Deluxe"
-  },
-  {
-    id: 4,
-    name: "Green Line",
-    route: "Volvo AC/Sleeper",
-    departureTime: "20:00",
-    arrivalTime: "8:00",
-    duration: "12h 0m",
-    price: 2000,
-    rating: 4.3,
-    amenities: ["Sleeper", "Air Condition", "WiFi", "TV"],
-    departureDate: "21 Nov",
-    arrivalDate: "22 Nov",
-    busType: "Hiace"
-  },
-]
+// Define the interface for bus data
+interface IBus {
+  id: string
+  operatorId: string
+  busNumber: string
+  operatorName: string
+  route: string
+  departureTime: string
+  arrivalTime: string
+  duration: string
+  price: number
+  rating?: number
+  amenities: string[]
+  departureDate: string
+  arrivalDate: string
+  busType: string
+  totalSeats: number
+  availableSeats: number
+  from: string
+  to: string
+  status: 'active' | 'inactive'
+}
+
+// API service to fetch buses
+const fetchAvailableBuses = async (from: string, to: string, date: string): Promise<IBus[]> => {
+  try {
+    const response = await fetch(`/api/buses/search?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&date=${encodeURIComponent(date)}`)
+    if (!response.ok) {
+      throw new Error('Failed to fetch buses')
+    }
+    return await response.json()
+  } catch (error) {
+    console.error('Error fetching buses:', error)
+    return []
+  }
+}
 
 export default function SearchResults() {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const [buses, setBuses] = useState<IBus[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [selectedFilters, setSelectedFilters] = useState({
     ac: false,
     nonAc: false,
@@ -81,14 +61,50 @@ export default function SearchResults() {
 
   const from = searchParams.get("from") || "Kathmandu"
   const to = searchParams.get("to") || "Biratnagar"
-  const date = searchParams.get("date") || "2024-11-20"
+  const date = searchParams.get("date") || new Date().toISOString().split('T')[0]
+
+  // Fetch buses on component mount
+  useEffect(() => {
+    const loadBuses = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const busData = await fetchAvailableBuses(from, to, date)
+        setBuses(busData)
+      } catch (err) {
+        setError('Failed to load buses. Please try again.')
+        console.error('Error loading buses:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadBuses()
+  }, [from, to, date])
+
+  // Filter buses based on selected filters
+  const filteredBuses = buses.filter(bus => {
+    if (!selectedFilters.ac && !selectedFilters.nonAc && !selectedFilters.deluxe && !selectedFilters.hiace && !selectedFilters.sleeper && !selectedFilters.seater) {
+      return true // No filters selected, show all
+    }
+
+    let matchesFilter = false
+
+    if (selectedFilters.ac && bus.busType.toLowerCase().includes('ac')) matchesFilter = true
+    if (selectedFilters.nonAc && !bus.busType.toLowerCase().includes('ac')) matchesFilter = true
+    if (selectedFilters.deluxe && bus.busType.toLowerCase().includes('deluxe')) matchesFilter = true
+    if (selectedFilters.hiace && bus.busType.toLowerCase().includes('hiace')) matchesFilter = true
+    if (selectedFilters.sleeper && bus.amenities.some(amenity => amenity.toLowerCase().includes('sleeper'))) matchesFilter = true
+    if (selectedFilters.seater && bus.amenities.some(amenity => amenity.toLowerCase().includes('seater'))) matchesFilter = true
+
+    return matchesFilter
+  })
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleDateString("en-US", {
-      month: "numeric",
+      month: "short",
       day: "numeric",
-      year: "numeric",
     })
   }
 
@@ -112,6 +128,10 @@ export default function SearchResults() {
       sleeper: false,
       seater: false,
     })
+  }
+
+  const handleBookNow = (busId: string) => {
+    router.push(`/booking/${busId}`)
   }
 
   return (
@@ -308,31 +328,64 @@ export default function SearchResults() {
           {/* Results */}
           <div className="lg:col-span-3">
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-800">{mockBuses.length} buses found</h2>
+              <h2 className="text-2xl font-bold text-gray-800">
+                {loading ? 'Searching...' : `${filteredBuses.length} buses found`}
+              </h2>
             </div>
 
+            {loading && (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                <span className="ml-3 text-lg text-gray-600">Loading available buses...</span>
+              </div>
+            )}
+
+            {error && (
+              <div className="text-center py-12">
+                <p className="text-red-600 text-lg mb-4">{error}</p>
+                <Button onClick={() => window.location.reload()} className="bg-red-600 hover:bg-red-700">
+                  Try Again
+                </Button>
+              </div>
+            )}
+
+            {!loading && !error && filteredBuses.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-gray-600 text-lg mb-4">No buses found for this route and date.</p>
+                <Button onClick={handleNewSearch} className="bg-blue-600 hover:bg-blue-700">
+                  Try Different Search
+                </Button>
+              </div>
+            )}
+
             <div className="space-y-6">
-              {mockBuses.map((bus) => (
+              {filteredBuses.map((bus) => (
                 <Card key={bus.id} className="hover:shadow-xl transition-all duration-300 border-0 rounded-2xl overflow-hidden">
                   <CardContent className="p-8">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
                       {/* Bus Info */}
                       <div className="lg:col-span-4 space-y-4">
                         <div>
-                          <h3 className="text-2xl font-bold text-gray-800 mb-2">{bus.name}</h3>
-                          <p className="text-gray-600 text-base mb-4">{bus.route}</p>
+                          <h3 className="text-2xl font-bold text-gray-800 mb-2">{bus.operatorName}</h3>
+                          <p className="text-gray-600 text-base mb-2">{bus.busNumber} - {bus.busType}</p>
+                          <p className="text-gray-600 text-sm mb-4">{bus.route}</p>
+                          <p className="text-sm text-gray-500">
+                            {bus.availableSeats} / {bus.totalSeats} seats available
+                          </p>
                         </div>
 
                         <div className="flex items-center space-x-4">
-                          <Badge variant="secondary" className="bg-green-100 text-green-800 px-3 py-1 rounded-full font-semibold">
-                            ⭐ {bus.rating}
-                          </Badge>
+                          {bus.rating && (
+                            <Badge variant="secondary" className="bg-green-100 text-green-800 px-3 py-1 rounded-full font-semibold">
+                              ⭐ {bus.rating}
+                            </Badge>
+                          )}
                           <div className="flex items-center space-x-3 text-sm text-gray-600">
                             {bus.amenities.map((amenity, index) => (
                               <div key={index} className="flex items-center space-x-1">
-                                {amenity === "Air Condition" && <AirVentIcon className="w-4 h-4" />}
-                                {amenity === "TV" && <TvIcon className="w-4 h-4" />}
-                                {amenity === "WiFi" && <WifiIcon className="w-4 h-4" />}
+                                {amenity.toLowerCase().includes("air condition") && <AirVentIcon className="w-4 h-4" />}
+                                {amenity.toLowerCase().includes("tv") && <TvIcon className="w-4 h-4" />}
+                                {amenity.toLowerCase().includes("wifi") && <WifiIcon className="w-4 h-4" />}
                                 <span>{amenity}</span>
                                 {index < bus.amenities.length - 1 && <span className="text-gray-400 mx-2">•</span>}
                               </div>
@@ -346,7 +399,7 @@ export default function SearchResults() {
                         <div className="flex items-center justify-between">
                           <div className="text-center">
                             <div className="text-2xl font-bold text-gray-800">{bus.departureTime}</div>
-                            <div className="text-sm text-gray-600 mt-1">{bus.departureDate}</div>
+                            <div className="text-sm text-gray-600 mt-1">{formatDate(bus.departureDate)}</div>
                           </div>
 
                           <div className="flex-1 mx-8">
@@ -358,7 +411,7 @@ export default function SearchResults() {
 
                           <div className="text-center">
                             <div className="text-2xl font-bold text-gray-800">{bus.arrivalTime}</div>
-                            <div className="text-sm text-gray-600 mt-1">{bus.arrivalDate}</div>
+                            <div className="text-sm text-gray-600 mt-1">{formatDate(bus.arrivalDate)}</div>
                           </div>
                         </div>
                       </div>
@@ -366,8 +419,12 @@ export default function SearchResults() {
                       {/* Price and Book */}
                       <div className="lg:col-span-4 text-right">
                         <div className="text-3xl font-bold text-gray-800 mb-4">Rs. {bus.price.toLocaleString()}</div>
-                        <Button className="bg-red-600 hover:bg-red-700 text-white font-bold px-8 py-3 rounded-xl text-lg shadow-lg hover:shadow-xl transition-all duration-200">
-                          BOOK NOW
+                        <Button 
+                          onClick={() => handleBookNow(bus.id)}
+                          disabled={bus.availableSeats === 0}
+                          className="bg-red-600 hover:bg-red-700 text-white font-bold px-8 py-3 rounded-xl text-lg shadow-lg hover:shadow-xl transition-all duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        >
+                          {bus.availableSeats === 0 ? 'SOLD OUT' : 'BOOK NOW'}
                         </Button>
                       </div>
                     </div>
