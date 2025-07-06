@@ -1,0 +1,52 @@
+{
+  "users": {
+    "user_001": { "name":"Alice","email":"a@x.com","phone":"9800000001","trips":0 },
+    "user_002": { "name":"Bob","email":"b@x.com","phone":"9800000002","trips":2 }
+  },
+  "operators": {
+    "opr_001": { "name":"Greenline","email":"ops@x.com","phone":"9812345678","busIds":["bus_001","bus_002"] }
+  },
+  "buses": {
+    "bus_001": {
+      "operatorId":"opr_001",
+      "conductorPhone":"9820000001",
+      "startPoint":"Kathmandu",
+      "endPoint":"Pokhara",
+      "busType":"Coach",
+      "seatCapacity":40,
+      "isAC":true,
+      "price":1200,
+      "departureTime":"08:00",
+      "arrivalTime":"14:00",
+      "duration":"6h",
+      "amenities":["WiFi","Charger","Recliner"],
+      "boardingPoints":["Thamel","Pokhara Bus Park"],
+      "droppingPoints":["Lakeside","City Center"]
+    },
+    "bus_002": {
+      "operatorId":"opr_001",
+      "conductorPhone":"9820000002",
+      "startPoint":"Kathmandu",
+      "endPoint":"Biratnagar",
+      "busType":"Hiace",
+      "seatCapacity":16,
+      "isAC":false,
+      "price":2000,
+      "departureTime":"20:00",
+      "arrivalTime":"06:00",
+      "duration":"10h",
+      "amenities":["Fan","TV"],
+      "boardingPoints":["Ratna Park"],
+      "droppingPoints":["BusPark","City Center"]
+    }
+  },
+  "routes": {
+    "route_001": { "startPoint":"Kathmandu","endPoint":"Pokhara","via":["Trishuli","Damauli"],"isReturning":false },
+    "route_002": { "startPoint":"Kathmandu","endPoint":"Biratnagar","via":["Janakpur"],"isReturning":true }
+  },
+  "trips": {
+    "trip_001": { "busId":"bus_001","startPoint":"Kathmandu","endPoint":"Pokhara","date":"2025-07-22","departureTime":"08:00" }
+  },
+  "active-bookings": {},
+  "past-bookings": {}
+}
