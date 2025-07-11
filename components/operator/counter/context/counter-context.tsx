@@ -1,97 +1,73 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { createContext, useContext, useState, useEffect } from "react"
-import type { IOperator, IBus, IBooking, IDashboardStats } from "../types/counter.types"
-import { BookingService } from "../services/booking.service"
-import { BusService } from "../services/bus.service"
-import { DashboardService } from "../services/dashboard.service"
-import { AuthService } from "../services/auth.service"
+import { createContext, useContext, useEffect, useState } from "react";
+import { BusService } from "../services/bus.service";
+import { getOperatorById } from "../../../../services/firestore";
+import type { Bus, Operator } from "../../../../lib/types";
 
 interface CounterContextType {
-  operator: IOperator | null
-  buses: IBus[]
-  bookings: IBooking[]
-  dashboardStats: IDashboardStats | null
-  loading: boolean
-  refreshData: () => Promise<void>
+  buses: Bus[];
+  loading: boolean;
+  operator: Operator | null;
+  refreshData: () => Promise<void>;
+  setBuses: (buses: Bus[]) => void;
 }
 
-const CounterContext = createContext<CounterContextType | undefined>(undefined)
+const CounterContext = createContext<CounterContextType | undefined>(undefined);
 
 export function CounterProvider({ children }: { children: React.ReactNode }) {
-  const [operator, setOperator] = useState<IOperator | null>(null)
-  const [buses, setBuses] = useState<IBus[]>([])
-  const [bookings, setBookings] = useState<IBooking[]>([])
-  const [dashboardStats, setDashboardStats] = useState<IDashboardStats | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [buses, setBuses] = useState<Bus[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [operator, setOperator] = useState<Operator | null>(null);
 
-  const authService = new AuthService()
-  const busService = new BusService()
-  const bookingService = new BookingService()
-  const dashboardService = new DashboardService()
+  const busService = new BusService();
+
+  // You'll need to get the operator ID from your auth context or props
+  const OPERATOR_ID = "your-operator-id"; // Replace with actual operator ID
 
   const refreshData = async () => {
-    if (!operator) return
-
     try {
-      setLoading(true)
-      const [busesData, bookingsData, statsData] = await Promise.all([
-        busService.getBuses(operator.id),
-        bookingService.getBookings(operator.id),
-        dashboardService.getDashboardStats(operator.id),
-      ])
-
-      setBuses(busesData)
-      setBookings(bookingsData)
-      setDashboardStats(statsData)
-    } catch (error) {
-      console.error("Error refreshing data:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    const initializeOperator = async () => {
-      try {
-        const currentOperator = await authService.getCurrentOperator()
-        setOperator(currentOperator)
-      } catch (error) {
-        console.error("Error getting current operator:", error)
+      setLoading(true);
+      
+      // Fetch operator data
+      const operatorData = await getOperatorById(OPERATOR_ID);
+      setOperator(operatorData);
+      
+      // Fetch buses for this operator
+      if (operatorData) {
+        const busesData = await busService.getBusesByOperator(operatorData.id);
+        setBuses(busesData);
       }
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+    } finally {
+      setLoading(false);
     }
-
-    initializeOperator()
-  }, [])
+  };
 
   useEffect(() => {
-    if (operator) {
-      refreshData()
-    }
-  }, [operator])
+    refreshData();
+  }, []);
+
+  const value = {
+    buses,
+    loading,
+    operator,
+    refreshData,
+    setBuses
+  };
 
   return (
-    <CounterContext.Provider
-      value={{
-        operator,
-        buses,
-        bookings,
-        dashboardStats,
-        loading,
-        refreshData,
-      }}
-    >
+    <CounterContext.Provider value={value}>
       {children}
     </CounterContext.Provider>
-  )
+  );
 }
 
-export function useCounter() {
-  const context = useContext(CounterContext)
+export const useCounter = () => {
+  const context = useContext(CounterContext);
   if (context === undefined) {
-    throw new Error("useCounter must be used within a CounterProvider")
+    throw new Error("useCounter must be used within a CounterProvider");
   }
-  return context
-}
+  return context;
+};

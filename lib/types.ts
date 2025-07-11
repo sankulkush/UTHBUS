@@ -6,30 +6,42 @@ export interface User {
   trips: number;
 }
 
+export interface Bus {
+  id: string;
+  name: string;
+  type: 'Micro' | 'Deluxe' | 'AC Deluxe';
+  model: string;
+  isAC: boolean;
+  amenities: string[];
+  routes: string[];
+  startPoint: string;
+  endPoint: string;
+  boardingPoints: string[];
+  droppingPoints: string[];
+  photos: string[];
+  description: string;
+  departureTime: string;
+  arrivalTime: string;
+  duration: string;
+  price: number;
+  seatCapacity: number;
+  operatorId: string;
+  status: 'Active' | 'Inactive' | 'Maintenance';
+  nextRoute?: string;
+  nextDeparture?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Operator {
   id: string;
   name: string;
   email: string;
   phone: string;
-  busIds: string[];
-}
-
-export interface Bus {
-  id: string;
-  operatorId: string;
-  conductorPhone: string;
-  startPoint: string;
-  endPoint: string;
-  busType: string;
-  seatCapacity: number;
-  isAC: boolean;
-  price: number;
-  departureTime: string;
-  arrivalTime: string;
-  duration: string;
-  amenities: string[];
-  boardingPoints: string[];
-  droppingPoints: string[];
+  address: string;
+  licenseNumber: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Route {

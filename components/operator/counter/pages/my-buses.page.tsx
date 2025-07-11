@@ -128,58 +128,84 @@ export function MyBusesPage() {
     }
   }
 
-  const handleAddBus = async () => {
-    if (!operator) return
+  // In your handleAddBus function, replace the existing implementation:
+const handleAddBus = async () => {
+  if (!operator) return;
 
-    if (
-      !addFormData.name ||
-      !addFormData.type ||
-      !addFormData.startPoint ||
-      !addFormData.endPoint
-    ) {
-      alert("Please fill in all required fields")
-      return
-    }
-
-    try {
-      await busService.createBus({
-        ...addFormData,
-        type: addFormData.type as BusType,
-        operatorId: operator.id,
-        routes: [`${addFormData.startPoint}-${addFormData.endPoint}`],
-        status: "Active",
-        nextRoute: `${addFormData.startPoint}-${addFormData.endPoint}`,
-        nextDeparture: addFormData.departureTime,
-      })
-
-      alert("Bus added successfully!")
-      setIsAddModalOpen(false)
-      await refreshData()
-
-      setAddFormData({
-        name: "",
-        type: "",
-        model: "",
-        isAC: true,
-        amenities: [],
-        routes: [],
-        startPoint: "",
-        endPoint: "",
-        boardingPoints: [],
-        droppingPoints: [],
-        photos: [],
-        description: "",
-        departureTime: "",
-        arrivalTime: "",
-        duration: "",
-        price: 0,
-        seatCapacity: 0,
-      })
-    } catch (error) {
-      console.error("Error adding bus:", error)
-      alert("Error adding bus")
-    }
+  if (
+    !addFormData.name ||
+    !addFormData.type ||
+    !addFormData.startPoint ||
+    !addFormData.endPoint
+  ) {
+    alert("Please fill in all required fields");
+    return;
   }
+
+  try {
+    // Create bus data matching your Bus interface
+    const busData = {
+      name: addFormData.name,
+      type: addFormData.type as 'Micro' | 'Deluxe' | 'AC Deluxe',
+      model: addFormData.model,
+      isAC: addFormData.isAC,
+      amenities: addFormData.amenities,
+      routes: [`${addFormData.startPoint}-${addFormData.endPoint}`],
+      startPoint: addFormData.startPoint,
+      endPoint: addFormData.endPoint,
+      boardingPoints: addFormData.boardingPoints,
+      droppingPoints: addFormData.droppingPoints,
+      photos: addFormData.photos,
+      description: addFormData.description,
+      departureTime: addFormData.departureTime,
+      arrivalTime: addFormData.arrivalTime,
+      duration: addFormData.duration,
+      price: addFormData.price,
+      seatCapacity: addFormData.seatCapacity,
+      operatorId: operator.id,
+      status: 'Active' as const,
+      nextRoute: `${addFormData.startPoint}-${addFormData.endPoint}`,
+      nextDeparture: addFormData.departureTime,
+    };
+    console.log('Firebase Config:', {
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  })
+    // This will automatically save to Firestore
+    const newBus = await busService.createBus(busData);
+    
+    alert("Bus added successfully!");
+    setIsAddModalOpen(false);
+    
+    // Refresh data to get updated list from Firestore
+    await refreshData();
+
+    // Reset form
+    setAddFormData({
+      name: "",
+      type: "",
+      model: "",
+      isAC: true,
+      amenities: [],
+      routes: [],
+      startPoint: "",
+      endPoint: "",
+      boardingPoints: [],
+      droppingPoints: [],
+      photos: [],
+      description: "",
+      departureTime: "",
+      arrivalTime: "",
+      duration: "",
+      price: 0,
+      seatCapacity: 0,
+    });
+  } catch (error) {
+    console.error("Error adding bus:", error);
+    alert("Error adding bus. Please try again.");
+  }
+};
 
   const handleAmenityChange = (
     amenityId: string,
