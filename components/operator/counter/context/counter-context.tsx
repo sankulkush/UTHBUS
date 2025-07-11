@@ -1,16 +1,16 @@
 "use client"
 
 import type React from "react"
-
 import { createContext, useContext, useState, useEffect } from "react"
-import type { IOperator, IBus, IBooking, IDashboardStats } from "../types/counter.types"
+import { useAuth } from "@/contexts/auth-context" // Import your new auth context
+import type { OperatorProfile } from "@/contexts/auth-context" // Import the correct type
+import type { IBus, IBooking, IDashboardStats } from "../types/counter.types"
 import { BookingService } from "../services/booking.service"
 import { BusService } from "../services/bus.service"
 import { DashboardService } from "../services/dashboard.service"
-import { AuthService } from "../services/auth.service"
 
 interface CounterContextType {
-  operator: IOperator | null
+  operator: OperatorProfile | null // Change to match auth context type
   buses: IBus[]
   bookings: IBooking[]
   dashboardStats: IDashboardStats | null
@@ -21,26 +21,27 @@ interface CounterContextType {
 const CounterContext = createContext<CounterContextType | undefined>(undefined)
 
 export function CounterProvider({ children }: { children: React.ReactNode }) {
-  const [operator, setOperator] = useState<IOperator | null>(null)
+  const { operator: authOperator, loading: authLoading } = useAuth() // Use the auth context
   const [buses, setBuses] = useState<IBus[]>([])
   const [bookings, setBookings] = useState<IBooking[]>([])
   const [dashboardStats, setDashboardStats] = useState<IDashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const authService = new AuthService()
   const busService = new BusService()
   const bookingService = new BookingService()
   const dashboardService = new DashboardService()
 
   const refreshData = async () => {
-    if (!operator) return
+    if (!authOperator) return
 
     try {
       setLoading(true)
+      // Use uid instead of id for OperatorProfile
+      const operatorId = authOperator.uid
       const [busesData, bookingsData, statsData] = await Promise.all([
-        busService.getBuses(operator.id),
-        bookingService.getBookings(operator.id),
-        dashboardService.getDashboardStats(operator.id),
+        busService.getBuses(operatorId),
+        bookingService.getBookings(operatorId),
+        dashboardService.getDashboardStats(operatorId),
       ])
 
       setBuses(busesData)
@@ -54,32 +55,19 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    const initializeOperator = async () => {
-      try {
-        const currentOperator = await authService.getCurrentOperator()
-        setOperator(currentOperator)
-      } catch (error) {
-        console.error("Error getting current operator:", error)
-      }
-    }
-
-    initializeOperator()
-  }, [])
-
-  useEffect(() => {
-    if (operator) {
+    if (authOperator && !authLoading) {
       refreshData()
     }
-  }, [operator])
+  }, [authOperator, authLoading])
 
   return (
     <CounterContext.Provider
       value={{
-        operator,
+        operator: authOperator, // Use operator from auth context
         buses,
         bookings,
         dashboardStats,
-        loading,
+        loading: loading || authLoading,
         refreshData,
       }}
     >

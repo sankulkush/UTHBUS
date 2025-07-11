@@ -5,7 +5,8 @@ import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firest
 import { auth, firestore as db } from "@/firebaseConfig"
 import { useRouter } from "next/navigation"
 
-interface OperatorProfile {
+// Export the OperatorProfile interface
+export interface OperatorProfile {
   uid: string
   email: string
   name: string

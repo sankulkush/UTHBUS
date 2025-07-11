@@ -13,6 +13,8 @@ import {
 } from "lucide-react"
 import type { MenuItem } from "../types/counter.types"
 import { useCounter } from "../context/counter-context"
+import { useAuth } from "@/contexts/auth-context"
+import { useRouter } from "next/navigation"
 
 interface SidebarProps {
   activeMenuItem: MenuItem
@@ -21,7 +23,6 @@ interface SidebarProps {
   onToggleCollapse: () => void
 }
 
-// Remove "Add Bus" from sidebar menu items
 const menuItems = [
   { id: "book-ticket" as MenuItem, label: "Book Ticket", icon: TicketIcon },
   { id: "my-buses" as MenuItem, label: "My Buses", icon: BusIcon },
@@ -31,6 +32,17 @@ const menuItems = [
 
 export function Sidebar({ activeMenuItem, onMenuItemChange, collapsed, onToggleCollapse }: SidebarProps) {
   const { operator } = useCounter()
+  const { logout } = useAuth()
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+      router.push('/operator/login')
+    } catch (error) {
+      console.error("Logout error:", error)
+    }
+  }
 
   return (
     <div
@@ -93,7 +105,8 @@ export function Sidebar({ activeMenuItem, onMenuItemChange, collapsed, onToggleC
       <div className="p-2 border-t border-gray-200">
         <Button
           variant="ghost"
-          className={cn("w-full justify-start text-gray-700 hover:bg-gray-100", collapsed ? "px-2" : "px-3")}
+          className={cn("w-full justify-start text-red-600 hover:bg-red-50", collapsed ? "px-2" : "px-3")}
+          onClick={handleLogout}
         >
           <LogOutIcon className={cn("w-4 h-4", collapsed ? "" : "mr-3")} />
           {!collapsed && <span>Logout</span>}

@@ -1,27 +1,42 @@
 // app/operator/counter/page.tsx
 "use client"
-import { useAuth } from "@/contexts/auth-context"
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
 
-export default function CounterDashboard() {
-  const { operator, loading } = useAuth()
-  const router = useRouter()
+import { useState } from "react"
+import { CounterProvider } from "@/components/operator/counter/context/counter-context"
+import { Sidebar } from "@/components/operator/counter/sidebar/sidebar"
+import { MainContent } from "@/components/operator/counter/main-content/main-content"
+import type { MenuItem } from "@/components/operator/counter/types/counter.types"
 
-  if (loading) {
-    return <div>Loading...</div>
+export default function CounterPage() {
+  const [activeMenuItem, setActiveMenuItem] = useState<MenuItem>("book-ticket")
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+
+  const handleMenuItemChange = (item: MenuItem) => {
+    setActiveMenuItem(item)
   }
 
-  if (!operator) {
-    router.push('/operator/login')
-    return null
+  const handleToggleSidebar = () => {
+    setSidebarCollapsed(!sidebarCollapsed)
   }
 
   return (
-    <div>
-      <h1>Welcome to Counter Dashboard</h1>
-      <p>Hello, {operator.name}!</p>
-      {/* Your existing counter content */}
-    </div>
+    <CounterProvider>
+      <div className="flex h-screen bg-gray-50">
+        {/* Sidebar */}
+        <Sidebar
+          activeMenuItem={activeMenuItem}
+          onMenuItemChange={handleMenuItemChange}
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={handleToggleSidebar}
+        />
+
+        {/* Main Content */}
+        <MainContent
+          activeMenuItem={activeMenuItem}
+          sidebarCollapsed={sidebarCollapsed}
+          onToggleSidebar={handleToggleSidebar}
+        />
+      </div>
+    </CounterProvider>
   )
 }
