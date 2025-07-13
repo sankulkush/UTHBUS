@@ -1,97 +1,84 @@
-"use client"
+// components/operator/counter/context/counter-context.tsx
+"use client";
 
-import type React from "react"
-
-import { createContext, useContext, useState, useEffect } from "react"
-import type { IOperator, IBus, IBooking, IDashboardStats } from "../types/counter.types"
-import { BookingService } from "../services/booking.service"
-import { BusService } from "../services/bus.service"
-import { DashboardService } from "../services/dashboard.service"
-import { AuthService } from "../services/auth.service"
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { useAuth } from "@/contexts/auth-context";
+import type { OperatorProfile } from "@/contexts/auth-context";
+import type { IBus, IBooking, IDashboardStats } from "../types/counter.types";
+import { BusService } from "../services/bus.service";
+import { BookingService } from "../services/booking.service";
+import { DashboardService } from "../services/dashboard.service";
 
 interface CounterContextType {
-  operator: IOperator | null
-  buses: IBus[]
-  bookings: IBooking[]
-  dashboardStats: IDashboardStats | null
-  loading: boolean
-  refreshData: () => Promise<void>
+  operator: OperatorProfile | null;
+  buses: IBus[];
+  bookings: IBooking[];
+  dashboardStats: IDashboardStats | null;
+  loading: boolean;
+  refreshData: () => Promise<void>;
 }
 
-const CounterContext = createContext<CounterContextType | undefined>(undefined)
+const CounterContext = createContext<CounterContextType | undefined>(undefined);
 
 export function CounterProvider({ children }: { children: React.ReactNode }) {
-  const [operator, setOperator] = useState<IOperator | null>(null)
-  const [buses, setBuses] = useState<IBus[]>([])
-  const [bookings, setBookings] = useState<IBooking[]>([])
-  const [dashboardStats, setDashboardStats] = useState<IDashboardStats | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { operator: authOperator, loading: authLoading } = useAuth();
+  const [buses, setBuses] = useState<IBus[]>([]);
+  const [bookings, setBookings] = useState<IBooking[]>([]);
+  const [dashboardStats, setDashboardStats] = useState<IDashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const authService = new AuthService()
-  const busService = new BusService()
-  const bookingService = new BookingService()
-  const dashboardService = new DashboardService()
+  const busService = new BusService();
+  const bookingService = new BookingService();
+  const dashboardService = new DashboardService();
 
   const refreshData = async () => {
-    if (!operator) return
+    if (!authOperator) return;
+    setLoading(true);
 
     try {
-      setLoading(true)
+      const operatorId = authOperator.uid;
       const [busesData, bookingsData, statsData] = await Promise.all([
-        busService.getBuses(operator.id),
-        bookingService.getBookings(operator.id),
-        dashboardService.getDashboardStats(operator.id),
-      ])
+        busService.getBuses(operatorId),
+        bookingService.getBookings(operatorId),
+        dashboardService.getDashboardStats(operatorId),
+      ]);
 
-      setBuses(busesData)
-      setBookings(bookingsData)
-      setDashboardStats(statsData)
+      setBuses(busesData);
+      setBookings(bookingsData);
+      setDashboardStats(statsData);
     } catch (error) {
-      console.error("Error refreshing data:", error)
+      console.error("Error refreshing data:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    const initializeOperator = async () => {
-      try {
-        const currentOperator = await authService.getCurrentOperator()
-        setOperator(currentOperator)
-      } catch (error) {
-        console.error("Error getting current operator:", error)
-      }
+    if (authOperator && !authLoading) {
+      refreshData();
     }
-
-    initializeOperator()
-  }, [])
-
-  useEffect(() => {
-    if (operator) {
-      refreshData()
-    }
-  }, [operator])
+  }, [authOperator, authLoading]);
 
   return (
     <CounterContext.Provider
       value={{
-        operator,
+        operator: authOperator,
         buses,
         bookings,
         dashboardStats,
-        loading,
+        loading: loading || authLoading,
         refreshData,
       }}
     >
       {children}
     </CounterContext.Provider>
-  )
+  );
 }
 
 export function useCounter() {
-  const context = useContext(CounterContext)
-  if (context === undefined) {
-    throw new Error("useCounter must be used within a CounterProvider")
+  const context = useContext(CounterContext);
+  if (!context) {
+    throw new Error("useCounter must be used within CounterProvider");
   }
-  return context
+  return context;
 }

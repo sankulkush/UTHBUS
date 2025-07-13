@@ -145,7 +145,7 @@ export function MyBusesPage() {
       await busService.createBus({
         ...addFormData,
         type: addFormData.type as BusType,
-        operatorId: operator.id,
+        operatorId: operator.uid,
         routes: [`${addFormData.startPoint}-${addFormData.endPoint}`],
         status: "Active",
         nextRoute: `${addFormData.startPoint}-${addFormData.endPoint}`,

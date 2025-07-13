@@ -2,10 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
-import { createUserWithEmailAndPassword } from "firebase/auth"
-import { doc, setDoc } from "firebase/firestore"
-import { auth, firestore, isPreviewEnvironment } from "@/firebaseConfig"
-import { useAuth } from "@/lib/auth-context"
+import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -16,7 +13,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 export default function OperatorRegister() {
-  const { mockLogin } = useAuth()
+  const { register } = useAuth()
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -68,62 +65,39 @@ export default function OperatorRegister() {
     setLoading(true)
 
     try {
-      if (isPreviewEnvironment) {
-        // Mock registration for preview
-        await new Promise((resolve) => setTimeout(resolve, 1500)) // Simulate network delay
+      await register(formData.email, formData.password, {
+        companyName: formData.companyName,
+        contactNumber: formData.contactNumber,
+        address: formData.address,
+        description: formData.description,
+        name: formData.companyName, // Use company name as the operator name
+        phoneNumber: formData.contactNumber
+      })
 
-        // Simulate successful registration
-        setSuccess(true)
-        setTimeout(() => {
-          mockLogin("operator")
-          router.push("/operator/counter")
-        }, 2000)
-      } else {
-        // Real Firebase registration
-        const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password)
-        const user = userCredential.user
-
-        // Create operator document in Firestore
-        const operatorData = {
-          uid: user.uid,
-          email: formData.email,
-          displayName: formData.companyName,
-          role: "operator" as const,
-          approved: false,
-          companyName: formData.companyName,
-          contactNumber: formData.contactNumber,
-          address: formData.address,
-          description: formData.description,
-          createdAt: new Date(),
-        }
-
-        await setDoc(doc(firestore, "operators", user.uid), operatorData)
-        router.push("/operator/pending-approval")
-      }
+      setSuccess(true)
+      
+      // The auth context will handle the redirect to /operator/counter
+      setTimeout(() => {
+        router.push("/operator/counter")
+      }, 2000)
     } catch (error: any) {
       console.error("Registration error:", error)
 
       let errorMessage = "Registration failed. Please try again."
 
       // Handle specific Firebase errors
-      switch (error.code) {
-        case "auth/network-request-failed":
-          errorMessage = "Network error. Please check your internet connection and try again."
-          break
-        case "auth/email-already-in-use":
-          errorMessage = "An account with this email already exists. Please use a different email or sign in."
-          break
-        case "auth/invalid-email":
-          errorMessage = "Please enter a valid email address."
-          break
-        case "auth/weak-password":
-          errorMessage = "Password is too weak. Please use at least 6 characters."
-          break
-        case "auth/too-many-requests":
-          errorMessage = "Too many failed attempts. Please try again later."
-          break
-        default:
-          errorMessage = error.message || errorMessage
+      if (error.message.includes("auth/email-already-in-use")) {
+        errorMessage = "An account with this email already exists. Please use a different email or sign in."
+      } else if (error.message.includes("auth/invalid-email")) {
+        errorMessage = "Please enter a valid email address."
+      } else if (error.message.includes("auth/weak-password")) {
+        errorMessage = "Password is too weak. Please use at least 6 characters."
+      } else if (error.message.includes("auth/network-request-failed")) {
+        errorMessage = "Network error. Please check your internet connection and try again."
+      } else if (error.message.includes("auth/too-many-requests")) {
+        errorMessage = "Too many failed attempts. Please try again later."
+      } else {
+        errorMessage = error.message || errorMessage
       }
 
       setError(errorMessage)
@@ -147,9 +121,7 @@ export default function OperatorRegister() {
             <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-green-700 mb-2">Registration Successful!</h2>
             <p className="text-gray-600 mb-4">
-              {isPreviewEnvironment
-                ? "Demo registration completed. Redirecting to operator portal..."
-                : "Your operator account has been created and is pending approval."}
+              Your operator account has been created successfully. Redirecting to your dashboard...
             </p>
             <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto" />
           </CardContent>
@@ -167,9 +139,6 @@ export default function OperatorRegister() {
             <span className="text-red-600">bus</span>
           </Link>
           <p className="text-gray-600 mt-2">Register as Bus Operator</p>
-          {isPreviewEnvironment && (
-            <p className="text-xs text-orange-600 mt-1">Preview Mode - Registration will be simulated</p>
-          )}
         </div>
 
         <Card>
@@ -286,10 +255,10 @@ export default function OperatorRegister() {
                 {loading ? (
                   <div className="flex items-center space-x-2">
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Registering...</span>
+                    <span>Creating Account...</span>
                   </div>
                 ) : (
-                  "Register"
+                  "Create Account"
                 )}
               </Button>
             </form>
