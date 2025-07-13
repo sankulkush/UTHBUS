@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,10 +12,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { TicketIcon, CheckCircleIcon } from "lucide-react"
 import { useCounter } from "../context/counter-context"
 import { BookingService } from "../services/booking.service"
-import { BusService } from "../services/bus.service"
+import { 
+  collection, 
+  query, 
+  where, 
+  getDocs, 
+  addDoc, 
+  serverTimestamp 
+} from "firebase/firestore"
+import { firestore } from "@/lib/firebase"
+import type { IBus } from "../types/counter.types"
+import type { IActiveBooking } from "../context/counter-context"
 
 export function BookTicketPage() {
-  const { operator, refreshData } = useCounter()
+  const { operator, refreshActiveBookings } = useCounter()
   const [formData, setFormData] = useState({
     from: "",
     to: "",
@@ -28,27 +37,48 @@ export function BookTicketPage() {
     busId: "",
     seatNumber: "",
   })
-  const [availableBuses, setAvailableBuses] = useState<any[]>([])
-  const [selectedBus, setSelectedBus] = useState<any>(null)
+  const [availableBuses, setAvailableBuses] = useState<IBus[]>([])
+  const [selectedBus, setSelectedBus] = useState<IBus | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [bookingSuccess, setBookingSuccess] = useState(false)
-  const [bookedTicket, setBookedTicket] = useState<any>(null)
+  const [bookedTicket, setBookedTicket] = useState<IActiveBooking | null>(null)
 
   const bookingService = new BookingService()
-  const busService = new BusService()
 
+  // Search buses from Firestore filtered by operator
   const handleSearchBuses = async () => {
     if (!formData.from || !formData.to) {
       alert("Please select both departure and destination cities")
       return
     }
 
+    if (!operator) {
+      alert("Operator not authenticated")
+      return
+    }
+
     setIsLoading(true)
     try {
-      const buses = await busService.searchBuses(formData.from, formData.to, formData.date)
-      // Filter buses for current operator
-      const operatorBuses = buses.filter((bus) => bus.operatorId === operator?.id)
-      setAvailableBuses(operatorBuses)
+      // Query Firestore for buses matching the criteria
+      const q = query(
+        collection(firestore, "buses"),
+        where("operatorId", "==", operator.uid),
+        where("startPoint", "==", formData.from),
+        where("endPoint", "==", formData.to),
+        where("status", "==", "Active")
+      )
+      
+      const snapshot = await getDocs(q)
+      const buses: IBus[] = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data()
+      } as IBus))
+      
+      setAvailableBuses(buses)
+      
+      if (buses.length === 0) {
+        alert("No buses found for this route")
+      }
     } catch (error) {
       console.error("Error searching buses:", error)
       alert("Error searching buses")
@@ -59,23 +89,14 @@ export function BookTicketPage() {
 
   const handleBusSelect = (busId: string) => {
     const bus = availableBuses.find((b) => b.id === busId)
-    setSelectedBus(bus)
+    setSelectedBus(bus || null)
     setFormData({ ...formData, busId })
-  }
-
-  const generateSeatNumber = () => {
-    // Generate random seat number
-    const rows = ["A", "B", "C", "D", "E"]
-    const numbers = Array.from({ length: 20 }, (_, i) => i + 1)
-    const randomRow = rows[Math.floor(Math.random() * rows.length)]
-    const randomNumber = numbers[Math.floor(Math.random() * numbers.length)]
-    return `${randomRow}${randomNumber}`
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!selectedBus) {
+    if (!selectedBus || !operator) {
       alert("Please select a bus")
       return
     }
@@ -85,30 +106,75 @@ export function BookTicketPage() {
       return
     }
 
+    if (!formData.seatNumber) {
+      alert("Please enter seat number")
+      return
+    }
+
+    const seatNum = parseInt(formData.seatNumber)
+    if (isNaN(seatNum) || seatNum <= 0) {
+      alert("Please enter a valid seat number")
+      return
+    }
+
+    // Removed validation for boarding and dropping points since they're now optional
+
     setIsLoading(true)
     try {
-      const seatNumber = generateSeatNumber()
-      const booking = await bookingService.createBooking({
+      // Create booking in activeBookings collection
+      const bookingData: Omit<IActiveBooking, "id"> = {
+        operatorId: operator.uid,
+        userId: operator.uid, // Using operator as user for now
         busId: selectedBus.id,
-        operatorId: operator!.id,
+        busName: selectedBus.name,
+        from: formData.from,
+        to: formData.to,
+        date: formData.date,
+        time: selectedBus.departureTime,
+        seatNumber: seatNum,
+        passengerName: formData.passengerName,
+        passengerPhone: formData.passengerPhone,
+        boardingPoint: formData.boardingPoint || "", // Default to empty string if not provided
+        droppingPoint: formData.droppingPoint || "", // Default to empty string if not provided
+        amount: selectedBus.price,
+        bookingTime: serverTimestamp(),
+        status: "booked"
+      }
+
+      // Add to Firestore
+      const docRef = await addDoc(collection(firestore, "activeBookings"), bookingData)
+      
+      // Create the booked ticket object with the new ID
+      const newBooking: IActiveBooking = {
+        id: docRef.id,
+        ...bookingData,
+        bookingTime: new Date() // For display purposes
+      }
+
+      // Also create in the old bookings system for backward compatibility
+      await bookingService.createBooking({
+        busId: selectedBus.id,
+        operatorId: operator.uid,
         passengerName: formData.passengerName,
         passengerPhone: formData.passengerPhone,
         from: formData.from,
         to: formData.to,
         date: formData.date,
         time: selectedBus.departureTime,
-        seatNumber,
+        seatNumber: seatNum.toString(),
         amount: selectedBus.price,
         status: "Confirmed",
-        boardingPoint: formData.boardingPoint,
-        droppingPoint: formData.droppingPoint,
+        boardingPoint: formData.boardingPoint || "",
+        droppingPoint: formData.droppingPoint || "",
         busName: selectedBus.name,
         busType: selectedBus.type,
       })
 
-      setBookedTicket(booking)
+      setBookedTicket(newBooking)
       setBookingSuccess(true)
-      await refreshData() // Refresh data to show new booking in transactions
+      
+      // Refresh active bookings to show new booking
+      await refreshActiveBookings()
     } catch (error) {
       console.error("Error booking ticket:", error)
       alert("Error booking ticket")
@@ -182,6 +248,18 @@ export function BookTicketPage() {
                   <Label className="text-sm font-medium text-gray-600">Status</Label>
                   <p className="text-lg text-green-600 font-semibold">{bookedTicket.status}</p>
                 </div>
+                {bookedTicket.boardingPoint && (
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Boarding Point</Label>
+                    <p className="text-lg">{bookedTicket.boardingPoint}</p>
+                  </div>
+                )}
+                {bookedTicket.droppingPoint && (
+                  <div>
+                    <Label className="text-sm font-medium text-gray-600">Dropping Point</Label>
+                    <p className="text-lg">{bookedTicket.droppingPoint}</p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -294,7 +372,7 @@ export function BookTicketPage() {
               </div>
             )}
 
-            {availableBuses.length === 0 && formData.from && formData.to && (
+            {availableBuses.length === 0 && formData.from && formData.to && !isLoading && (
               <div className="text-center py-8">
                 <p className="text-gray-600">No buses available for this route. Please try a different route.</p>
               </div>
@@ -327,16 +405,31 @@ export function BookTicketPage() {
                   </div>
                 </div>
 
-                {/* Boarding & Dropping Points */}
+                {/* Seat Number Input */}
+                <div className="space-y-2">
+                  <Label htmlFor="seatNumber">Seat Number *</Label>
+                  <Input
+                    id="seatNumber"
+                    type="number"
+                    value={formData.seatNumber}
+                    onChange={(e) => setFormData({ ...formData, seatNumber: e.target.value })}
+                    placeholder="Enter seat number (e.g., 12)"
+                    min="1"
+                    max="50"
+                    required
+                  />
+                </div>
+
+                {/* Boarding & Dropping Points - Now Optional */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label>Boarding Point</Label>
+                    <Label>Boarding Point (Optional)</Label>
                     <Select onValueChange={(value) => setFormData({ ...formData, boardingPoint: value })}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select boarding point" />
+                        <SelectValue placeholder="Select boarding point (optional)" />
                       </SelectTrigger>
                       <SelectContent>
-                        {selectedBus.boardingPoints.map((point: string) => (
+                        {selectedBus.boardingPoints?.map((point: string) => (
                           <SelectItem key={point} value={point}>
                             {point}
                           </SelectItem>
@@ -346,13 +439,13 @@ export function BookTicketPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Dropping Point</Label>
+                    <Label>Dropping Point (Optional)</Label>
                     <Select onValueChange={(value) => setFormData({ ...formData, droppingPoint: value })}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select dropping point" />
+                        <SelectValue placeholder="Select dropping point (optional)" />
                       </SelectTrigger>
                       <SelectContent>
-                        {selectedBus.droppingPoints.map((point: string) => (
+                        {selectedBus.droppingPoints?.map((point: string) => (
                           <SelectItem key={point} value={point}>
                             {point}
                           </SelectItem>

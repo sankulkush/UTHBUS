@@ -10,7 +10,7 @@ import {
   doc as docRef,
   getDoc,
   deleteDoc,
-  type DocumentData,
+  serverTimestamp,
 } from "firebase/firestore";
 import { firestore } from "@/lib/firebase";
 import type { IBusService, IBus } from "../types/counter.types";
@@ -33,14 +33,23 @@ export class BusService implements IBusService {
 
   /** Create a new bus document */
   async createBus(bus: Omit<IBus, "id">): Promise<IBus> {
-    const ref = await addDoc(this.col(), bus);
+    const busData = {
+      ...bus,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+    const ref = await addDoc(this.col(), busData);
     return { ...bus, id: ref.id };
   }
 
   /** Update an existing bus */
   async updateBus(id: string, updates: Partial<IBus>): Promise<IBus> {
     const busRef = docRef(firestore, "buses", id);
-    await updateDoc(busRef, updates);
+    const updateData = {
+      ...updates,
+      updatedAt: serverTimestamp(),
+    };
+    await updateDoc(busRef, updateData);
     const updated = await getDoc(busRef);
     const data = updated.data() as Omit<IBus, 'id'>;
     return { ...data, id: updated.id };
@@ -52,10 +61,11 @@ export class BusService implements IBusService {
     await deleteDoc(busRef);
   }
 
-  /** Search buses matching origin, destination, and active status */
-  async searchBuses(from: string, to: string, date: string): Promise<IBus[]> {
+  /** Search buses for a specific operator matching origin and destination */
+  async searchBuses(from: string, to: string, date: string, operatorId: string): Promise<IBus[]> {
     const q = query(
       this.col(),
+      where("operatorId", "==", operatorId),
       where("startPoint", "==", from),
       where("endPoint", "==", to),
       where("status", "==", "Active")
@@ -65,5 +75,16 @@ export class BusService implements IBusService {
       const data = d.data() as Omit<IBus, 'id'>;
       return { ...data, id: d.id };
     });
+  }
+
+  /** Get a specific bus by ID */
+  async getBusById(id: string): Promise<IBus | null> {
+    const busRef = docRef(firestore, "buses", id);
+    const doc = await getDoc(busRef);
+    if (doc.exists()) {
+      const data = doc.data() as Omit<IBus, 'id'>;
+      return { ...data, id: doc.id };
+    }
+    return null;
   }
 }

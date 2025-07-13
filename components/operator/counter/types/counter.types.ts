@@ -82,7 +82,7 @@ export interface IBusService {
   createBus(bus: Omit<IBus, "id">): Promise<IBus>
   updateBus(id: string, updates: Partial<IBus>): Promise<IBus>
   deleteBus(id: string): Promise<void>
-  searchBuses(from: string, to: string, date: string): Promise<IBus[]>
+  searchBuses(from: string, to: string, date: string, operatorId: string): Promise<IBus[]>
 }
 
 export interface IDashboardService {
