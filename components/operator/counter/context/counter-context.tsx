@@ -8,6 +8,7 @@ import type { IBus, IBooking, IDashboardStats } from "../types/counter.types";
 import { BusService } from "../services/bus.service";
 import { BookingService } from "../services/booking.service";
 import { DashboardService } from "../services/dashboard.service";
+import { ActiveBookingsService } from "../services/active-booking.service";
 import { 
   collection, 
   query, 
@@ -22,14 +23,15 @@ import { firestore } from "@/lib/firebase";
 export interface IActiveBooking {
   id?: string;
   operatorId: string;
-  userId: string;
+  userId?: string;
   busId: string;
   busName: string;
+  busType: string;
   from: string;
   to: string;
   date: string;
   time: string;
-  seatNumber: number;
+  seatNumber: string;
   passengerName: string;
   passengerPhone: string;
   boardingPoint: string;
@@ -48,6 +50,8 @@ interface CounterContextType {
   loading: boolean;
   refreshData: () => Promise<void>;
   refreshActiveBookings: () => Promise<void>;
+  // New methods for global search
+  searchAllBuses: (from: string, to: string, date: string) => Promise<IBus[]>;
 }
 
 const CounterContext = createContext<CounterContextType | undefined>(undefined);
@@ -63,6 +67,7 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
   const busService = new BusService();
   const bookingService = new BookingService();
   const dashboardService = new DashboardService();
+  const activeBookingsService = new ActiveBookingsService();
 
   // Fetch active bookings from Firestore
   const refreshActiveBookings = async () => {
@@ -86,6 +91,11 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error("Error fetching active bookings:", error);
     }
+  };
+
+  // New method for global bus search
+  const searchAllBuses = async (from: string, to: string, date: string): Promise<IBus[]> => {
+    return await busService.searchAllBuses(from, to, date);
   };
 
   const refreshData = async () => {
@@ -130,6 +140,7 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
         loading: loading || authLoading,
         refreshData,
         refreshActiveBookings,
+        searchAllBuses,
       }}
     >
       {children}

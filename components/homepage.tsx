@@ -38,20 +38,36 @@ export default function Homepage() {
   const [to, setTo] = useState("Biratnagar") // Default to Biratnagar
   const [date, setDate] = useState(() => new Date().toISOString().split("T")[0])
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [isSearching, setIsSearching] = useState(false)
   const router = useRouter()
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     if (!from || !to) {
       alert("Please select both departure and destination cities")
       return
     }
 
-    const searchParams = new URLSearchParams({
-      from,
-      to,
-      date,
-    })
-    router.push(`/search?${searchParams.toString()}`)
+    if (from === to) {
+      alert("Departure and destination cities cannot be the same")
+      return
+    }
+
+    setIsSearching(true)
+    
+    try {
+      // Navigate to search results page with query parameters
+      const searchParams = new URLSearchParams({
+        from,
+        to,
+        date,
+      })
+      router.push(`/search?${searchParams.toString()}`)
+    } catch (error) {
+      console.error("Search error:", error)
+      alert("Error occurred while searching. Please try again.")
+    } finally {
+      setIsSearching(false)
+    }
   }
 
   const nextSlide = () => {
@@ -62,6 +78,17 @@ export default function Homepage() {
     setCurrentSlide((prev) => (prev - 1 + Math.ceil(popularRoutes.length / 4)) % Math.ceil(popularRoutes.length / 4))
   }
 
+  // Handle popular route click
+  const handleRouteClick = (routeName: string) => {
+    if (from === routeName) {
+      // If from is already selected, set it as destination
+      setTo(routeName)
+    } else {
+      // Set as destination by default
+      setTo(routeName)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -69,11 +96,13 @@ export default function Homepage() {
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <span className="text-2xl font-bold">
-                <span className="text-blue-600">uth</span>
-                <span className="text-red-600">bus</span>
-                <span className="text-xs text-gray-500 ml-1 bg-gray-200 px-1 rounded">BETA</span>
-              </span>
+              <Link href="/" className="flex items-center space-x-2">
+                <span className="text-2xl font-bold">
+                  <span className="text-blue-600">uth</span>
+                  <span className="text-red-600">bus</span>
+                  <span className="text-xs text-gray-500 ml-1 bg-gray-200 px-1 rounded">BETA</span>
+                </span>
+              </Link>
             </div>
 
             <div className="flex items-center space-x-6">
@@ -148,9 +177,10 @@ export default function Homepage() {
                 <div className="md:col-span-2">
                   <Button
                     onClick={handleSearch}
-                    className="w-full h-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold text-sm rounded-none rounded-r-3xl border-0 shadow-lg transition-all duration-200"
+                    disabled={isSearching}
+                    className="w-full h-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold text-sm rounded-none rounded-r-3xl border-0 shadow-lg transition-all duration-200 disabled:opacity-50"
                   >
-                    SEARCH BUSES
+                    {isSearching ? "SEARCHING..." : "SEARCH BUSES"}
                   </Button>
                 </div>
               </div>
@@ -181,7 +211,11 @@ export default function Homepage() {
           <div className="relative">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {popularRoutes.map((route, index) => (
-                <Card key={index} className="group cursor-pointer hover:shadow-lg transition-shadow border-0 shadow-md">
+                <Card 
+                  key={index} 
+                  className="group cursor-pointer hover:shadow-lg transition-shadow border-0 shadow-md"
+                  onClick={() => handleRouteClick(route.name)}
+                >
                   <CardContent className="p-0">
                     <div className="relative h-48 overflow-hidden rounded-t-lg">
                       <Image

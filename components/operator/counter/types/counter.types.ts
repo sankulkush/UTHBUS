@@ -78,11 +78,14 @@ export interface IBookingService {
 }
 
 export interface IBusService {
-  getBuses(operatorId: string): Promise<IBus[]>
-  createBus(bus: Omit<IBus, "id">): Promise<IBus>
-  updateBus(id: string, updates: Partial<IBus>): Promise<IBus>
-  deleteBus(id: string): Promise<void>
-  searchBuses(from: string, to: string, date: string, operatorId: string): Promise<IBus[]>
+  getBuses(operatorId: string): Promise<IBus[]>;
+  createBus(bus: Omit<IBus, "id">): Promise<IBus>;
+  updateBus(id: string, updates: Partial<IBus>): Promise<IBus>;
+  deleteBus(id: string): Promise<void>;
+  searchBuses(from: string, to: string, date: string, operatorId: string): Promise<IBus[]>;
+  getBusById(id: string): Promise<IBus | null>;
+  // New method for global search
+  searchAllBuses(from: string, to: string, date: string): Promise<IBus[]>;
 }
 
 export interface IDashboardService {
@@ -95,4 +98,24 @@ export interface IAuthService {
   getCurrentOperator(): Promise<IOperator | null>
   login(email: string, password: string): Promise<IOperator>
   logout(): Promise<void>
+}
+
+export interface IActiveBookingData {
+  operatorId: string;
+  userId?: string;
+  busId: string;
+  busName: string;
+  busType: string;
+  from: string;
+  to: string;
+  date: string;
+  time: string;
+  seatNumber: string;
+  passengerName: string;
+  passengerPhone: string;
+  boardingPoint: string;
+  droppingPoint: string;
+  amount: number;
+  status: "booked" | "cancelled" | "completed";
+  bookingTime: any;
 }

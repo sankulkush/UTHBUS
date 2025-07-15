@@ -13,7 +13,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { firestore } from "@/lib/firebase";
-import type { IBusService, IBus } from "../types/counter.types";
+import type { IBusService, IBus } from "@/components/operator/counter/types/counter.types";
 
 export class BusService implements IBusService {
   /** Helper to reference the 'buses' collection */
