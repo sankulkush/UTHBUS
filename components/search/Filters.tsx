@@ -1,91 +1,147 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Filter, X } from 'lucide-react';
+import { 
+  Filter, 
+  X, 
+  Snowflake, 
+  Wind, 
+  Bus, 
+  BusFront, 
+  Sun, 
+  Moon,
+  Wifi,
+  Zap,
+  Armchair,
+  Tv,
+  Droplet,
+  Video
+} from 'lucide-react';
 import type { IBus } from "@/components/operator/counter/types/counter.types";
 
 export interface FilterState {
-  busType: string;
+  busType: string[];
+  isAC: boolean | null;
   priceRange: [number, number];
   amenities: string[];
+  departureTime: string[];
 }
 
 interface FiltersProps {
-  filters?: FilterState; // ← ADD THIS
+  filters: FilterState;
   onFiltersChange: (filters: FilterState) => void;
-  initialFilters?: FilterState;
-  maxPrice?: number;
-  availableAmenities?: string[];
-  buses?: IBus[];
+  buses: IBus[];
 }
 
+const BUS_TYPES = [
+  { id: 'Micro', label: 'Micro', icon: Bus },
+  { id: 'Deluxe', label: 'Deluxe', icon: BusFront },
+];
 
-const DEFAULT_AMENITIES = [
-  'WiFi',
-  'AC',
-  'Blanket',
-  'Pillow',
-  'Charging Port',
-  'Entertainment',
-  'Snacks',
-  'Water Bottle',
-  'Rest Stops'
+const AMENITIES = [
+  { id: 'Sofa Seat', label: 'Sofa Seat', icon: Armchair },
+  { id: 'wifi', label: 'Wi-Fi', icon: Wifi },
+  { id: 'charging Point', label: 'Charging Point', icon: Zap },
+  { id: 'TV', label: 'TV', icon: Tv },
+  { id: 'water', label: 'Water Bottle', icon: Droplet },
+  { id: 'cctv', label: 'CCTV', icon: Video },
+];
+
+const DEPARTURE_TIMES = [
+  { id: 'day', label: 'Day Time', icon: Sun, description: 'Before 12 PM' },
+  { id: 'night', label: 'Night Time', icon: Moon, description: 'After 12 PM' },
 ];
 
 export default function Filters({ 
+  filters,
   onFiltersChange, 
-  initialFilters,
-  maxPrice = 5000,
-  availableAmenities = DEFAULT_AMENITIES
+  buses = []
 }: FiltersProps) {
-  const [filters, setFilters] = useState<FilterState>({
-    busType: 'All',
-    priceRange: [0, maxPrice],
-    amenities: [],
-    ...initialFilters
-  });
-
   const [isOpen, setIsOpen] = useState(false);
 
-  useEffect(() => {
-    onFiltersChange(filters);
-  }, [filters, onFiltersChange]);
+  // Calculate max price from buses
+  const maxPrice = buses.length > 0 
+    ? Math.max(...buses.map(bus => bus.price))
+    : 5000;
 
-  const handleBusTypeChange = (type: string) => {
-    setFilters(prev => ({
-      ...prev,
-      busType: type
-    }));
-  };
-
-  const handlePriceRangeChange = (range: [number, number]) => {
-    setFilters(prev => ({
-      ...prev,
-      priceRange: range
-    }));
-  };
-
-  const handleAmenityToggle = (amenity: string) => {
-    setFilters(prev => ({
-      ...prev,
-      amenities: prev.amenities.includes(amenity)
-        ? prev.amenities.filter(a => a !== amenity)
-        : [...prev.amenities, amenity]
-    }));
-  };
-
-  const clearFilters = () => {
-    setFilters({
-      busType: 'All',
-      priceRange: [0, maxPrice],
-      amenities: []
+  const handleBusTypeToggle = (type: string) => {
+    const newBusTypes = filters.busType.includes(type)
+      ? filters.busType.filter(t => t !== type)
+      : [...filters.busType, type];
+    
+    onFiltersChange({
+      ...filters,
+      busType: newBusTypes
     });
   };
 
-  const hasActiveFilters = filters.busType !== 'All' || 
-                          filters.priceRange[0] !== 0 || 
-                          filters.priceRange[1] !== maxPrice || 
-                          filters.amenities.length > 0;
+  const handleACToggle = (isAC: boolean | null) => {
+    onFiltersChange({
+      ...filters,
+      isAC: filters.isAC === isAC ? null : isAC
+    });
+  };
+
+  const handlePriceRangeChange = (range: [number, number]) => {
+    onFiltersChange({
+      ...filters,
+      priceRange: range
+    });
+  };
+
+  const handleMinChange = (value: number) => {
+    const newMin = Math.min(value, filters.priceRange[1]);
+    handlePriceRangeChange([newMin, filters.priceRange[1]]);
+  };
+
+  const handleMaxChange = (value: number) => {
+    const newMax = Math.max(value, filters.priceRange[0]);
+    handlePriceRangeChange([filters.priceRange[0], newMax]);
+  };
+
+  const handleAmenityToggle = (amenity: string) => {
+    const newAmenities = filters.amenities.includes(amenity)
+      ? filters.amenities.filter(a => a !== amenity)
+      : [...filters.amenities, amenity];
+    
+    onFiltersChange({
+      ...filters,
+      amenities: newAmenities
+    });
+  };
+
+  const handleDepartureTimeToggle = (time: string) => {
+    const newDepartureTimes = filters.departureTime.includes(time)
+      ? filters.departureTime.filter(t => t !== time)
+      : [...filters.departureTime, time];
+    
+    onFiltersChange({
+      ...filters,
+      departureTime: newDepartureTimes
+    });
+  };
+
+  const clearFilters = () => {
+    onFiltersChange({
+      busType: [],
+      isAC: null,
+      priceRange: [0, maxPrice],
+      amenities: [],
+      departureTime: []
+    });
+  };
+
+  const hasActiveFilters = 
+    filters.busType.length > 0 || 
+    filters.isAC !== null ||
+    filters.priceRange[0] !== 0 || 
+    filters.priceRange[1] !== maxPrice || 
+    filters.amenities.length > 0 ||
+    filters.departureTime.length > 0;
+
+  // Calculate percentages for dual range slider
+  const minPercent = (filters.priceRange[0] / maxPrice) * 100;
+  const maxPercent = (filters.priceRange[1] / maxPrice) * 100;
 
   return (
     <>
@@ -98,7 +154,7 @@ export default function Filters({
           <Filter className="w-4 h-4" />
           Filters
           {hasActiveFilters && (
-            <span className="bg-blue-500 text-white text-xs rounded-full px-2 py-1">
+            <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1">
               Active
             </span>
           )}
@@ -123,7 +179,7 @@ export default function Filters({
                 {hasActiveFilters && (
                   <button
                     onClick={clearFilters}
-                    className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
+                    className="text-sm text-red-600 hover:text-red-800 transition-colors"
                   >
                     Clear all
                   </button>
@@ -137,106 +193,155 @@ export default function Filters({
               </div>
             </div>
 
-            {/* Bus Type Filter */}
+            {/* AC/Non-AC Filter */}
             <div className="mb-6">
-              <h4 className="text-sm font-medium text-gray-900 mb-3">Bus Type</h4>
-              <div className="space-y-2">
-                {['All', 'AC', 'Non-AC'].map((type) => (
-                  <label key={type} className="flex items-center">
-                    <input
-                      type="radio"
-                      name="busType"
-                      value={type}
-                      checked={filters.busType === type}
-                      onChange={(e) => handleBusTypeChange(e.target.value)}
-                      className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">{type}</span>
-                  </label>
-                ))}
+              <h4 className="text-sm font-medium text-gray-900 mb-3">Air Conditioning</h4>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleACToggle(true)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+                    filters.isAC === true
+                      ? 'bg-red-50 border-red-500 text-red-700'
+                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <Snowflake className="w-4 h-4" />
+                  <span className="text-sm">AC</span>
+                </button>
+                <button
+                  onClick={() => handleACToggle(false)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+                    filters.isAC === false
+                      ? 'bg-red-50 border-red-500 text-red-700'
+                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <Wind className="w-4 h-4" />
+                  <span className="text-sm">Non-AC</span>
+                </button>
               </div>
             </div>
 
-            {/* Price Range Filter */}
+            {/* Bus Type Filter */}
+            <div className="mb-6">
+              <h4 className="text-sm font-medium text-gray-900 mb-3">Bus Type</h4>
+              <div className="flex flex-wrap gap-2">
+                {BUS_TYPES.map((type) => {
+                  const Icon = type.icon;
+                  return (
+                    <button
+                      key={type.id}
+                      onClick={() => handleBusTypeToggle(type.id)}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+                        filters.busType.includes(type.id)
+                          ? 'bg-red-50 border-red-500 text-red-700'
+                          : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span className="text-sm">{type.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Departure Time Filter */}
+            <div className="mb-6">
+              <h4 className="text-sm font-medium text-gray-900 mb-3">Departure Time</h4>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleDepartureTimeToggle('day')}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+                    filters.departureTime.includes('day')
+                      ? 'bg-red-50 border-red-200 text-red-700'
+                      : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <Sun className="w-4 h-4" />
+                  Day
+                </button>
+                <button
+                  onClick={() => handleDepartureTimeToggle('night')}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+                    filters.departureTime.includes('night')
+                      ? 'bg-red-50 border-red-200 text-red-700'
+                      : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <Moon className="w-4 h-4" />
+                  Night
+                </button>
+              </div>
+            </div>
+
+            {/* Price Range Filter - Simplified with just slider */}
             <div className="mb-6">
               <h4 className="text-sm font-medium text-gray-900 mb-3">Price Range</h4>
               <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <div className="flex-1">
-                    <label className="block text-xs text-gray-500 mb-1">Min</label>
-                    <input
-                      type="number"
-                      value={filters.priceRange[0]}
-                      onChange={(e) => handlePriceRangeChange([
-                        parseInt(e.target.value) || 0,
-                        filters.priceRange[1]
-                      ])}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      min="0"
-                      max={maxPrice}
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <label className="block text-xs text-gray-500 mb-1">Max</label>
-                    <input
-                      type="number"
-                      value={filters.priceRange[1]}
-                      onChange={(e) => handlePriceRangeChange([
-                        filters.priceRange[0],
-                        parseInt(e.target.value) || maxPrice
-                      ])}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      min="0"
-                      max={maxPrice}
-                    />
-                  </div>
-                </div>
-                <div className="relative">
+                {/* Dual Range Slider */}
+                <div className="relative h-6 flex items-center">
+                  {/* Track background */}
+                  <div className="absolute w-full h-1 bg-gray-200 rounded-lg"></div>
+                  
+                  {/* Active track between thumbs */}
+                  <div
+                    className="absolute h-1 bg-red-500 rounded-lg"
+                    style={{
+                      left: `${minPercent}%`,
+                      width: `${maxPercent - minPercent}%`
+                    }}
+                  ></div>
+                  
+                  {/* Min range input */}
                   <input
                     type="range"
                     min="0"
                     max={maxPrice}
                     value={filters.priceRange[0]}
-                    onChange={(e) => handlePriceRangeChange([
-                      parseInt(e.target.value),
-                      filters.priceRange[1]
-                    ])}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-thumb"
+                    onChange={(e) => handleMinChange(parseInt(e.target.value))}
+                    className="absolute w-full h-1 bg-transparent appearance-none cursor-pointer z-10 dual-range-slider"
                   />
+                  
+                  {/* Max range input */}
                   <input
                     type="range"
                     min="0"
                     max={maxPrice}
                     value={filters.priceRange[1]}
-                    onChange={(e) => handlePriceRangeChange([
-                      filters.priceRange[0],
-                      parseInt(e.target.value)
-                    ])}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-thumb absolute top-0"
+                    onChange={(e) => handleMaxChange(parseInt(e.target.value))}
+                    className="absolute w-full h-1 bg-transparent appearance-none cursor-pointer z-20 dual-range-slider"
                   />
                 </div>
+                
                 <div className="flex justify-between text-xs text-gray-500">
-                  <span>NPR {filters.priceRange[0]}</span>
-                  <span>NPR {filters.priceRange[1]}</span>
+                  <span>NPR {filters.priceRange[0].toLocaleString()}</span>
+                  <span>NPR {filters.priceRange[1].toLocaleString()}</span>
                 </div>
               </div>
             </div>
 
-            {/* Amenities Filter */}
+            {/* Amenities Filter - Updated to square layout */}
             <div className="mb-6">
               <h4 className="text-sm font-medium text-gray-900 mb-3">Amenities</h4>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {availableAmenities.map((amenity) => (
-                  <label key={amenity} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={filters.amenities.includes(amenity)}
-                      onChange={() => handleAmenityToggle(amenity)}
-                      className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <span className="ml-2 text-sm text-gray-700">{amenity}</span>
-                  </label>
-                ))}
+              <div className="grid grid-cols-3 gap-2">
+                {AMENITIES.map((amenity) => {
+                  const Icon = amenity.icon;
+                  return (
+                    <button
+                      key={amenity.id}
+                      onClick={() => handleAmenityToggle(amenity.id)}
+                      className={`flex flex-col items-center gap-2 p-3 rounded-lg border transition-colors ${
+                        filters.amenities.includes(amenity.id)
+                          ? 'bg-red-50 border-red-500 text-red-700'
+                          : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="text-xs text-center leading-tight">{amenity.label}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -245,24 +350,39 @@ export default function Filters({
 
       {/* Custom slider styles */}
       <style jsx>{`
-        .slider-thumb::-webkit-slider-thumb {
-          appearance: none;
-          height: 20px;
-          width: 20px;
-          border-radius: 50%;
-          background: #2563eb;
-          cursor: pointer;
-          border: 2px solid #ffffff;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        .dual-range-slider {
+          pointer-events: none;
         }
-        .slider-thumb::-moz-range-thumb {
-          height: 20px;
-          width: 20px;
+        
+        .dual-range-slider::-webkit-slider-thumb {
+          appearance: none;
+          height: 16px;
+          width: 16px;
           border-radius: 50%;
-          background: #2563eb;
+          background: white;
           cursor: pointer;
-          border: 2px solid #ffffff;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+          border: 2px solid #ef4444;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          pointer-events: auto;
+        }
+        
+        .dual-range-slider::-moz-range-thumb {
+          height: 16px;
+          width: 16px;
+          border-radius: 50%;
+          background: white;
+          cursor: pointer;
+          border: 2px solid #ef4444;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          pointer-events: auto;
+        }
+        
+        .dual-range-slider::-webkit-slider-thumb:hover {
+          border-color: #dc2626;
+        }
+        
+        .dual-range-slider::-moz-range-thumb:hover {
+          border-color: #dc2626;
         }
       `}</style>
     </>

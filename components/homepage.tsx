@@ -143,9 +143,9 @@ export default function Homepage() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative h-[450px] overflow-visible">
+      <section className="relative h-[300px] overflow-visible">
         <div className="absolute inset-0">
-          <Image src="/Hero/bus1.png" alt="Nepal Mountains" fill className="object-cover object-center" priority />
+          <Image src="/Hero/HeroRDC.svg" alt="Nepal Mountains" fill className="object-cover object-center" priority />
           <div className="absolute inset-0 bg-black/30"></div>
         </div>
 

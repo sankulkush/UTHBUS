@@ -41,14 +41,10 @@ const cities = [
 
 const amenitiesList = [
   { id: "wifi", label: "Wi-Fi" },
-  { id: "charger", label: "Charger" },
-  { id: "recliner", label: "Recliner" },
-  { id: "tv", label: "TV/Entertainment" },
-  { id: "ac", label: "Air Conditioning" },
-  { id: "blanket", label: "Blankets" },
+  { id: "charging Point", label: "charging Point" },
+  { id: "Sofa Seat", label: "Sofa Seat" },
+  { id: "TV", label: "TV" },
   { id: "water", label: "Water Bottle" },
-  { id: "snacks", label: "Snacks" },
-  { id: "gps", label: "GPS Tracking" },
   { id: "cctv", label: "CCTV" },
 ]
 

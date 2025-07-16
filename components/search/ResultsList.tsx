@@ -5,12 +5,20 @@ import { Grid, List, SortAsc, SortDesc } from 'lucide-react';
 import BusCard from './BusCard';
 import type { IBus } from "@/components/operator/counter/types/counter.types";
 
+export interface FilterState {
+  busType: string[];
+  isAC: boolean | null;
+  priceRange: [number, number];
+  amenities: string[];
+  departureTime: string[];
+}
 
 interface ResultsListProps {
   buses: IBus[];
   loading: boolean;
   error: string | null;
   onBookBus: (bus: IBus) => void;
+  filters: FilterState;
 }
 
 type SortOption = 'departure' | 'price' | 'duration';
@@ -21,7 +29,8 @@ export default function ResultsList({
   buses, 
   loading, 
   error, 
-  onBookBus 
+  onBookBus,
+  filters 
 }: ResultsListProps) {
   const [sortBy, setSortBy] = useState<SortOption>('departure');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
@@ -38,7 +47,55 @@ export default function ResultsList({
     return arrTime.getTime() - depTime.getTime();
   };
 
-  const sortedBuses = [...buses].sort((a, b) => {
+  // Apply filters to buses
+  const filteredBuses = buses.filter(bus => {
+    // Bus type filter (Micro, Deluxe, etc.)
+    if (filters.busType.length > 0) {
+      const matchesType = filters.busType.includes(bus.type);
+      if (!matchesType) return false;
+    }
+
+    // AC filter
+    if (filters.isAC !== null) {
+      if (filters.isAC && !bus.isAC) return false;
+      if (!filters.isAC && bus.isAC) return false;
+    }
+
+    // Price range filter
+    if (bus.price < filters.priceRange[0] || bus.price > filters.priceRange[1]) {
+      return false;
+    }
+
+    // Amenities filter
+    if (filters.amenities.length > 0) {
+      const hasAllAmenities = filters.amenities.every(amenity => 
+        bus.amenities && bus.amenities.includes(amenity)
+      );
+      if (!hasAllAmenities) return false;
+    }
+
+    // Departure time filter
+    if (filters.departureTime.length > 0) {
+      const departureHour = parseInt(bus.departureTime.split(':')[0]);
+      const isDayTime = departureHour >= 4 && departureHour <= 13; // 4 AM to 1 PM
+      const isNightTime = departureHour >= 14 || departureHour < 4; // 2 PM onwards and before 4 AM
+      
+      let matchesTime = false;
+      
+      if (filters.departureTime.includes('day') && isDayTime) {
+        matchesTime = true;
+      }
+      if (filters.departureTime.includes('night') && isNightTime) {
+        matchesTime = true;
+      }
+      
+      if (!matchesTime) return false;
+    }
+
+    return true;
+  });
+
+  const sortedBuses = [...filteredBuses].sort((a, b) => {
     let comparison = 0;
     
     switch (sortBy) {
@@ -115,7 +172,7 @@ export default function ResultsList({
     );
   }
 
-  if (!buses.length) {
+  if (!sortedBuses.length) {
     return (
       <div className="text-center py-12">
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 max-w-md mx-auto">
@@ -133,7 +190,12 @@ export default function ResultsList({
       {/* Header with results count and controls */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="text-gray-600">
-          <span className="font-medium text-gray-900">{buses.length}</span> buses found
+          <span className="font-medium text-gray-900">{sortedBuses.length}</span> buses found
+          {filteredBuses.length !== buses.length && (
+            <span className="text-sm text-gray-500 ml-2">
+              (filtered from {buses.length})
+            </span>
+          )}
         </div>
         
         <div className="flex items-center gap-4">

@@ -20,9 +20,11 @@ import {
 import { firestore } from "@/lib/firebase";
 
 export interface FilterState {
-  busType: string; // "All" | "AC" | "Non-AC"
+  busType: string[]; // Changed from single string to array for multiple selections
+  isAC: boolean | null; // null means "All", true means AC only, false means Non-AC only
   priceRange: [number, number];
   amenities: string[];
+  departureTime: string[]; // "day" | "night"
 }
 
 export default function SearchPage() {
@@ -35,9 +37,11 @@ export default function SearchPage() {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [bookedSeats, setBookedSeats] = useState<string[]>([]);
   const [filters, setFilters] = useState<FilterState>({
-    busType: "All",
+    busType: [],
+    isAC: null,
     priceRange: [0, 5000],
     amenities: [],
+    departureTime: [],
   });
 
   const busService = new BusService();
@@ -80,9 +84,16 @@ export default function SearchPage() {
   const applyFilters = () => {
     let filtered = [...buses];
 
-    // Bus type filter
-    if (filters.busType !== "All") {
-      filtered = filtered.filter(bus => bus.type === filters.busType);
+    // Bus type filter (Micro, Deluxe, etc.)
+    if (filters.busType.length > 0) {
+      filtered = filtered.filter(bus => 
+        filters.busType.includes(bus.type)
+      );
+    }
+
+    // AC filter
+    if (filters.isAC !== null) {
+      filtered = filtered.filter(bus => bus.isAC === filters.isAC);
     }
 
     // Price range filter
@@ -93,8 +104,24 @@ export default function SearchPage() {
     // Amenities filter
     if (filters.amenities.length > 0) {
       filtered = filtered.filter(bus => 
-        filters.amenities.every(amenity => bus.amenities.includes(amenity))
+        filters.amenities.every(amenity => 
+          bus.amenities && bus.amenities.includes(amenity)
+        )
       );
+    }
+
+    // Departure time filter
+    if (filters.departureTime.length > 0) {
+      filtered = filtered.filter(bus => {
+        const hour = parseInt(bus.departureTime.split(':')[0]);
+        const isDayTime = hour < 12;
+        
+        return filters.departureTime.some(timeFilter => {
+          if (timeFilter === 'day' && isDayTime) return true;
+          if (timeFilter === 'night' && !isDayTime) return true;
+          return false;
+        });
+      });
     }
 
     setFilteredBuses(filtered);
@@ -135,8 +162,8 @@ export default function SearchPage() {
 
       // Create booking in activeBookings collection
       const activeBookingData: Omit<IActiveBooking, "id"> = {
-        operatorId: selectedBus.operatorId || "", // You'll need to get this from the bus data
-        userId: "", // You'll need to implement user authentication or use a guest booking system
+        operatorId: selectedBus.operatorId || "",
+        userId: "",
         busId: selectedBus.id,
         busName: selectedBus.name,
         busType: selectedBus.type,
@@ -245,6 +272,7 @@ export default function SearchPage() {
               loading={loading}
               error={error}
               onBookBus={handleBookBus}
+              filters={filters}
             />
           </div>
         </div>
