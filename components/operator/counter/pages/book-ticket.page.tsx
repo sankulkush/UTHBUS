@@ -1,3 +1,4 @@
+//components\operator\counter\pages\book-ticket.page.tsx
 "use client"
 
 import type React from "react"

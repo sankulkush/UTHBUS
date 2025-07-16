@@ -1,13 +1,16 @@
+// components/search/BookingModal.tsx
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, User, Phone, MapPin, Clock, CreditCard, Check } from 'lucide-react';
+import { ActiveBookingsService } from '@/components/operator/counter/services/active-booking.service';
 
 interface IBus {
   id: string;
   operatorId: string;
-  busName: string;
-  busType: string;
+  name: string; // Changed from busName to name to match your IBus interface
+  type: string; // Changed from busType to type
   startPoint: string;
   endPoint: string;
   departureTime: string;
@@ -20,6 +23,7 @@ interface IBus {
 
 interface BookingModalProps {
   bus: IBus;
+  bookedSeats: string[]; // This should come from the parent component
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (bookingData: {
@@ -28,21 +32,28 @@ interface BookingModalProps {
     passengerPhone: string;
     seatNumber: string;
     totalPrice: number;
+    boardingPoint?: string;
+    droppingPoint?: string;
   }) => Promise<void>;
 }
 
-export default function BookingModal({ bus, isOpen, onClose, onConfirm }: BookingModalProps) {
+export default function BookingModal({ bus, bookedSeats, isOpen, onClose, onConfirm }: BookingModalProps) {
   const [formData, setFormData] = useState({
     passengerName: '',
     passengerPhone: '',
-    seatNumber: ''
+    seatNumber: '',
+    boardingPoint: '',
+    droppingPoint: ''
   });
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
   const [currentStep, setCurrentStep] = useState<'seats' | 'details' | 'confirmation'>('seats');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [seatCheckLoading, setSeatCheckLoading] = useState(false);
 
-  // Generate seat layout (simplified - normally this would come from the bus configuration)
+  const activeBookingsService = new ActiveBookingsService();
+
+  // Generate seat layout based on bus capacity and booked seats
   const generateSeats = () => {
     const seats = [];
     const rows = Math.ceil(bus.seatCapacity / 4);
@@ -51,30 +62,76 @@ export default function BookingModal({ bus, isOpen, onClose, onConfirm }: Bookin
       const rowSeats = [];
       for (let col = 1; col <= 4; col++) {
         const seatNumber = `${row}${String.fromCharCode(64 + col)}`;
-        if (seats.length < bus.seatCapacity) {
+        if (seats.flat().length < bus.seatCapacity) {
           rowSeats.push({
             number: seatNumber,
-            available: Math.random() > 0.3, // Random availability for demo
+            available: !bookedSeats.includes(seatNumber), // Check against actual booked seats
             type: col <= 2 ? 'window' : 'aisle'
           });
         }
       }
-      seats.push(rowSeats);
+      if (rowSeats.length > 0) {
+        seats.push(rowSeats);
+      }
     }
     return seats;
   };
 
   const seatLayout = generateSeats();
 
-  const handleSeatSelect = (seatNumber: string) => {
+  // Reset form when modal opens/closes
+  useEffect(() => {
+    if (isOpen) {
+      setFormData({
+        passengerName: '',
+        passengerPhone: '',
+        seatNumber: '',
+        boardingPoint: '',
+        droppingPoint: ''
+      });
+      setSelectedSeats([]);
+      setCurrentStep('seats');
+      setError('');
+    }
+  }, [isOpen]);
+
+  const handleSeatSelect = async (seatNumber: string) => {
+    // If seat is already selected, deselect it
     if (selectedSeats.includes(seatNumber)) {
       setSelectedSeats(selectedSeats.filter(s => s !== seatNumber));
-    } else if (selectedSeats.length < 1) { // Limit to 1 seat for this demo
-      setSelectedSeats([seatNumber]);
+      return;
+    }
+
+    // Check if seat is available in real-time
+    setSeatCheckLoading(true);
+    try {
+      const isAvailable = await activeBookingsService.isSeatAvailable(
+        bus.id, 
+        new Date().toISOString().split('T')[0], // You might need to get the actual date from the search params
+        seatNumber
+      );
+      
+      if (!isAvailable) {
+        setError('This seat has just been booked by someone else. Please select another seat.');
+        setSeatCheckLoading(false);
+        return;
+      }
+
+      // Limit to 1 seat for this demo
+      if (selectedSeats.length < 1) {
+        setSelectedSeats([seatNumber]);
+      }
+    } catch (error) {
+      console.error('Error checking seat availability:', error);
+      setError('Error checking seat availability. Please try again.');
+    } finally {
+      setSeatCheckLoading(false);
     }
   };
 
   const handleNextStep = () => {
+    setError(''); // Clear any previous errors
+    
     if (currentStep === 'seats' && selectedSeats.length > 0) {
       setFormData(prev => ({ ...prev, seatNumber: selectedSeats[0] }));
       setCurrentStep('details');
@@ -89,20 +146,46 @@ export default function BookingModal({ bus, isOpen, onClose, onConfirm }: Bookin
       return;
     }
 
+    // Validate phone number (basic validation)
+    const phoneRegex = /^(\+?977)?[0-9]{10}$/;
+    if (!phoneRegex.test(formData.passengerPhone.replace(/\s/g, ''))) {
+      setError('Please enter a valid phone number');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
     try {
+      // Double-check seat availability before booking
+      const isAvailable = await activeBookingsService.isSeatAvailable(
+        bus.id, 
+        new Date().toISOString().split('T')[0], // You might need to get the actual date from the search params
+        selectedSeats[0]
+      );
+      
+      if (!isAvailable) {
+        throw new Error('This seat is no longer available. Please select another seat.');
+      }
+
       await onConfirm({
         busId: bus.id,
         passengerName: formData.passengerName,
         passengerPhone: formData.passengerPhone,
         seatNumber: selectedSeats[0],
-        totalPrice: bus.price * selectedSeats.length
+        totalPrice: bus.price * selectedSeats.length,
+        boardingPoint: formData.boardingPoint || undefined,
+        droppingPoint: formData.droppingPoint || undefined
       });
       
       // Reset form
-      setFormData({ passengerName: '', passengerPhone: '', seatNumber: '' });
+      setFormData({ 
+        passengerName: '', 
+        passengerPhone: '', 
+        seatNumber: '',
+        boardingPoint: '',
+        droppingPoint: ''
+      });
       setSelectedSeats([]);
       setCurrentStep('seats');
       onClose();
@@ -114,11 +197,15 @@ export default function BookingModal({ bus, isOpen, onClose, onConfirm }: Bookin
   };
 
   const formatTime = (time: string) => {
-    const [hours, minutes] = time.split(':');
-    const hour = parseInt(hours);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    const displayHour = hour % 12 || 12;
-    return `${displayHour}:${minutes} ${ampm}`;
+    try {
+      const [hours, minutes] = time.split(':');
+      const hour = parseInt(hours);
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const displayHour = hour % 12 || 12;
+      return `${displayHour}:${minutes} ${ampm}`;
+    } catch {
+      return time; // Return original if parsing fails
+    }
   };
 
   if (!isOpen) return null;
@@ -130,7 +217,7 @@ export default function BookingModal({ bus, isOpen, onClose, onConfirm }: Bookin
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>
             <h2 className="text-xl font-semibold text-gray-900">Book Your Seat</h2>
-            <p className="text-sm text-gray-600">{bus.busName} • {bus.startPoint} → {bus.endPoint}</p>
+            <p className="text-sm text-gray-600">{bus.name} • {bus.startPoint} → {bus.endPoint}</p>
           </div>
           <button
             onClick={onClose}
@@ -183,10 +270,10 @@ export default function BookingModal({ bus, isOpen, onClose, onConfirm }: Bookin
                   {seatLayout.map((row, rowIndex) => (
                     <div key={rowIndex} className="flex justify-center gap-3">
                       {row.map((seat, colIndex) => (
-                        <div key={seat.number} className="relative">
+                        <div key={seat.number} className="relative flex">
                           <button
                             onClick={() => seat.available && handleSeatSelect(seat.number)}
-                            disabled={!seat.available}
+                            disabled={!seat.available || seatCheckLoading}
                             className={`w-12 h-12 rounded-lg border-2 text-sm font-medium transition-all ${
                               selectedSeats.includes(seat.number)
                                 ? 'bg-blue-600 border-blue-600 text-white'
@@ -219,6 +306,15 @@ export default function BookingModal({ bus, isOpen, onClose, onConfirm }: Bookin
                   </div>
                 </div>
               </div>
+
+              {seatCheckLoading && (
+                <div className="text-center">
+                  <div className="inline-flex items-center gap-2 text-sm text-gray-600">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
+                    Checking seat availability...
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -263,6 +359,32 @@ export default function BookingModal({ bus, isOpen, onClose, onConfirm }: Bookin
                     />
                   </div>
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Boarding Point (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.boardingPoint}
+                    onChange={(e) => setFormData(prev => ({ ...prev, boardingPoint: e.target.value }))}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter boarding point"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Dropping Point (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.droppingPoint}
+                    onChange={(e) => setFormData(prev => ({ ...prev, droppingPoint: e.target.value }))}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter dropping point"
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -280,7 +402,7 @@ export default function BookingModal({ bus, isOpen, onClose, onConfirm }: Bookin
                     <MapPin className="w-6 h-6 text-blue-600" />
                   </div>
                   <div>
-                    <h4 className="font-medium text-gray-900">{bus.busName}</h4>
+                    <h4 className="font-medium text-gray-900">{bus.name}</h4>
                     <p className="text-sm text-gray-600">{bus.startPoint} → {bus.endPoint}</p>
                   </div>
                 </div>
@@ -309,6 +431,18 @@ export default function BookingModal({ bus, isOpen, onClose, onConfirm }: Bookin
                     <span className="text-sm text-gray-600">Seat:</span>
                     <span className="text-sm font-medium">{selectedSeats[0]}</span>
                   </div>
+                  {formData.boardingPoint && (
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm text-gray-600">Boarding:</span>
+                      <span className="text-sm font-medium">{formData.boardingPoint}</span>
+                    </div>
+                  )}
+                  {formData.droppingPoint && (
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm text-gray-600">Dropping:</span>
+                      <span className="text-sm font-medium">{formData.droppingPoint}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center text-lg font-semibold border-t pt-2">
                     <span>Total:</span>
                     <span className="text-blue-600">NPR {bus.price}</span>
@@ -321,6 +455,13 @@ export default function BookingModal({ bus, isOpen, onClose, onConfirm }: Bookin
                   <p className="text-red-600 text-sm">{error}</p>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* General Error Display */}
+          {error && currentStep !== 'confirmation' && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-4">
+              <p className="text-red-600 text-sm">{error}</p>
             </div>
           )}
         </div>
@@ -366,7 +507,8 @@ export default function BookingModal({ bus, isOpen, onClose, onConfirm }: Bookin
                 onClick={handleNextStep}
                 disabled={
                   (currentStep === 'seats' && selectedSeats.length === 0) ||
-                  (currentStep === 'details' && (!formData.passengerName || !formData.passengerPhone))
+                  (currentStep === 'details' && (!formData.passengerName || !formData.passengerPhone)) ||
+                  seatCheckLoading
                 }
                 className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-6 py-2 rounded-lg font-medium transition-colors"
               >

@@ -4,11 +4,20 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { BusService } from "@/components/operator/counter/services/bus.service";
+import { ActiveBookingsService } from "@/components/operator/counter/services/active-booking.service";
 import type { IBus } from "@/components/operator/counter/types/counter.types";
+import type { IActiveBooking } from "@/components/operator/counter/services/active-booking.service";
 import SearchBar from "@/components/search/SearchBar";
 import Filters from "@/components/search/Filters";
 import ResultsList from "@/components/search/ResultsList";
+import BookingModal from "@/components/search/BookingModal";
 import { Loader2 } from "lucide-react";
+import { 
+  collection, 
+  addDoc, 
+  serverTimestamp 
+} from "firebase/firestore";
+import { firestore } from "@/lib/firebase";
 
 export interface FilterState {
   busType: string; // "All" | "AC" | "Non-AC"
@@ -21,6 +30,10 @@ export default function SearchPage() {
   const [buses, setBuses] = useState<IBus[]>([]);
   const [filteredBuses, setFilteredBuses] = useState<IBus[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedBus, setSelectedBus] = useState<IBus | null>(null);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [bookedSeats, setBookedSeats] = useState<string[]>([]);
   const [filters, setFilters] = useState<FilterState>({
     busType: "All",
     priceRange: [0, 5000],
@@ -28,6 +41,7 @@ export default function SearchPage() {
   });
 
   const busService = new BusService();
+  const activeBookingsService = new ActiveBookingsService();
 
   // Get search parameters from URL
   const from = searchParams.get("from") || "";
@@ -39,14 +53,26 @@ export default function SearchPage() {
     if (!from || !to || !date) return;
     
     setLoading(true);
+    setError(null);
     try {
       const results = await busService.searchAllBuses(from, to, date);
       setBuses(results);
       setFilteredBuses(results);
     } catch (error) {
       console.error("Error searching buses:", error);
+      setError("Failed to search buses. Please try again.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Get booked seats for the selected bus
+  const getBookedSeats = async (busId: string) => {
+    try {
+      const seats = await activeBookingsService.getBookedSeats(busId, date);
+      setBookedSeats(seats);
+    } catch (error) {
+      console.error("Error fetching booked seats:", error);
     }
   };
 
@@ -72,6 +98,79 @@ export default function SearchPage() {
     }
 
     setFilteredBuses(filtered);
+  };
+
+  // Handle bus booking
+  const handleBookBus = async (bus: IBus) => {
+    setSelectedBus(bus);
+    await getBookedSeats(bus.id);
+    setIsBookingModalOpen(true);
+  };
+
+  // Handle booking confirmation
+  const handleBookingConfirm = async (bookingData: {
+    busId: string;
+    passengerName: string;
+    passengerPhone: string;
+    seatNumber: string;
+    totalPrice: number;
+    boardingPoint?: string;
+    droppingPoint?: string;
+  }) => {
+    try {
+      if (!selectedBus) {
+        throw new Error("No bus selected");
+      }
+
+      // Check if seat is available
+      const seatAvailable = await activeBookingsService.isSeatAvailable(
+        bookingData.busId, 
+        date, 
+        bookingData.seatNumber
+      );
+      
+      if (!seatAvailable) {
+        throw new Error("This seat is no longer available. Please select another seat.");
+      }
+
+      // Create booking in activeBookings collection
+      const activeBookingData: Omit<IActiveBooking, "id"> = {
+        operatorId: selectedBus.operatorId || "", // You'll need to get this from the bus data
+        userId: "", // You'll need to implement user authentication or use a guest booking system
+        busId: selectedBus.id,
+        busName: selectedBus.name,
+        busType: selectedBus.type,
+        from: from,
+        to: to,
+        date: date,
+        time: selectedBus.departureTime,
+        seatNumber: bookingData.seatNumber,
+        passengerName: bookingData.passengerName,
+        passengerPhone: bookingData.passengerPhone,
+        boardingPoint: bookingData.boardingPoint || "",
+        droppingPoint: bookingData.droppingPoint || "",
+        amount: bookingData.totalPrice,
+        status: "booked",
+        bookingTime: serverTimestamp(),
+      };
+
+      // Add to Firestore activeBookings collection
+      const docRef = await addDoc(collection(firestore, "activeBookings"), activeBookingData);
+      
+      // Success feedback
+      alert(`Booking confirmed! Booking ID: ${docRef.id}\nPassenger: ${bookingData.passengerName}\nSeat: ${bookingData.seatNumber}`);
+      
+      // Close modal and refresh booked seats
+      setIsBookingModalOpen(false);
+      setSelectedBus(null);
+      
+      // Refresh booked seats for this bus
+      await getBookedSeats(selectedBus.id);
+      
+    } catch (error) {
+      console.error("Booking error:", error);
+      throw new Error(error instanceof Error ? error.message : "Booking failed. Please try again.");
+    }
   };
 
   useEffect(() => {
@@ -140,10 +239,30 @@ export default function SearchPage() {
                 Departure date: {new Date(date).toLocaleDateString()}
               </p>
             </div>
-            <ResultsList buses={filteredBuses} from={from} to={to} date={date} />
+            
+            <ResultsList 
+              buses={filteredBuses} 
+              loading={loading}
+              error={error}
+              onBookBus={handleBookBus}
+            />
           </div>
         </div>
       </div>
+
+      {/* Booking Modal */}
+      {selectedBus && (
+        <BookingModal
+          bus={selectedBus}
+          bookedSeats={bookedSeats}
+          isOpen={isBookingModalOpen}
+          onClose={() => {
+            setIsBookingModalOpen(false);
+            setSelectedBus(null);
+          }}
+          onConfirm={handleBookingConfirm}
+        />
+      )}
     </div>
   );
 }
