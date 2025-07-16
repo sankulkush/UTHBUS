@@ -28,3 +28,5 @@ googleProvider.setCustomParameters({
 })
 
 export { app }
+export const isPreviewEnvironment = process.env.NEXT_PUBLIC_ENV === "preview";
+export const isFirebaseConfigured = Boolean(process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
