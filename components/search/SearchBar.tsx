@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Search, MapPin, Calendar } from 'lucide-react';
+import { Search, RefreshCw } from 'lucide-react';
+import CitySelect from '@/components/city-select';
+import DatePicker from '@/components/date-picker';
 
 interface SearchBarProps {
   onSearch?: (searchData: {
@@ -27,7 +29,7 @@ export default function SearchBar({
   const [formData, setFormData] = useState({
     from: defaultFrom,
     to: defaultTo,
-    date: defaultDate
+    date: defaultDate || new Date().toISOString().split('T')[0] // Default to today
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -36,7 +38,7 @@ export default function SearchBar({
   useEffect(() => {
     const fromParam = searchParams.get('from') || '';
     const toParam = searchParams.get('to') || '';
-    const dateParam = searchParams.get('date') || '';
+    const dateParam = searchParams.get('date') || new Date().toISOString().split('T')[0];
     
     setFormData({
       from: fromParam,
@@ -89,95 +91,70 @@ export default function SearchBar({
     }));
   };
 
-  // Get today's date in YYYY-MM-DD format
-  const today = new Date().toISOString().split('T')[0];
-
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="bg-white rounded-xl shadow-lg border border-gray-100">
+      <form onSubmit={handleSubmit}>
+        <div className="flex items-center">
           {/* From Location */}
-          <div className="relative">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              From
-            </label>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                value={formData.from}
-                onChange={(e) => handleInputChange('from', e.target.value)}
-                placeholder="Departure city"
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                required
-              />
-            </div>
+          <div className="flex-1 border-r border-gray-200 px-4 py-3">
+            <CitySelect
+              value={formData.from}
+              onChange={(value) => handleInputChange('from', value)}
+              placeholder="From"
+              label="FROM"
+            />
+          </div>
+
+          {/* Swap Button */}
+          <div className="px-3">
+            <button
+              type="button"
+              onClick={swapLocations}
+              className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+              title="Swap locations"
+            >
+              <RefreshCw className="w-5 h-5" />
+            </button>
           </div>
 
           {/* To Location */}
-          <div className="relative">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              To
-            </label>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                value={formData.to}
-                onChange={(e) => handleInputChange('to', e.target.value)}
-                placeholder="Destination city"
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                required
-              />
-              <button
-                type="button"
-                onClick={swapLocations}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-500 transition-colors"
-                title="Swap locations"
-              >
-                ⇄
-              </button>
-            </div>
+          <div className="flex-1 border-r border-gray-200 px-4 py-3">
+            <CitySelect
+              value={formData.to}
+              onChange={(value) => handleInputChange('to', value)}
+              placeholder="To"
+              label="TO"
+            />
           </div>
 
           {/* Date */}
-          <div className="relative">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Date
-            </label>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="date"
-                value={formData.date}
-                onChange={(e) => handleInputChange('date', e.target.value)}
-                min={today}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                required
-              />
-            </div>
+          <div className="flex-1 border-r border-gray-200 px-4 py-1">
+            <DatePicker
+              value={formData.date}
+              onChange={(value) => handleInputChange('date', value)}
+            />
           </div>
-        </div>
 
-        {/* Search Button */}
-        <div className="flex justify-center">
-          <button
-            type="submit"
-            disabled={isLoading || !formData.from || !formData.to || !formData.date}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-8 py-3 rounded-lg font-medium transition-colors min-w-[150px] justify-center"
-          >
-            {isLoading ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                Searching...
-              </>
-            ) : (
-              <>
-                <Search className="w-4 h-4" />
-                Search Buses
-              </>
-            )}
-          </button>
+          {/* Search Button */}
+          <div className="px-4">
+            <button
+              type="submit"
+              disabled={isLoading || !formData.from || !formData.to || !formData.date}
+              className="flex items-center gap-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-8 py-4 rounded-lg font-semibold transition-colors min-w-[140px] justify-center text-sm uppercase tracking-wide"
+            >
+              {isLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                  Searching...
+                </>
+              ) : (
+                <>
+                  <Search className="w-4 h-4" />
+                  Search Buses
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </form>
     </div>
