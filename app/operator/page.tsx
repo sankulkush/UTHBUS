@@ -1,6 +1,6 @@
 "use client"
 
-import { AuthGuard } from "@/components/auth/auth-gaurd"
+import { AuthGuard } from "@/components/Auth/auth-gaurd"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 

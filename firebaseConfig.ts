@@ -1,6 +1,6 @@
 // lib/firebase.ts (or wherever your config file is)
 import { initializeApp, getApps } from "firebase/app"
-import { getAuth, GoogleAuthProvider } from "firebase/auth"
+import { getAuth, GoogleAuthProvider, FacebookAuthProvider } from "firebase/auth"
 import { getFirestore } from "firebase/firestore"
 
 const firebaseConfig = {
@@ -21,6 +21,9 @@ export const firestore = getFirestore(app)
 
 // Configure Google provider
 export const googleProvider = new GoogleAuthProvider()
+export const facebookProvider = new FacebookAuthProvider()
+export const db = getFirestore(app)
+
 googleProvider.addScope("email")
 googleProvider.addScope("profile")
 googleProvider.setCustomParameters({
