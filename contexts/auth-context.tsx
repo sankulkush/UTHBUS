@@ -1,258 +1,184 @@
-"use client"
-import { createContext, useContext, useState, useEffect, ReactNode } from "react"
-import { User, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth"
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore"
-import { auth, firestore as db } from "@/firebaseConfig"
-import { useRouter } from "next/navigation"
+'use client';
 
-// Export the OperatorProfile interface
-export interface OperatorProfile {
-  uid: string
-  email: string
-  name: string
-  phoneNumber: string
-  companyName?: string
-  licenseNumber?: string
-  address?: string
-  description?: string
-  contactNumber?: string
-  createdAt?: any
-  updatedAt?: any
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { 
+  User, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
+  FacebookAuthProvider,
+  signOut,
+  onAuthStateChanged
+} from 'firebase/auth';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db } from '@/firebaseConfig';
+
+interface UserData {
+  uid: string;
+  name: string;
+  phone: string;
+  email: string;
+  createdAt: any;
+  lastLogin: any;
 }
 
 interface AuthContextType {
-  user: User | null
-  operator: OperatorProfile | null
-  token: string | null
-  loading: boolean
-  login: (email: string, password: string) => Promise<void>
-  register: (email: string, password: string, profileData: {
-    companyName: string
-    contactNumber?: string
-    address?: string
-    description?: string
-    name?: string
-    phoneNumber?: string
-  }) => Promise<void>
-  logout: () => Promise<void>
-  updateProfile: (profileData: Partial<OperatorProfile>) => Promise<void>
-  refreshToken: () => Promise<void>
+  user: User | null;
+  userData: UserData | null;
+  loading: boolean;
+  loginWithGoogle: () => Promise<void>;
+  loginWithFacebook: () => Promise<void>;
+  loginWithEmail: (email: string, password: string) => Promise<void>;
+  signupWithEmail: (email: string, password: string, name: string, phone: string) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
-  const context = useContext(AuthContext)
+  const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider")
+    throw new Error('useAuth must be used within an AuthProvider');
   }
-  return context
-}
+  return context;
+};
 
 interface AuthProviderProps {
-  children: ReactNode
+  children: ReactNode;
 }
 
-export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [user, setUser] = useState<User | null>(null)
-  const [operator, setOperator] = useState<OperatorProfile | null>(null)
-  const [token, setToken] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const router = useRouter()
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Load operator profile from Firestore
-  const loadOperatorProfile = async (user: User) => {
-    try {
-      const operatorDoc = await getDoc(doc(db, "operators", user.uid))
-      if (operatorDoc.exists()) {
-        const operatorData = operatorDoc.data() as OperatorProfile
-        setOperator({ ...operatorData, uid: user.uid })
-      } else {
-        // Create basic profile if it doesn't exist
-        const basicProfile: OperatorProfile = {
-          uid: user.uid,
-          email: user.email!,
-          name: user.displayName || "",
-          phoneNumber: "",
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        }
-        await setDoc(doc(db, "operators", user.uid), basicProfile)
-        setOperator(basicProfile)
-      }
-    } catch (error) {
-      console.error("Error loading operator profile:", error)
-    }
-  }
+  const googleProvider = new GoogleAuthProvider();
+  const facebookProvider = new FacebookAuthProvider();
 
-  // Get and set Firebase ID token
-  const setUserToken = async (user: User) => {
-    try {
-      const idToken = await user.getIdToken()
-      setToken(idToken)
-      
-      // Store token in httpOnly cookie via API route
-      await fetch('/api/auth/set-token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: idToken })
-      })
-    } catch (error) {
-      console.error("Error setting token:", error)
-    }
-  }
-
-  // Monitor auth state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      try {
-        if (user) {
-          setUser(user)
-          await setUserToken(user)
-          await loadOperatorProfile(user)
-        } else {
-          setUser(null)
-          setOperator(null)
-          setToken(null)
-          
-          // Clear token cookie
-          await fetch('/api/auth/clear-token', { method: 'POST' })
-        }
-      } catch (error) {
-        console.error("Auth state change error:", error)
-      } finally {
-        setLoading(false)
+      if (user) {
+        setUser(user);
+        await fetchUserData(user.uid);
+        await updateLastLogin(user.uid);
+      } else {
+        setUser(null);
+        setUserData(null);
       }
-    })
+      setLoading(false);
+    });
 
-    return () => unsubscribe()
-  }, [])
+    return () => unsubscribe();
+  }, []);
 
-  // Login function
-  const login = async (email: string, password: string) => {
+  const fetchUserData = async (uid: string) => {
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password)
-      const user = userCredential.user
-      
-      await setUserToken(user)
-      await loadOperatorProfile(user)
-      
-      router.push('/operator/counter')
-    } catch (error: any) {
-      throw new Error(error.message || "Login failed")
-    }
-  }
-
-  // Register function
-  const register = async (email: string, password: string, profileData: {
-    companyName: string
-    contactNumber?: string
-    address?: string
-    description?: string
-    name?: string
-    phoneNumber?: string
-  }) => {
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-      const user = userCredential.user
-
-      // Create operator profile in Firestore
-      const operatorProfile: OperatorProfile = {
-        uid: user.uid,
-        email: user.email!,
-        name: profileData.name || profileData.companyName,
-        phoneNumber: profileData.phoneNumber || profileData.contactNumber || '',
-        companyName: profileData.companyName,
-        licenseNumber: '',
-        address: profileData.address || '',
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+      const userDoc = await getDoc(doc(db, 'users', uid));
+      if (userDoc.exists()) {
+        setUserData({ uid, ...userDoc.data() } as UserData);
       }
-
-      await setDoc(doc(db, "operators", user.uid), operatorProfile)
-      
-      await setUserToken(user)
-      setOperator(operatorProfile)
-      
-      router.push('/operator/counter')
-    } catch (error: any) {
-      throw new Error(error.message || "Registration failed")
+    } catch (error) {
+      console.error('Error fetching user data:', error);
     }
-  }
+  };
 
-  // Logout function
+  const updateLastLogin = async (uid: string) => {
+    try {
+      await setDoc(doc(db, 'users', uid), {
+        lastLogin: serverTimestamp()
+      }, { merge: true });
+    } catch (error) {
+      console.error('Error updating last login:', error);
+    }
+  };
+
+  const createUserDocument = async (user: User, additionalData?: { name?: string; phone?: string }) => {
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userRef);
+      
+      if (!userDoc.exists()) {
+        const { displayName, email } = user;
+        const userData = {
+          name: additionalData?.name || displayName || '',
+          phone: additionalData?.phone || '',
+          email: email || '',
+          createdAt: serverTimestamp(),
+          lastLogin: serverTimestamp()
+        };
+        
+        await setDoc(userRef, userData);
+        setUserData({ uid: user.uid, ...userData });
+      }
+    } catch (error) {
+      console.error('Error creating user document:', error);
+      throw error;
+    }
+  };
+
+  const loginWithGoogle = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      await createUserDocument(result.user);
+    } catch (error) {
+      console.error('Error signing in with Google:', error);
+      throw error;
+    }
+  };
+
+  const loginWithFacebook = async () => {
+    try {
+      const result = await signInWithPopup(auth, facebookProvider);
+      await createUserDocument(result.user);
+    } catch (error) {
+      console.error('Error signing in with Facebook:', error);
+      throw error;
+    }
+  };
+
+  const loginWithEmail = async (email: string, password: string) => {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      console.error('Error signing in with email:', error);
+      throw error;
+    }
+  };
+
+  const signupWithEmail = async (email: string, password: string, name: string, phone: string) => {
+    try {
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      await createUserDocument(result.user, { name, phone });
+    } catch (error) {
+      console.error('Error signing up with email:', error);
+      throw error;
+    }
+  };
+
   const logout = async () => {
     try {
-      await signOut(auth)
-      
-      // Clear token cookie
-      await fetch('/api/auth/clear-token', { method: 'POST' })
-      
-      setUser(null)
-      setOperator(null)
-      setToken(null)
-      
-      router.push('/operator/login')
-    } catch (error: any) {
-      throw new Error(error.message || "Logout failed")
-    }
-  }
-
-  // Update profile function
-  const updateProfile = async (profileData: Partial<OperatorProfile>) => {
-    if (!user || !operator) {
-      throw new Error("No authenticated user")
-    }
-
-    try {
-      const updatedData = {
-        ...profileData,
-        updatedAt: serverTimestamp()
-      }
-
-      await updateDoc(doc(db, "operators", user.uid), updatedData)
-      
-      // Update local state
-      setOperator(prev => prev ? { ...prev, ...updatedData } : null)
-    } catch (error: any) {
-      throw new Error(error.message || "Profile update failed")
-    }
-  }
-
-  // Refresh token function
-  const refreshToken = async () => {
-    if (!user) return
-
-    try {
-      const idToken = await user.getIdToken(true) // Force refresh
-      setToken(idToken)
-      
-      // Update cookie
-      await fetch('/api/auth/set-token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: idToken })
-      })
+      await signOut(auth);
     } catch (error) {
-      console.error("Error refreshing token:", error)
+      console.error('Error signing out:', error);
+      throw error;
     }
-  }
+  };
 
-  const value: AuthContextType = {
+  const value = {
     user,
-    operator,
-    token,
+    userData,
     loading,
-    login,
-    register,
-    logout,
-    updateProfile,
-    refreshToken
-  }
+    loginWithGoogle,
+    loginWithFacebook,
+    loginWithEmail,
+    signupWithEmail,
+    logout
+  };
 
   return (
     <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
-  )
-}
+  );
+};
