@@ -91,61 +91,11 @@ export default function Homepage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Link href="/" className="flex items-center space-x-2">
-                <span className="text-2xl font-bold">
-                  <span className="text-blue-600">uth</span>
-                  <span className="text-red-600">bus</span>
-                  <span className="text-xs text-gray-500 ml-1 bg-gray-200 px-1 rounded">BETA</span>
-                </span>
-              </Link>
-            </div>
-
-            <div className="flex items-center space-x-6">
-              <div className="hidden md:flex items-center bg-red-600 text-white px-4 py-2 rounded-lg">
-                <PhoneIcon className="w-4 h-4 mr-2" />
-                <div className="text-sm">
-                  <div className="font-semibold">TICKET ON A CALL</div>
-                  <div>+977 9815355501</div>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-4 text-sm">
-                <Button variant="ghost" className="flex items-center space-x-1">
-                  <span>Payment</span>
-                  <ChevronRightIcon className="w-3 h-3" />
-                </Button>
-                <Button variant="ghost" className="flex items-center space-x-1">
-                  <span>English</span>
-                  <ChevronRightIcon className="w-3 h-3" />
-                </Button>
-
-                {/* Add Operator Portal Link */}
-                <Link href="/operator/login">
-                  <Button variant="ghost" className="flex items-center space-x-1 text-red-600 hover:text-red-700">
-                    <BusIcon className="w-4 h-4" />
-                    <span>Operator Portal</span>
-                  </Button>
-                </Link>
-
-                <Button variant="ghost" className="flex items-center space-x-1">
-                  <span>Account</span>
-                  <ChevronRightIcon className="w-3 h-3" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
 
       {/* Hero Section */}
-      <section className="relative h-[300px] overflow-visible">
+      <section className="relative h-[450px] overflow-visible">
         <div className="absolute inset-0">
-          <Image src="/Hero/HeroRDC.svg" alt="Nepal Mountains" fill className="object-cover object-center" priority />
+          <Image src="/Hero/bus1.png" alt="Nepal Mountains" fill className="object-cover object-center" priority />
           <div className="absolute inset-0 bg-black/30"></div>
         </div>
 
