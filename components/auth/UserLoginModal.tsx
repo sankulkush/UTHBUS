@@ -31,30 +31,31 @@ export default function UserLoginModal({
   const [error, setError] = useState("")
   const { login, loginWithGoogle, loading } = useUserAuth()
 
+  // in components/Auth/UserLoginModal.tsx
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-
+    e.preventDefault();
+    setError("");
     try {
-      await login(formData.email, formData.password)
-      onClose()
-      setFormData({ email: "", password: "" })
-    } catch (error: any) {
-      console.error("Login error:", error)
-      setError(error.message || "Login failed")
+      await login(formData.email, formData.password);
+      // ✅ only close on real success
+      onClose();
+      setFormData({ email: "", password: "" });
+    } catch (err: any) {
+      setError(err.message);
     }
-  }
+  };
 
   const handleGoogleLogin = async () => {
-    setError("")
+    setError("");
     try {
-      await loginWithGoogle()
-      onClose()
-    } catch (error: any) {
-      console.error("Google login error:", error)
-      setError(error.message || "Google login failed")
+      await loginWithGoogle();
+      // ✅ only close on real success
+      onClose();
+    } catch (err: any) {
+      setError(err.message);
     }
-  }
+  };
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({

@@ -120,67 +120,66 @@ export const UserAuthProvider = ({ children }: UserAuthProviderProps) => {
   }, [])
 
   // Login function
+// in contexts/user-auth-context.tsx
+// Login function
   const login = async (email: string, password: string) => {
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password)
-      const user = userCredential.user
-      
-      // Check if this is a user account
-      const userDoc = await getDoc(doc(db, "users", user.uid))
-      if (userDoc.exists()) {
-        const userData = userDoc.data()
-        if (!userData.isUser || userData.isOperator) {
-          await signOut(auth)
-          throw new Error("This account is registered as an operator. Please use the Operator Portal.")
-        }
-      }
-      
-      await setUserToken(user)
-      await loadUserProfile(user)
-    } catch (error: any) {
-      throw new Error(error.message || "Login failed")
+    const userCred = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCred.user;
+
+    // Fetch profile
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    if (!userDoc.exists()) {
+      await signOut(auth);
+      throw new Error("No user profile found.");
     }
-  }
+    const data = userDoc.data() as UserProfile;
+
+    // Must be a passenger
+    if (!data.isUser || data.isOperator) {
+      await signOut(auth);
+      throw new Error("This account is registered as an operator. Please use the Operator Portal.");
+    }
+
+    // Good! Now set token + profile
+    await setUserToken(user);
+    await loadUserProfile(user);
+  };
+
 
   // Google login function
+  // in contexts/user-auth-context.tsx
   const loginWithGoogle = async () => {
-    try {
-      const provider = new GoogleAuthProvider()
-      const userCredential = await signInWithPopup(auth, provider)
-      const user = userCredential.user
-      
-      // Check if user profile exists
-      const userDoc = await getDoc(doc(db, "users", user.uid))
-      
-      if (!userDoc.exists()) {
-        // Create new user profile for Google sign-in
-        const newUserProfile: UserProfile = {
-          uid: user.uid,
-          email: user.email!,
-          fullName: user.displayName || "",
-          phoneNumber: user.phoneNumber || "",
-          isOperator: false,
-          isUser: true,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        }
-        
-        await setDoc(doc(db, "users", user.uid), newUserProfile)
-        setUserProfile(newUserProfile)
-      } else {
-        const userData = userDoc.data()
-        if (!userData.isUser || userData.isOperator) {
-          await signOut(auth)
-          throw new Error("This account is registered as an operator. Please use the Operator Portal.")
-        }
-        await loadUserProfile(user)
+    const provider = new GoogleAuthProvider();
+    const userCred = await signInWithPopup(auth, provider);
+    const user = userCred.user;
+    
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    if (userDoc.exists()) {
+      const data = userDoc.data() as UserProfile;
+      if (!data.isUser || data.isOperator) {
+        await signOut(auth);
+        throw new Error("This account is registered as an operator. Please use the Operator Portal.");
       }
-      
-      await setUserToken(user)
-    } catch (error: any) {
-      throw new Error(error.message || "Google login failed")
+      // Valid user: load profile
+      await loadUserProfile(user);
+    } else {
+      // New Google user → create
+      const newUser: UserProfile = {
+        uid: user.uid,
+        email: user.email!,
+        fullName: user.displayName || "",
+        phoneNumber: user.phoneNumber || "",
+        isOperator: false,
+        isUser: true,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
+      await setDoc(doc(db, "users", user.uid), newUser);
+      setUserProfile(newUser);
     }
-  }
+
+    await setUserToken(user);
+  };
 
   // Signup function
   const signup = async (email: string, password: string, profileData: {
