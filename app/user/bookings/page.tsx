@@ -1,7 +1,7 @@
 "use client"
-
-import type React from "react"
 import { useState, useEffect } from "react"
+import { useUserAuth } from "@/contexts/user-auth-context"
+import { ActiveBookingsService, type IActiveBooking } from "@/components/operator/counter/services/active-booking.service"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -18,26 +18,26 @@ import {
   CreditCardIcon,
   SearchIcon,
   FilterIcon,
+  PrinterIcon,
+  DownloadIcon,
   RefreshCwIcon
 } from "lucide-react"
-import { useCounter } from "../context/counter-context"
-import { ActiveBookingsService, type IActiveBooking } from "../services/active-booking.service"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface BookingTabsProps {
   activeTab: string
   onTabChange: (tab: string) => void
   counts: {
-    booked: number
-    completed: number
+    upcoming: number
+    past: number
     cancelled: number
   }
 }
 
 function BookingTabs({ activeTab, onTabChange, counts }: BookingTabsProps) {
   const tabs = [
-    { id: 'booked', label: 'Active Bookings', count: counts.booked, color: 'text-green-600' },
-    { id: 'completed', label: 'Completed', count: counts.completed, color: 'text-blue-600' },
+    { id: 'upcoming', label: 'Upcoming', count: counts.upcoming, color: 'text-blue-600' },
+    { id: 'past', label: 'Past', count: counts.past, color: 'text-green-600' },
     { id: 'cancelled', label: 'Cancelled', count: counts.cancelled, color: 'text-red-600' }
   ]
 
@@ -73,118 +73,86 @@ function BookingTabs({ activeTab, onTabChange, counts }: BookingTabsProps) {
   )
 }
 
-export function BookedTransactionsPage() {
-  const { operator } = useCounter()
-  const [allBookings, setAllBookings] = useState<IActiveBooking[]>([])
+export default function BookingsPage() {
+  const { userProfile } = useUserAuth()
+  const [bookings, setBookings] = useState<IActiveBooking[]>([])
   const [filteredBookings, setFilteredBookings] = useState<IActiveBooking[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState('booked')
-  const [searchTerm, setSearchTerm] = useState("")
-  const [filterDate, setFilterDate] = useState("")
+  const [activeTab, setActiveTab] = useState('upcoming')
   const [counts, setCounts] = useState({
-    booked: 0,
-    completed: 0,
+    upcoming: 0,
+    past: 0,
     cancelled: 0
   })
-
+  
   const activeBookingsService = new ActiveBookingsService()
-
-  // Fetch all bookings on component mount
+  
+  // Fetch user bookings on component mount
   useEffect(() => {
-    if (operator) {
-      fetchAllBookings()
+    if (userProfile) {
+      fetchUserBookings()
     }
-  }, [operator])
-
-  // Filter bookings based on active tab and search criteria
+  }, [userProfile])
+  
+  // Filter bookings based on active tab
   useEffect(() => {
-    let filtered = allBookings
-
+    let filtered = bookings
+    
     // Apply tab filter based on status
     switch (activeTab) {
-      case 'booked':
+      case 'upcoming':
         filtered = filtered.filter(booking => booking.status === 'booked')
         break
-      case 'completed':
+      case 'past':
         filtered = filtered.filter(booking => booking.status === 'completed')
         break
       case 'cancelled':
         filtered = filtered.filter(booking => booking.status === 'cancelled')
         break
     }
-
-    // Search filter
-    if (searchTerm) {
-      filtered = filtered.filter(booking => 
-        booking.passengerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        booking.passengerPhone.includes(searchTerm) ||
-        booking.busName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        booking.from.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        booking.to.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        booking.id?.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    }
-
-    // Date filter
-    if (filterDate) {
-      filtered = filtered.filter(booking => booking.date === filterDate)
-    }
-
+    
     setFilteredBookings(filtered)
-  }, [allBookings, activeTab, searchTerm, filterDate])
-
+  }, [bookings, activeTab])
+  
   // Calculate counts for each tab
   useEffect(() => {
-    const booked = allBookings.filter(booking => booking.status === 'booked').length
-    const completed = allBookings.filter(booking => booking.status === 'completed').length
-    const cancelled = allBookings.filter(booking => booking.status === 'cancelled').length
+    const upcoming = bookings.filter(booking => booking.status === 'booked').length
+    const past = bookings.filter(booking => booking.status === 'completed').length
+    const cancelled = bookings.filter(booking => booking.status === 'cancelled').length
     
-    setCounts({ booked, completed, cancelled })
-  }, [allBookings])
-
-  const fetchAllBookings = async () => {
-    if (!operator) return
-
+    setCounts({ upcoming, past, cancelled })
+  }, [bookings])
+  
+  const fetchUserBookings = async () => {
+    if (!userProfile) return
     setIsLoading(true)
     try {
-      // Now using getOperatorBookings to get ALL bookings regardless of status
-      const bookings = await activeBookingsService.getOperatorBookings(operator.uid)
-      setAllBookings(bookings)
+      const userBookings = await activeBookingsService.getUserBookings(userProfile.uid)
+      setBookings(userBookings)
     } catch (error) {
-      console.error("Error fetching bookings:", error)
-      alert("Error loading bookings")
+      console.error("Error fetching user bookings:", error)
+      alert("Error loading your bookings")
     } finally {
       setIsLoading(false)
     }
   }
-
+  
   const handleCancelBooking = async (bookingId: string) => {
     if (!confirm("Are you sure you want to cancel this booking?")) return
-
     try {
+      // First update the status to cancelled
       await activeBookingsService.updateActiveBooking(bookingId, { status: 'cancelled' })
+      // Then call the cancel method for any additional cleanup
       await activeBookingsService.cancelActiveBooking(bookingId)
       // Refresh bookings after cancellation
-      await fetchAllBookings()
+      await fetchUserBookings()
       alert("Booking cancelled successfully")
     } catch (error) {
       console.error("Error cancelling booking:", error)
       alert("Error cancelling booking")
     }
   }
-
-  const handleUpdateBookingStatus = async (bookingId: string, newStatus: "booked" | "cancelled" | "completed") => {
-    try {
-      await activeBookingsService.updateActiveBooking(bookingId, { status: newStatus })
-      // Refresh bookings after update
-      await fetchAllBookings()
-      alert(`Booking status updated to ${newStatus}`)
-    } catch (error) {
-      console.error("Error updating booking status:", error)
-      alert("Error updating booking status")
-    }
-  }
-
+  
   const getStatusColor = (status: string) => {
     switch (status) {
       case "booked":
@@ -197,7 +165,7 @@ export function BookedTransactionsPage() {
         return "bg-gray-100 text-gray-800"
     }
   }
-
+  
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleDateString('en-US', {
@@ -207,7 +175,7 @@ export function BookedTransactionsPage() {
       day: 'numeric'
     })
   }
-
+  
   const formatBookingTime = (timestamp: any) => {
     if (!timestamp) return "N/A"
     
@@ -220,7 +188,24 @@ export function BookedTransactionsPage() {
       minute: '2-digit'
     })
   }
-
+  
+  const canCancelBooking = (booking: IActiveBooking) => {
+    // Only allow cancellation for booked bookings
+    if (booking.status !== "booked") return false
+    
+    try {
+      const travelDate = new Date(booking.date)
+      const today = new Date()
+      today.setHours(23, 59, 59, 999) // End of today
+      
+      // Allow cancellation if travel date is today or in the future
+      return travelDate >= today
+    } catch (e) {
+      console.error("Invalid date for booking:", booking.id, booking.date)
+      return false
+    }
+  }
+  
   const printTicket = (booking: IActiveBooking) => {
     // Create a printable ticket
     const printWindow = window.open('', '_blank')
@@ -264,97 +249,46 @@ export function BookedTransactionsPage() {
       printWindow.print()
     }
   }
-
-  if (!operator) {
-    return (
-      <div className="p-6 max-w-4xl mx-auto">
-        <Card>
-          <CardContent className="p-8 text-center">
-            <p className="text-gray-600">Please log in to view booked transactions</p>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
+  
   return (
     <div className="p-6">
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center space-x-2 mb-2">
           <TicketIcon className="w-6 h-6 text-red-600" />
-          <h1 className="text-2xl font-bold text-gray-900">Booked Transactions</h1>
+          <h1 className="text-2xl font-bold text-gray-900">My Bookings</h1>
         </div>
-        <p className="text-gray-600">View and manage all passenger bookings</p>
+        <p className="text-gray-600">View and manage your bus bookings</p>
       </div>
-
+      
       {/* Tabs */}
       <BookingTabs
         activeTab={activeTab}
         onTabChange={setActiveTab}
         counts={counts}
       />
-
-      {/* Search and Filter Section */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <FilterIcon className="w-5 h-5" />
-            <span>Search & Filter</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label>Search</Label>
-              <div className="relative">
-                <SearchIcon className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search by name, phone, bus, ID..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Date</Label>
-              <Input
-                type="date"
-                value={filterDate}
-                onChange={(e) => setFilterDate(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>&nbsp;</Label>
-              <Button 
-                onClick={fetchAllBookings} 
-                disabled={isLoading}
-                className="w-full bg-red-600 hover:bg-red-700"
-              >
-                <RefreshCwIcon className="w-4 h-4 mr-2" />
-                {isLoading ? "Loading..." : "Refresh"}
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
+      
       {/* Results Summary */}
       <div className="mb-4 flex items-center justify-between">
         <p className="text-sm text-gray-600">
-          Showing {filteredBookings.length} of {allBookings.length} bookings
+          Showing {filteredBookings.length} of {bookings.length} bookings
         </p>
+        <Button 
+          onClick={fetchUserBookings} 
+          disabled={isLoading}
+          className="bg-red-600 hover:bg-red-700"
+        >
+          <RefreshCwIcon className="w-4 h-4 mr-2" />
+          {isLoading ? "Loading..." : "Refresh"}
+        </Button>
       </div>
-
+      
       {/* Bookings List */}
       {isLoading ? (
         <Card>
           <CardContent className="p-8 text-center">
             <RefreshCwIcon className="w-8 h-8 animate-spin text-red-600 mx-auto mb-4" />
-            <p className="text-gray-600">Loading bookings...</p>
+            <p className="text-gray-600">Loading your bookings...</p>
           </CardContent>
         </Card>
       ) : filteredBookings.length === 0 ? (
@@ -363,12 +297,17 @@ export function BookedTransactionsPage() {
             <TicketIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No Bookings Found</h3>
             <p className="text-gray-600 mb-4">
-              {activeTab === 'booked' ? "No active bookings found." : 
-               activeTab === 'completed' ? "No completed bookings found." : 
-               "No cancelled bookings found."}
+              {activeTab === 'upcoming' ? "You don't have any upcoming bookings." : 
+               activeTab === 'past' ? "You don't have any past bookings." : 
+               "You don't have any cancelled bookings."}
             </p>
-            {allBookings.length === 0 && (
-              <p className="text-gray-600">No bookings have been made yet.</p>
+            {bookings.length === 0 && (
+              <Button 
+                onClick={() => window.location.href = '/'} 
+                className="mt-4 bg-red-600 hover:bg-red-700"
+              >
+                Search Buses
+              </Button>
             )}
           </CardContent>
         </Card>
@@ -401,24 +340,7 @@ export function BookedTransactionsPage() {
                     </p>
                   </div>
                 </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                  <div className="flex items-center space-x-2">
-                    <UserIcon className="w-4 h-4 text-gray-400" />
-                    <div>
-                      <p className="text-sm font-medium">{booking.passengerName}</p>
-                      <p className="text-xs text-gray-500">Passenger</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <PhoneIcon className="w-4 h-4 text-gray-400" />
-                    <div>
-                      <p className="text-sm font-medium">{booking.passengerPhone}</p>
-                      <p className="text-xs text-gray-500">Phone</p>
-                    </div>
-                  </div>
-
                   <div className="flex items-center space-x-2">
                     <CalendarIcon className="w-4 h-4 text-gray-400" />
                     <div>
@@ -426,7 +348,6 @@ export function BookedTransactionsPage() {
                       <p className="text-xs text-gray-500">Travel Date</p>
                     </div>
                   </div>
-
                   <div className="flex items-center space-x-2">
                     <ClockIcon className="w-4 h-4 text-gray-400" />
                     <div>
@@ -434,34 +355,43 @@ export function BookedTransactionsPage() {
                       <p className="text-xs text-gray-500">Departure</p>
                     </div>
                   </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                   <div className="flex items-center space-x-2">
-                    <MapPinIcon className="w-4 h-4 text-green-600" />
-                    <div>
-                      <p className="text-sm font-medium">{booking.boardingPoint}</p>
-                      <p className="text-xs text-gray-500">Boarding Point</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <MapPinIcon className="w-4 h-4 text-red-600" />
-                    <div>
-                      <p className="text-sm font-medium">{booking.droppingPoint}</p>
-                      <p className="text-xs text-gray-500">Dropping Point</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <CreditCardIcon className="w-4 h-4 text-blue-600" />
+                    <UserIcon className="w-4 h-4 text-gray-400" />
                     <div>
                       <p className="text-sm font-medium">Seat {booking.seatNumber}</p>
-                      <p className="text-xs text-gray-500">Rs. {booking.amount.toLocaleString()}</p>
+                      <p className="text-xs text-gray-500">Your Seat</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <CreditCardIcon className="w-4 h-4 text-red-600" />
+                    <div>
+                      <p className="text-sm font-medium">Rs. {booking.amount.toLocaleString()}</p>
+                      <p className="text-xs text-gray-500">Amount Paid</p>
                     </div>
                   </div>
                 </div>
-
+                {(booking.boardingPoint || booking.droppingPoint) && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    {booking.boardingPoint && (
+                      <div className="flex items-center space-x-2">
+                        <MapPinIcon className="w-4 h-4 text-green-600" />
+                        <div>
+                          <p className="text-sm font-medium">{booking.boardingPoint}</p>
+                          <p className="text-xs text-gray-500">Boarding Point</p>
+                        </div>
+                      </div>
+                    )}
+                    {booking.droppingPoint && (
+                      <div className="flex items-center space-x-2">
+                        <MapPinIcon className="w-4 h-4 text-red-600" />
+                        <div>
+                          <p className="text-sm font-medium">{booking.droppingPoint}</p>
+                          <p className="text-xs text-gray-500">Dropping Point</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
                 {/* Action Buttons */}
                 <div className="flex flex-wrap gap-2 pt-4 border-t">
                   <Button
@@ -469,36 +399,29 @@ export function BookedTransactionsPage() {
                     variant="outline"
                     onClick={() => printTicket(booking)}
                   >
+                    <PrinterIcon className="w-4 h-4 mr-2" />
                     Print Ticket
                   </Button>
                   
+                  {/* Show Cancel button for any booked booking */}
                   {booking.status === "booked" && (
-                    <>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleUpdateBookingStatus(booking.id!, "completed")}
-                      >
-                        Mark Completed
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-red-600 hover:bg-red-50"
-                        onClick={() => handleCancelBooking(booking.id!)}
-                      >
-                        Cancel Booking
-                      </Button>
-                    </>
-                  )}
-                  
-                  {booking.status === "cancelled" && (
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => handleUpdateBookingStatus(booking.id!, "booked")}
+                      className="text-red-600 hover:bg-red-50"
+                      onClick={() => handleCancelBooking(booking.id!)}
                     >
-                      Reactivate
+                      Cancel Booking
+                    </Button>
+                  )}
+                  
+                  {booking.status === "booked" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => alert("Contact support for booking modifications")}
+                    >
+                      Need Help?
                     </Button>
                   )}
                 </div>

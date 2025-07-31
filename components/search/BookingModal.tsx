@@ -5,21 +5,8 @@
 import { useState, useEffect } from 'react';
 import { X, User, Phone, MapPin, Clock, CreditCard, Check } from 'lucide-react';
 import { ActiveBookingsService } from '@/components/operator/counter/services/active-booking.service';
-
-interface IBus {
-  id: string;
-  operatorId: string;
-  name: string; // Changed from busName to name to match your IBus interface
-  type: string; // Changed from busType to type
-  startPoint: string;
-  endPoint: string;
-  departureTime: string;
-  arrivalTime: string;
-  price: number;
-  seatCapacity: number;
-  amenities: string[];
-  status: "Active" | "Inactive";
-}
+import type { UserProfile } from '@/contexts/user-auth-context';
+import type { IBus } from "@/components/operator/counter/types/counter.types"; // USE THE CORRECT IBus TYPE
 
 interface BookingModalProps {
   bus: IBus;
@@ -35,9 +22,10 @@ interface BookingModalProps {
     boardingPoint?: string;
     droppingPoint?: string;
   }) => Promise<void>;
+  currentUser?: UserProfile | null; // ADD THIS PROP
 }
 
-export default function BookingModal({ bus, bookedSeats, isOpen, onClose, onConfirm }: BookingModalProps) {
+export default function BookingModal({ bus, bookedSeats, isOpen, onClose, onConfirm, currentUser }: BookingModalProps) {
   const [formData, setFormData] = useState({
     passengerName: '',
     passengerPhone: '',
@@ -82,9 +70,10 @@ export default function BookingModal({ bus, bookedSeats, isOpen, onClose, onConf
   // Reset form when modal opens/closes
   useEffect(() => {
     if (isOpen) {
+      // PRE-FILL USER DATA IF SIGNED IN
       setFormData({
-        passengerName: '',
-        passengerPhone: '',
+        passengerName: currentUser?.fullName || '',
+        passengerPhone: currentUser?.phoneNumber || '',
         seatNumber: '',
         boardingPoint: '',
         droppingPoint: ''
@@ -93,7 +82,7 @@ export default function BookingModal({ bus, bookedSeats, isOpen, onClose, onConf
       setCurrentStep('seats');
       setError('');
     }
-  }, [isOpen]);
+  }, [isOpen, currentUser]); // ADD currentUser TO DEPENDENCY ARRAY
 
   const handleSeatSelect = async (seatNumber: string) => {
     // If seat is already selected, deselect it
@@ -180,8 +169,8 @@ export default function BookingModal({ bus, bookedSeats, isOpen, onClose, onConf
       
       // Reset form
       setFormData({ 
-        passengerName: '', 
-        passengerPhone: '', 
+        passengerName: currentUser?.fullName || '', 
+        passengerPhone: currentUser?.phoneNumber || '', 
         seatNumber: '',
         boardingPoint: '',
         droppingPoint: ''
@@ -218,6 +207,12 @@ export default function BookingModal({ bus, bookedSeats, isOpen, onClose, onConf
           <div>
             <h2 className="text-xl font-semibold text-gray-900">Book Your Seat</h2>
             <p className="text-sm text-gray-600">{bus.name} • {bus.startPoint} → {bus.endPoint}</p>
+            {/* ADD USER STATUS IN HEADER */}
+            {currentUser && (
+              <p className="text-xs text-green-600 mt-1">
+                ✓ Booking as {currentUser.fullName} ({currentUser.email})
+              </p>
+            )}
           </div>
           <button
             onClick={onClose}
@@ -323,6 +318,12 @@ export default function BookingModal({ bus, bookedSeats, isOpen, onClose, onConf
               <div className="text-center">
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Passenger Details</h3>
                 <p className="text-sm text-gray-600">Enter passenger information for seat {selectedSeats[0]}</p>
+                {/* ADD PREFILL NOTICE IF USER IS SIGNED IN */}
+                {currentUser && (
+                  <p className="text-xs text-green-600 mt-1">
+                    ✓ Details pre-filled from your account
+                  </p>
+                )}
               </div>
               
               <div className="max-w-md mx-auto space-y-4">
@@ -441,6 +442,13 @@ export default function BookingModal({ bus, bookedSeats, isOpen, onClose, onConf
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-sm text-gray-600">Dropping:</span>
                       <span className="text-sm font-medium">{formData.droppingPoint}</span>
+                    </div>
+                  )}
+                  {/* ADD ACCOUNT LINKING STATUS */}
+                  {currentUser && (
+                    <div className="flex justify-between items-center mb-2 bg-green-50 -mx-2 px-2 py-1 rounded">
+                      <span className="text-sm text-green-700">Account:</span>
+                      <span className="text-sm font-medium text-green-700">✓ Linked to {currentUser.email}</span>
                     </div>
                   )}
                   <div className="flex justify-between items-center text-lg font-semibold border-t pt-2">

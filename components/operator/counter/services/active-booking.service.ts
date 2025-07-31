@@ -71,12 +71,27 @@ export class ActiveBookingsService {
     });
   }
 
-  /** NEW: Get all active bookings for a specific user (passenger) */
+  /** FIXED: Get all bookings for a specific user (passenger) - ALL STATUSES */
   async getUserBookings(userId: string): Promise<IActiveBooking[]> {
     const q = query(
       this.col(),
       where("userId", "==", userId),
-      where("status", "==", "booked"),
+      // REMOVED the status filter to get all bookings regardless of status
+      orderBy("bookingTime", "desc")
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => {
+      const data = d.data() as Omit<IActiveBooking, 'id'>;
+      return { ...data, id: d.id };
+    });
+  }
+
+  /** NEW: Get user bookings by specific status */
+  async getUserBookingsByStatus(userId: string, status: "booked" | "cancelled" | "completed"): Promise<IActiveBooking[]> {
+    const q = query(
+      this.col(),
+      where("userId", "==", userId),
+      where("status", "==", status),
       orderBy("bookingTime", "desc")
     );
     const snap = await getDocs(q);
@@ -171,6 +186,21 @@ export class ActiveBookingsService {
       where("busId", "==", busId),
       where("date", "==", date),
       where("status", "==", "booked")
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => {
+      const data = d.data() as Omit<IActiveBooking, 'id'>;
+      return { ...data, id: d.id };
+    });
+  }
+
+  /** NEW: Get ALL bookings for a specific operator (all statuses) */
+  async getOperatorBookings(operatorId: string): Promise<IActiveBooking[]> {
+    const q = query(
+      this.col(),
+      where("operatorId", "==", operatorId),
+      // Remove status filter to get all bookings regardless of status
+      orderBy("bookingTime", "desc")
     );
     const snap = await getDocs(q);
     return snap.docs.map((d) => {

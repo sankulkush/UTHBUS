@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { BusService } from "@/components/operator/counter/services/bus.service";
 import { ActiveBookingsService } from "@/components/operator/counter/services/active-booking.service";
+import { useUserAuth } from "@/contexts/user-auth-context"; // ADD THIS IMPORT
 import type { IBus } from "@/components/operator/counter/types/counter.types";
 import type { IActiveBooking } from "@/components/operator/counter/services/active-booking.service";
 import SearchBar from "@/components/search/SearchBar";
@@ -29,6 +30,7 @@ export interface FilterState {
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
+  const { userProfile } = useUserAuth(); // ADD THIS LINE
   const [buses, setBuses] = useState<IBus[]>([]);
   const [filteredBuses, setFilteredBuses] = useState<IBus[]>([]);
   const [loading, setLoading] = useState(true);
@@ -163,7 +165,7 @@ export default function SearchPage() {
       // Create booking in activeBookings collection
       const activeBookingData: Omit<IActiveBooking, "id"> = {
         operatorId: selectedBus.operatorId || "",
-        userId: "",
+        userId: userProfile?.uid || "", // ADD USER ID IF SIGNED IN
         busId: selectedBus.id,
         busName: selectedBus.name,
         busType: selectedBus.type,
@@ -185,7 +187,7 @@ export default function SearchPage() {
       const docRef = await addDoc(collection(firestore, "activeBookings"), activeBookingData);
       
       // Success feedback
-      alert(`Booking confirmed! Booking ID: ${docRef.id}\nPassenger: ${bookingData.passengerName}\nSeat: ${bookingData.seatNumber}`);
+      alert(`Booking confirmed! Booking ID: ${docRef.id}\nPassenger: ${bookingData.passengerName}\nSeat: ${bookingData.seatNumber}${userProfile ? `\n(Linked to account: ${userProfile.email})` : ''}`);
       
       // Close modal and refresh booked seats
       setIsBookingModalOpen(false);
@@ -265,6 +267,12 @@ export default function SearchPage() {
               <p className="text-sm text-gray-600">
                 Departure date: {new Date(date).toLocaleDateString()}
               </p>
+              {/* ADD USER STATUS INDICATOR */}
+              {userProfile && (
+                <p className="text-sm text-green-600 mt-1">
+                  ✓ Signed in as {userProfile.fullName} - Your bookings will be linked to your account
+                </p>
+              )}
             </div>
             
             <ResultsList 
@@ -289,6 +297,7 @@ export default function SearchPage() {
             setSelectedBus(null);
           }}
           onConfirm={handleBookingConfirm}
+          currentUser={userProfile} // ADD THIS PROP
         />
       )}
     </div>

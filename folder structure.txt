@@ -1,0 +1,129 @@
+app/
+├── admin/
+│   └── … (admin pages)
+├── api/
+│   └── … (API routes)
+├── bookings/
+│   └── page.tsx
+├── login/
+│   └── page.tsx
+├── operator/
+│   ├── counter/
+│   │   ├── context/
+│   │   │   └── counter-context.tsx
+│   │   ├── main-content/
+│   │   │   └── main-content.tsx
+│   │   └── pages/
+│   │       ├── book-ticket.page.tsx
+│   │       ├── booked-transactions.page.tsx
+│   │       ├── booking-history.page.tsx
+│   │       ├── my-buses.page.tsx
+│   │       └── profile.page.tsx
+│   ├── login/
+│   │   └── page.tsx
+│   ├── pending-approvals/
+│   │   └── page.tsx
+│   ├── profile/
+│   │   └── page.tsx
+│   ├── register/
+│   │   └── page.tsx
+│   ├── routes/
+│   │   └── page.tsx
+│   ├── layout.tsx
+│   └── page.tsx
+├── profile/
+│   └── page.tsx
+├── search/
+│   └── page.tsx
+├── user/
+│   └── page.tsx
+├── layout.tsx
+└── page.tsx
+
+components/
+├── Auth/
+│   ├── account-dropdown.tsx
+│   ├── auth-guard.tsx
+│   ├── OperatorAuthGuard.tsx
+│   ├── OperatorAuthWrapper.tsx
+│   ├── OperatorLoginModal.tsx
+│   ├── OperatorProfileDropdown.tsx
+│   ├── ProfileDropdown.tsx
+│   ├── UserAuthGuard.tsx
+│   ├── UserAuthWrapper.tsx
+│   ├── UserLoginModal.tsx
+│   ├── UserProfileDropdown.tsx
+│   └── UserSignupModal.tsx
+└── operator/
+    ├── counter/
+    │   ├── context/
+    │   │   └── counter-context.tsx
+    │   ├── main-content/
+    │   │   └── main-content.tsx
+    │   ├── pages/
+    │   │   ├── book-ticket.page.tsx
+    │   │   ├── booked-transactions.page.tsx
+    │   │   ├── booking-history.page.tsx
+    │   │   ├── my-buses.page.tsx
+    │   │   └── profile.page.tsx
+    │   └── services/
+    │       ├── active-booking.service.ts
+    │       ├── auth.service.ts
+    │       ├── booking.service.ts
+    │       ├── bus.service.ts
+    │       └── dashboard.service.ts
+    |── counter-portal.tsx
+├── search/
+│   ├── BookingModal.tsx
+│   ├── ResultsList.tsx
+│   ├── SearchBar.tsx
+│   ├── Filters.tsx
+│   ├── BusCard.tsx
+│   └── … (any extras)
+├── ui/
+│   └── … (shadcn/ui components)
+├── city-select.tsx
+├── date-picker.tsx
+├── error-boundary.tsx
+├── homepage.tsx
+├── Navbar.tsx
+├── protected-route.tsx
+├── search-results.tsx
+└── theme-provider.tsx
+
+contexts/
+├── auth-context.tsx
+├── operator-auth-context.tsx
+└── user-auth-context.tsx
+
+lib/
+├── database/
+│   └── … (DB helpers)
+└── firebase.ts
+
+hooks/
+└── … (custom hooks)
+
+services/
+├── active-booking.service.ts
+├── auth.service.ts
+├── booking.service.ts
+└── bus.service.ts
+
+functions/
+├── src/
+│   └── index.ts
+├── package.json
+└── tsconfig.json
+
+styles/
+└── globals.css
+
+.env.local  
+.firebaserc  
+firebase.json  
+firestore.indexes.json  
+firestore.rules  
+next.config.js  
+package.json  
+README.md  
