@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Grid, List, SortAsc, SortDesc } from 'lucide-react';
+import { SortAsc, SortDesc } from 'lucide-react';
 import BusCard from './BusCard';
 import type { IBus } from "@/components/operator/counter/types/counter.types";
 
@@ -23,7 +23,6 @@ interface ResultsListProps {
 
 type SortOption = 'departure' | 'price' | 'duration';
 type SortOrder = 'asc' | 'desc';
-type ViewMode = 'grid' | 'list';
 
 export default function ResultsList({ 
   buses, 
@@ -34,7 +33,6 @@ export default function ResultsList({
 }: ResultsListProps) {
   const [sortBy, setSortBy] = useState<SortOption>('departure');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
   const calculateDuration = (departure: string, arrival: string) => {
     const depTime = new Date(`2024-01-01T${departure}`);
@@ -131,9 +129,9 @@ export default function ResultsList({
           <div className="h-6 bg-gray-200 rounded w-32 animate-pulse"></div>
           <div className="h-10 bg-gray-200 rounded w-48 animate-pulse"></div>
         </div>
-        <div className="grid grid-cols-1 gap-4">
+        <div className="space-y-4">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="bg-white rounded-lg border border-gray-200 p-6">
+            <div key={i} className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
               <div className="animate-pulse">
                 <div className="flex justify-between items-start mb-4">
                   <div className="h-6 bg-gray-200 rounded w-48"></div>
@@ -164,7 +162,7 @@ export default function ResultsList({
   if (error) {
     return (
       <div className="text-center py-12">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
+        <div className="bg-red-50 border border-red-200 rounded-xl shadow-lg p-6 max-w-md mx-auto">
           <div className="text-red-600 text-lg font-medium mb-2">Error Loading Buses</div>
           <p className="text-red-500 text-sm">{error}</p>
         </div>
@@ -175,7 +173,7 @@ export default function ResultsList({
   if (!sortedBuses.length) {
     return (
       <div className="text-center py-12">
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 max-w-md mx-auto">
+        <div className="bg-gray-50 border border-gray-200 rounded-xl shadow-lg p-8 max-w-md mx-auto">
           <div className="text-gray-600 text-lg font-medium mb-2">No buses found</div>
           <p className="text-gray-500 text-sm">
             Try adjusting your search criteria or filters to find available buses.
@@ -187,7 +185,7 @@ export default function ResultsList({
 
   return (
     <div className="space-y-4">
-      {/* Header with results count and controls */}
+      {/* Header with results count and controls - Removed the bold header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="text-gray-600">
           <span className="font-medium text-gray-900">{sortedBuses.length}</span> buses found
@@ -202,10 +200,10 @@ export default function ResultsList({
           {/* Sort Controls */}
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-600">Sort by:</span>
-            <div className="flex bg-gray-100 rounded-lg p-1">
+            <div className="flex bg-gray-100 rounded-xl p-1 shadow-sm">
               <button
                 onClick={() => handleSort('departure')}
-                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
                   sortBy === 'departure'
                     ? 'bg-white text-gray-900 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
@@ -218,7 +216,7 @@ export default function ResultsList({
               </button>
               <button
                 onClick={() => handleSort('price')}
-                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
                   sortBy === 'price'
                     ? 'bg-white text-gray-900 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
@@ -231,7 +229,7 @@ export default function ResultsList({
               </button>
               <button
                 onClick={() => handleSort('duration')}
-                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
                   sortBy === 'duration'
                     ? 'bg-white text-gray-900 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
@@ -244,48 +242,17 @@ export default function ResultsList({
               </button>
             </div>
           </div>
-
-          {/* View Mode Toggle */}
-          <div className="flex bg-gray-100 rounded-lg p-1">
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`p-2 rounded transition-colors ${
-                viewMode === 'grid'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-              title="Grid view"
-            >
-              <Grid className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`p-2 rounded transition-colors ${
-                viewMode === 'list'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-              title="List view"
-            >
-              <List className="w-4 h-4" />
-            </button>
-          </div>
         </div>
       </div>
 
-      {/* Bus Cards */}
-      <div className={`
-        ${viewMode === 'grid' 
-          ? 'grid grid-cols-1 lg:grid-cols-2 gap-4' 
-          : 'space-y-4'
-        }
-      `}>
+      {/* Bus Cards - Always in list view */}
+      <div className="space-y-4">
         {sortedBuses.map((bus) => (
           <BusCard
             key={bus.id}
             bus={bus}
             onBook={() => onBookBus(bus)}
-            viewMode={viewMode}
+            viewMode="list"
           />
         ))}
       </div>

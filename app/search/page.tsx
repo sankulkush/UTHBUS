@@ -64,6 +64,15 @@ export default function SearchPage() {
       const results = await busService.searchAllBuses(from, to, date);
       setBuses(results);
       setFilteredBuses(results);
+
+      // Update price range to match actual max price
+      if (results.length > 0) {
+        const maxPrice = Math.max(...results.map(bus => bus.price));
+        setFilters(prev => ({
+          ...prev,
+          priceRange: [0, maxPrice]
+        }));
+      }
     } catch (error) {
       console.error("Error searching buses:", error);
       setError("Failed to search buses. Please try again.");
@@ -216,9 +225,9 @@ export default function SearchPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="mx-auto h-8 w-8 animate-spin text-blue-600 mb-4" />
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-red-600 mb-4" />
           <p className="text-gray-600">Searching for buses...</p>
         </div>
       </div>
@@ -226,7 +235,7 @@ export default function SearchPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-100">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="container mx-auto px-4 py-3">
@@ -260,20 +269,14 @@ export default function SearchPage() {
 
           {/* Results */}
           <div className="lg:w-3/4">
-            <div className="mb-4">
-              <h2 className="text-xl font-semibold text-gray-800">
-                {filteredBuses.length} buses found from {from} to {to}
-              </h2>
-              <p className="text-sm text-gray-600">
-                Departure date: {new Date(date).toLocaleDateString()}
-              </p>
-              {/* ADD USER STATUS INDICATOR */}
-              {userProfile && (
-                <p className="text-sm text-green-600 mt-1">
+            {/* ADD USER STATUS INDICATOR */}
+            {userProfile && (
+              <div className="mb-4">
+                <p className="text-sm text-green-600">
                   ✓ Signed in as {userProfile.fullName} - Your bookings will be linked to your account
                 </p>
-              )}
-            </div>
+              </div>
+            )}
             
             <ResultsList 
               buses={filteredBuses} 

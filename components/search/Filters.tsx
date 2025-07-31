@@ -59,10 +59,20 @@ export default function Filters({
 }: FiltersProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Calculate max price from buses
+  // Calculate max price from buses and set it as default max
   const maxPrice = buses.length > 0 
     ? Math.max(...buses.map(bus => bus.price))
     : 5000;
+
+  // Initialize price range to [0, maxPrice] if not set properly
+  useEffect(() => {
+    if (filters.priceRange[1] === 5000 && maxPrice !== 5000) {
+      onFiltersChange({
+        ...filters,
+        priceRange: [0, maxPrice]
+      });
+    }
+  }, [maxPrice, filters, onFiltersChange]);
 
   const handleBusTypeToggle = (type: string) => {
     const newBusTypes = filters.busType.includes(type)
@@ -139,9 +149,9 @@ export default function Filters({
     filters.amenities.length > 0 ||
     filters.departureTime.length > 0;
 
-  // Calculate percentages for dual range slider
-  const minPercent = (filters.priceRange[0] / maxPrice) * 100;
-  const maxPercent = (filters.priceRange[1] / maxPrice) * 100;
+  // Calculate percentages for dual range slider - ensure they stay within bounds
+  const minPercent = Math.max(0, Math.min(100, (filters.priceRange[0] / maxPrice) * 100));
+  const maxPercent = Math.max(0, Math.min(100, (filters.priceRange[1] / maxPrice) * 100));
 
   return (
     <>
@@ -149,7 +159,7 @@ export default function Filters({
       <div className="lg:hidden mb-4">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-2 bg-white border border-gray-300 rounded-lg px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
+          className="flex items-center gap-2 bg-white border border-gray-300 rounded-xl px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
         >
           <Filter className="w-4 h-4" />
           Filters
@@ -167,7 +177,7 @@ export default function Filters({
         ${isOpen ? 'block' : 'hidden lg:block'}
       `}>
         <div className={`
-          fixed right-0 top-0 h-full w-80 bg-white shadow-xl lg:static lg:w-full lg:shadow-none
+          fixed right-0 top-0 h-full w-80 bg-white shadow-xl lg:static lg:w-full lg:shadow-lg lg:rounded-xl lg:border lg:border-gray-200
           transform transition-transform duration-300 ease-in-out
           ${isOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}
         `}>
@@ -199,7 +209,7 @@ export default function Filters({
               <div className="flex gap-2">
                 <button
                   onClick={() => handleACToggle(true)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-colors ${
                     filters.isAC === true
                       ? 'bg-red-50 border-red-500 text-red-700'
                       : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
@@ -210,7 +220,7 @@ export default function Filters({
                 </button>
                 <button
                   onClick={() => handleACToggle(false)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-colors ${
                     filters.isAC === false
                       ? 'bg-red-50 border-red-500 text-red-700'
                       : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
@@ -232,7 +242,7 @@ export default function Filters({
                     <button
                       key={type.id}
                       onClick={() => handleBusTypeToggle(type.id)}
-                      className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+                      className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-colors ${
                         filters.busType.includes(type.id)
                           ? 'bg-red-50 border-red-500 text-red-700'
                           : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
@@ -252,7 +262,7 @@ export default function Filters({
               <div className="flex gap-2">
                 <button
                   onClick={() => handleDepartureTimeToggle('day')}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-colors ${
                     filters.departureTime.includes('day')
                       ? 'bg-red-50 border-red-200 text-red-700'
                       : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
@@ -263,7 +273,7 @@ export default function Filters({
                 </button>
                 <button
                   onClick={() => handleDepartureTimeToggle('night')}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-colors ${
                     filters.departureTime.includes('night')
                       ? 'bg-red-50 border-red-200 text-red-700'
                       : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
@@ -275,7 +285,7 @@ export default function Filters({
               </div>
             </div>
 
-            {/* Price Range Filter - Simplified with just slider */}
+            {/* Price Range Filter - Fixed */}
             <div className="mb-6">
               <h4 className="text-sm font-medium text-gray-900 mb-3">Price Range</h4>
               <div className="space-y-4">
@@ -289,7 +299,7 @@ export default function Filters({
                     className="absolute h-1 bg-red-500 rounded-lg"
                     style={{
                       left: `${minPercent}%`,
-                      width: `${maxPercent - minPercent}%`
+                      width: `${Math.max(0, maxPercent - minPercent)}%`
                     }}
                   ></div>
                   
@@ -298,7 +308,7 @@ export default function Filters({
                     type="range"
                     min="0"
                     max={maxPrice}
-                    value={filters.priceRange[0]}
+                    value={Math.min(filters.priceRange[0], maxPrice)}
                     onChange={(e) => handleMinChange(parseInt(e.target.value))}
                     className="absolute w-full h-1 bg-transparent appearance-none cursor-pointer z-10 dual-range-slider"
                   />
@@ -308,15 +318,15 @@ export default function Filters({
                     type="range"
                     min="0"
                     max={maxPrice}
-                    value={filters.priceRange[1]}
+                    value={Math.min(filters.priceRange[1], maxPrice)}
                     onChange={(e) => handleMaxChange(parseInt(e.target.value))}
                     className="absolute w-full h-1 bg-transparent appearance-none cursor-pointer z-20 dual-range-slider"
                   />
                 </div>
                 
                 <div className="flex justify-between text-xs text-gray-500">
-                  <span>NPR {filters.priceRange[0].toLocaleString()}</span>
-                  <span>NPR {filters.priceRange[1].toLocaleString()}</span>
+                  <span>NPR {Math.min(filters.priceRange[0], maxPrice).toLocaleString()}</span>
+                  <span>NPR {Math.min(filters.priceRange[1], maxPrice).toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -331,7 +341,7 @@ export default function Filters({
                     <button
                       key={amenity.id}
                       onClick={() => handleAmenityToggle(amenity.id)}
-                      className={`flex flex-col items-center gap-2 p-3 rounded-lg border transition-colors ${
+                      className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-colors ${
                         filters.amenities.includes(amenity.id)
                           ? 'bg-red-50 border-red-500 text-red-700'
                           : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
