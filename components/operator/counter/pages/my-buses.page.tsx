@@ -326,9 +326,8 @@ export function MyBusesPage() {
                         <SelectValue placeholder="Select bus type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Mini">Micro</SelectItem>
-                        <SelectItem value="Hiace">Deluxe</SelectItem>
-                        <SelectItem value="Deluxe">AC Deluxe</SelectItem>
+                        <SelectItem value="Micro">Micro</SelectItem>
+                        <SelectItem value="Deluxe">Deluxe</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -931,8 +930,7 @@ export function MyBusesPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Mini">Micro</SelectItem>
-                      <SelectItem value="Hiace">Deluxe</SelectItem>
-                      <SelectItem value="Deluxe">AC Deluxe</SelectItem>
+                      <SelectItem value="Deluxe">Deluxe</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
