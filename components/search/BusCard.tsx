@@ -611,7 +611,7 @@ export default function BusCard({ bus, onBook, viewMode = 'grid', bookedSeats, c
                 )}
                 <div className="flex justify-between items-center text-lg font-semibold border-t pt-2">
                   <span>Total:</span>
-                  <span className="text-red-600">NPR {bus.price}</span>
+                  <span className="text-red-600">रु {bus.price}</span>
                 </div>
               </div>
             </div>
@@ -654,8 +654,8 @@ export default function BusCard({ bus, onBook, viewMode = 'grid', bookedSeats, c
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 pt-4 border-t border-gray-200">
           <div className="text-xs sm:text-sm text-gray-600 text-center sm:text-left">
             {currentStep === 'seats' && selectedSeats.length > 0 && `Selected: ${selectedSeats[0]}`}
-            {currentStep === 'details' && `Seat ${selectedSeats[0]} - NPR ${bus.price}`}
-            {currentStep === 'confirmation' && `Total: NPR ${bus.price}`}
+            {currentStep === 'details' && `Seat ${selectedSeats[0]} - रु ${bus.price}`}
+            {currentStep === 'confirmation' && `Total: रु ${bus.price}`}
           </div>
           
           <div className="flex items-center justify-center sm:justify-end gap-2 sm:gap-3">
@@ -690,7 +690,7 @@ export default function BusCard({ bus, onBook, viewMode = 'grid', bookedSeats, c
                 ) : (
                   <>
                     <CreditCard className="w-4 h-4" />
-                    <span className="hidden sm:inline">Pay NPR {bus.price}</span>
+                    <span className="hidden sm:inline">Pay रु {bus.price}</span>
                     <span className="sm:hidden">Pay</span>
                   </>
                 )}
@@ -794,7 +794,7 @@ export default function BusCard({ bus, onBook, viewMode = 'grid', bookedSeats, c
               </div>
               
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">NPR {bus.price}</div>
+                <div className="text-2xl font-bold text-blue-600">रु {bus.price}</div>
                 <div className="flex items-center gap-2 mt-2">
                   <span className="text-sm text-gray-500">Click to book</span>
                   {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -887,7 +887,7 @@ export default function BusCard({ bus, onBook, viewMode = 'grid', bookedSeats, c
           </div>
           
           <div className="text-center sm:text-right">
-            <div className="text-xl sm:text-2xl font-bold text-blue-600">NPR {bus.price}</div>
+            <div className="text-xl sm:text-2xl font-bold text-blue-600">रु {bus.price}</div>
             <div className="text-xs text-gray-500">Click anywhere to book</div>
           </div>
         </div>
