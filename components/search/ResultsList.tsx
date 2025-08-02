@@ -1,9 +1,12 @@
+//resultlist
 'use client';
 
-import { useState } from 'react';
-import { SortAsc, SortDesc } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Grid, List, SortAsc, SortDesc } from 'lucide-react';
 import BusCard from './BusCard';
+import { ActiveBookingsService } from '@/components/operator/counter/services/active-booking.service';
 import type { IBus } from "@/components/operator/counter/types/counter.types";
+import type { UserProfile } from '@/contexts/user-auth-context';
 
 export interface FilterState {
   busType: string[];
@@ -17,22 +20,39 @@ interface ResultsListProps {
   buses: IBus[];
   loading: boolean;
   error: string | null;
-  onBookBus: (bus: IBus) => void;
+  onBookBus: (bookingData: {
+    busId: string;
+    passengerName: string;
+    passengerPhone: string;
+    seatNumber: string;
+    totalPrice: number;
+    boardingPoint?: string;
+    droppingPoint?: string;
+  }) => Promise<void>;
   filters: FilterState;
+  currentUser?: UserProfile | null;
+  searchDate?: string; // Add search date prop
 }
 
 type SortOption = 'departure' | 'price' | 'duration';
 type SortOrder = 'asc' | 'desc';
+type ViewMode = 'grid' | 'list';
 
 export default function ResultsList({ 
   buses, 
   loading, 
   error, 
   onBookBus,
-  filters 
+  filters,
+  currentUser,
+  searchDate
 }: ResultsListProps) {
   const [sortBy, setSortBy] = useState<SortOption>('departure');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [bookedSeatsMap, setBookedSeatsMap] = useState<{ [busId: string]: string[] }>({});
+  
+  const activeBookingsService = new ActiveBookingsService();
 
   const calculateDuration = (departure: string, arrival: string) => {
     const depTime = new Date(`2024-01-01T${departure}`);
@@ -44,6 +64,31 @@ export default function ResultsList({
     
     return arrTime.getTime() - depTime.getTime();
   };
+
+  // Load booked seats for all buses for the specific search date
+  useEffect(() => {
+    const loadBookedSeats = async () => {
+      const dateToCheck = searchDate || new Date().toISOString().split('T')[0];
+      const bookedSeatsData: { [busId: string]: string[] } = {};
+      
+      for (const bus of buses) {
+        try {
+          // Use the search date for checking booked seats
+          const seats = await activeBookingsService.getBookedSeats(bus.id, dateToCheck);
+          bookedSeatsData[bus.id] = seats;
+        } catch (error) {
+          console.error(`Error fetching booked seats for bus ${bus.id}:`, error);
+          bookedSeatsData[bus.id] = [];
+        }
+      }
+      
+      setBookedSeatsMap(bookedSeatsData);
+    };
+
+    if (buses.length > 0) {
+      loadBookedSeats();
+    }
+  }, [buses, searchDate]); // Add searchDate as dependency
 
   // Apply filters to buses
   const filteredBuses = buses.filter(bus => {
@@ -124,14 +169,14 @@ export default function ResultsList({
 
   if (loading) {
     return (
-      <div className="space-y-4">
+      <div className="lg:w-3/4 space-y-4">
         <div className="flex items-center justify-between">
           <div className="h-6 bg-gray-200 rounded w-32 animate-pulse"></div>
           <div className="h-10 bg-gray-200 rounded w-48 animate-pulse"></div>
         </div>
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 gap-4">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+            <div key={i} className="bg-white rounded-xl border border-gray-200 p-6">
               <div className="animate-pulse">
                 <div className="flex justify-between items-start mb-4">
                   <div className="h-6 bg-gray-200 rounded w-48"></div>
@@ -161,10 +206,12 @@ export default function ResultsList({
 
   if (error) {
     return (
-      <div className="text-center py-12">
-        <div className="bg-red-50 border border-red-200 rounded-xl shadow-lg p-6 max-w-md mx-auto">
-          <div className="text-red-600 text-lg font-medium mb-2">Error Loading Buses</div>
-          <p className="text-red-500 text-sm">{error}</p>
+      <div className="lg:w-3/4">
+        <div className="text-center py-12">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md mx-auto">
+            <div className="text-red-600 text-lg font-medium mb-2">Error Loading Buses</div>
+            <p className="text-red-500 text-sm">{error}</p>
+          </div>
         </div>
       </div>
     );
@@ -172,26 +219,33 @@ export default function ResultsList({
 
   if (!sortedBuses.length) {
     return (
-      <div className="text-center py-12">
-        <div className="bg-gray-50 border border-gray-200 rounded-xl shadow-lg p-8 max-w-md mx-auto">
-          <div className="text-gray-600 text-lg font-medium mb-2">No buses found</div>
-          <p className="text-gray-500 text-sm">
-            Try adjusting your search criteria or filters to find available buses.
-          </p>
+      <div className="lg:w-3/4">
+        <div className="text-center py-12">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 max-w-md mx-auto">
+            <div className="text-gray-600 text-lg font-medium mb-2">No buses found</div>
+            <p className="text-gray-500 text-sm">
+              Try adjusting your search criteria or filters to find available buses.
+            </p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header with results count and controls - Removed the bold header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="lg:w-3/4 space-y-4">
+      {/* Header with results count and controls */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 rounded-xl border border-gray-200">
         <div className="text-gray-600">
           <span className="font-medium text-gray-900">{sortedBuses.length}</span> buses found
           {filteredBuses.length !== buses.length && (
             <span className="text-sm text-gray-500 ml-2">
               (filtered from {buses.length})
+            </span>
+          )}
+          {searchDate && (
+            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full ml-2">
+              {new Date(searchDate).toLocaleDateString()}
             </span>
           )}
         </div>
@@ -200,10 +254,10 @@ export default function ResultsList({
           {/* Sort Controls */}
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-600">Sort by:</span>
-            <div className="flex bg-gray-100 rounded-xl p-1 shadow-sm">
+            <div className="flex bg-gray-100 rounded-lg p-1">
               <button
                 onClick={() => handleSort('departure')}
-                className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
                   sortBy === 'departure'
                     ? 'bg-white text-gray-900 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
@@ -216,7 +270,7 @@ export default function ResultsList({
               </button>
               <button
                 onClick={() => handleSort('price')}
-                className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
                   sortBy === 'price'
                     ? 'bg-white text-gray-900 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
@@ -229,7 +283,7 @@ export default function ResultsList({
               </button>
               <button
                 onClick={() => handleSort('duration')}
-                className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
                   sortBy === 'duration'
                     ? 'bg-white text-gray-900 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
@@ -242,17 +296,51 @@ export default function ResultsList({
               </button>
             </div>
           </div>
+
+          {/* View Mode Toggle */}
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`p-2 rounded transition-colors ${
+                viewMode === 'grid'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+              title="Grid view"
+            >
+              <Grid className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-2 rounded transition-colors ${
+                viewMode === 'list'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+              title="List view"
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Bus Cards - Always in list view */}
-      <div className="space-y-4">
+      {/* Bus Cards - Updated container to be wider */}
+      <div className={`
+        ${viewMode === 'grid' 
+          ? 'grid grid-cols-1 xl:grid-cols-2 gap-6' 
+          : 'space-y-6'
+        }
+      `}>
         {sortedBuses.map((bus) => (
           <BusCard
             key={bus.id}
             bus={bus}
-            onBook={() => onBookBus(bus)}
-            viewMode="list"
+            onBook={onBookBus}
+            viewMode={viewMode}
+            bookedSeats={bookedSeatsMap[bus.id] || []}
+            currentUser={currentUser}
+            searchDate={searchDate} // Pass search date to BusCard
           />
         ))}
       </div>

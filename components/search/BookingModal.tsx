@@ -318,7 +318,7 @@ export default function BookingModal({ bus, bookedSeats, isOpen, onClose, onConf
             </div>
           </div>
         </div>
-
+        
         {/* Content */}
         <div className="overflow-y-auto max-h-[calc(95vh-200px)] px-4 lg:px-6 py-6">
           {currentStep === 'seats' && (
@@ -371,7 +371,7 @@ export default function BookingModal({ bus, bookedSeats, isOpen, onClose, onConf
                   </div>
                 </div>
               </div>
-
+              
               {/* RIGHT COLUMN - BUS DETAILS */}
               <div className="space-y-6">
                 <div className="bg-white border border-gray-200 rounded-2xl shadow-lg p-6">
@@ -390,7 +390,7 @@ export default function BookingModal({ bus, bookedSeats, isOpen, onClose, onConf
                       <span>{bus.model || 'Standard'} A/C {bus.type}</span>
                     </div>
                   </div>
-
+                  
                   {/* Bus Photos Card */}
                   <div className="mb-6">
                     <div className="grid grid-cols-3 gap-3 rounded-xl overflow-hidden">
@@ -412,7 +412,7 @@ export default function BookingModal({ bus, bookedSeats, isOpen, onClose, onConf
                       </div>
                     </div>
                   </div>
-
+                  
                   {/* Tabs Card */}
                   <div className="border-b border-gray-200 mb-6">
                     <nav className="flex space-x-1 overflow-x-auto">
@@ -495,7 +495,7 @@ export default function BookingModal({ bus, bookedSeats, isOpen, onClose, onConf
               </div>
             </div>
           )}
-
+          
           {currentStep === 'details' && (
             <div className="bg-white border border-gray-200 rounded-2xl shadow-lg p-6 max-w-2xl mx-auto">
               <div className="text-center mb-6">
@@ -571,7 +571,7 @@ export default function BookingModal({ bus, bookedSeats, isOpen, onClose, onConf
               </div>
             </div>
           )}
-
+          
           {currentStep === 'confirmation' && (
             <div className="bg-white border border-gray-200 rounded-2xl shadow-lg p-6 max-w-2xl mx-auto">
               <div className="text-center mb-6">
@@ -646,7 +646,7 @@ export default function BookingModal({ bus, bookedSeats, isOpen, onClose, onConf
               </div>
             </div>
           )}
-
+          
           {/* General Error Display */}
           {error && currentStep !== 'confirmation' && (
             <div className="mb-4 bg-red-50 border border-red-200 rounded-xl p-4">
@@ -654,7 +654,7 @@ export default function BookingModal({ bus, bookedSeats, isOpen, onClose, onConf
             </div>
           )}
         </div>
-
+        
         {/* Footer */}
         <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 lg:p-6">
           <div className="flex items-center justify-between">

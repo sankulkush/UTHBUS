@@ -4,17 +4,25 @@
 
 body {
   font-family: Arial, Helvetica, sans-serif;
+  /* Modern darker red-tinted gray background */
+  background-color: #e8d5d5;
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
+  
+  /* Custom background utility class */
+  .bg-soft-gray-red {
+    background-color: #e8d5d5;
+  }
 }
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    /* Updated background color with soft red-tinted gray */
+    --background: 0 10% 94%;
     --foreground: 0 0% 3.9%;
     --card: 0 0% 100%;
     --card-foreground: 0 0% 3.9%;
@@ -47,6 +55,11 @@ body {
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Custom soft red-tinted gray color variables */
+    --soft-gray-red: #e8d5d5;
+    --soft-gray-red-darker: #ddc7c7;
+    --soft-gray-red-lighter: #eee0e0;
   }
   .dark {
     --background: 0 0% 3.9%;
@@ -81,6 +94,11 @@ body {
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Dark mode soft red-tinted colors - adjusted for dark theme */
+    --soft-gray-red: #2d1e1e;
+    --soft-gray-red-darker: #261717;
+    --soft-gray-red-lighter: #382828;
   }
 }
 
@@ -90,6 +108,8 @@ body {
   }
   body {
     @apply bg-background text-foreground;
+    /* Override with our custom soft red-tinted gray */
+    background-color: var(--soft-gray-red);
   }
 }
 
@@ -103,12 +123,12 @@ body {
     max-height: 100vh;
     border-radius: 16px 16px 0 0;
   }
-  
+
   .booking-modal-content .grid-cols-2 {
     grid-template-columns: 1fr;
   }
-  
-  .booking-modal-content .lg\\:grid-cols-2 {
+
+  .booking-modal-content .lg\:grid-cols-2 {
     grid-template-columns: 1fr;
   }
 }
@@ -348,26 +368,26 @@ body {
   .booking-modal-header {
     padding: 1rem;
   }
-  
+
   .booking-modal-content {
     padding: 1rem;
   }
-  
+
   .seat-layout {
     transform: scale(0.9);
     transform-origin: center;
   }
-  
+
   .progress-steps {
     transform: scale(0.85);
     transform-origin: center;
   }
-  
+
   .tab-button {
     font-size: 0.75rem;
     padding: 0.5rem 0.75rem;
   }
-  
+
   .seat-button {
     width: 2.5rem;
     height: 2.5rem;
@@ -378,11 +398,11 @@ body {
   .seat-layout {
     transform: scale(0.8);
   }
-  
+
   .progress-steps {
     transform: scale(0.75);
   }
-  
+
   .booking-modal-content .space-y-6 {
     gap: 1rem;
   }

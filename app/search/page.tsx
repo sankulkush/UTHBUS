@@ -1,17 +1,14 @@
-// app/search/page.tsx
+// app/search/page.tsx 
 "use client";
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { BusService } from "@/components/operator/counter/services/bus.service";
-import { ActiveBookingsService } from "@/components/operator/counter/services/active-booking.service";
-import { useUserAuth } from "@/contexts/user-auth-context"; // ADD THIS IMPORT
+import { useUserAuth } from "@/contexts/user-auth-context";
 import type { IBus } from "@/components/operator/counter/types/counter.types";
-import type { IActiveBooking } from "@/components/operator/counter/services/active-booking.service";
 import SearchBar from "@/components/search/SearchBar";
 import Filters from "@/components/search/Filters";
 import ResultsList from "@/components/search/ResultsList";
-import BookingModal from "@/components/search/BookingModal";
 import { Loader2 } from "lucide-react";
 import { 
   collection, 
@@ -21,23 +18,20 @@ import {
 import { firestore } from "@/lib/firebase";
 
 export interface FilterState {
-  busType: string[]; // Changed from single string to array for multiple selections
-  isAC: boolean | null; // null means "All", true means AC only, false means Non-AC only
+  busType: string[];
+  isAC: boolean | null;
   priceRange: [number, number];
   amenities: string[];
-  departureTime: string[]; // "day" | "night"
+  departureTime: string[];
 }
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
-  const { userProfile } = useUserAuth(); // ADD THIS LINE
+  const { userProfile } = useUserAuth();
   const [buses, setBuses] = useState<IBus[]>([]);
   const [filteredBuses, setFilteredBuses] = useState<IBus[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedBus, setSelectedBus] = useState<IBus | null>(null);
-  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
-  const [bookedSeats, setBookedSeats] = useState<string[]>([]);
   const [filters, setFilters] = useState<FilterState>({
     busType: [],
     isAC: null,
@@ -47,7 +41,6 @@ export default function SearchPage() {
   });
 
   const busService = new BusService();
-  const activeBookingsService = new ActiveBookingsService();
 
   // Get search parameters from URL
   const from = searchParams.get("from") || "";
@@ -64,30 +57,11 @@ export default function SearchPage() {
       const results = await busService.searchAllBuses(from, to, date);
       setBuses(results);
       setFilteredBuses(results);
-
-      // Update price range to match actual max price
-      if (results.length > 0) {
-        const maxPrice = Math.max(...results.map(bus => bus.price));
-        setFilters(prev => ({
-          ...prev,
-          priceRange: [0, maxPrice]
-        }));
-      }
     } catch (error) {
       console.error("Error searching buses:", error);
       setError("Failed to search buses. Please try again.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Get booked seats for the selected bus
-  const getBookedSeats = async (busId: string) => {
-    try {
-      const seats = await activeBookingsService.getBookedSeats(busId, date);
-      setBookedSeats(seats);
-    } catch (error) {
-      console.error("Error fetching booked seats:", error);
     }
   };
 
@@ -138,13 +112,6 @@ export default function SearchPage() {
     setFilteredBuses(filtered);
   };
 
-  // Handle bus booking
-  const handleBookBus = async (bus: IBus) => {
-    setSelectedBus(bus);
-    await getBookedSeats(bus.id);
-    setIsBookingModalOpen(true);
-  };
-
   // Handle booking confirmation
   const handleBookingConfirm = async (bookingData: {
     busId: string;
@@ -156,31 +123,21 @@ export default function SearchPage() {
     droppingPoint?: string;
   }) => {
     try {
+      const selectedBus = buses.find(bus => bus.id === bookingData.busId);
       if (!selectedBus) {
-        throw new Error("No bus selected");
-      }
-
-      // Check if seat is available
-      const seatAvailable = await activeBookingsService.isSeatAvailable(
-        bookingData.busId, 
-        date, 
-        bookingData.seatNumber
-      );
-      
-      if (!seatAvailable) {
-        throw new Error("This seat is no longer available. Please select another seat.");
+        throw new Error("Bus not found");
       }
 
       // Create booking in activeBookings collection
-      const activeBookingData: Omit<IActiveBooking, "id"> = {
+      const activeBookingData = {
         operatorId: selectedBus.operatorId || "",
-        userId: userProfile?.uid || "", // ADD USER ID IF SIGNED IN
+        userId: userProfile?.uid || "",
         busId: selectedBus.id,
         busName: selectedBus.name,
         busType: selectedBus.type,
         from: from,
         to: to,
-        date: date,
+        date: date, // Use the search date for booking
         time: selectedBus.departureTime,
         seatNumber: bookingData.seatNumber,
         passengerName: bookingData.passengerName,
@@ -198,12 +155,8 @@ export default function SearchPage() {
       // Success feedback
       alert(`Booking confirmed! Booking ID: ${docRef.id}\nPassenger: ${bookingData.passengerName}\nSeat: ${bookingData.seatNumber}${userProfile ? `\n(Linked to account: ${userProfile.email})` : ''}`);
       
-      // Close modal and refresh booked seats
-      setIsBookingModalOpen(false);
-      setSelectedBus(null);
-      
-      // Refresh booked seats for this bus
-      await getBookedSeats(selectedBus.id);
+      // Refresh the page to update booked seats
+      window.location.reload();
       
     } catch (error) {
       console.error("Booking error:", error);
@@ -225,9 +178,9 @@ export default function SearchPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#f2e7e7 ' }}>
         <div className="text-center">
-          <Loader2 className="mx-auto h-8 w-8 animate-spin text-red-600 mb-4" />
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-blue-600 mb-4" />
           <p className="text-gray-600">Searching for buses...</p>
         </div>
       </div>
@@ -235,7 +188,7 @@ export default function SearchPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen" style={{ backgroundColor: '#f2e7e7 ' }}>
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="container mx-auto px-4 py-3">
@@ -266,43 +219,19 @@ export default function SearchPage() {
               buses={buses}
             />
           </div>
-
-          {/* Results */}
-          <div className="lg:w-3/4">
-            {/* ADD USER STATUS INDICATOR */}
-            {userProfile && (
-              <div className="mb-4">
-                <p className="text-sm text-green-600">
-                  ✓ Signed in as {userProfile.fullName} - Your bookings will be linked to your account
-                </p>
-              </div>
-            )}
-            
-            <ResultsList 
-              buses={filteredBuses} 
-              loading={loading}
-              error={error}
-              onBookBus={handleBookBus}
-              filters={filters}
-            />
-          </div>
+          
+          {/* Results List - Pass search date */}
+          <ResultsList 
+            buses={filteredBuses} 
+            loading={loading}
+            error={error}
+            onBookBus={handleBookingConfirm}
+            filters={filters}
+            currentUser={userProfile}
+            searchDate={date} // Pass the search date
+          />
         </div>
       </div>
-
-      {/* Booking Modal */}
-      {selectedBus && (
-        <BookingModal
-          bus={selectedBus}
-          bookedSeats={bookedSeats}
-          isOpen={isBookingModalOpen}
-          onClose={() => {
-            setIsBookingModalOpen(false);
-            setSelectedBus(null);
-          }}
-          onConfirm={handleBookingConfirm}
-          currentUser={userProfile} // ADD THIS PROP
-        />
-      )}
     </div>
   );
 }

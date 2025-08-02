@@ -929,7 +929,7 @@ export function MyBusesPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Mini">Micro</SelectItem>
+                      <SelectItem value="Micro">Micro</SelectItem>
                       <SelectItem value="Deluxe">Deluxe</SelectItem>
                     </SelectContent>
                   </Select>
