@@ -74,12 +74,10 @@ components/
     │       └── dashboard.service.ts
     |── counter-portal.tsx
 ├── search/
-│   ├── BookingModal.tsx
 │   ├── ResultsList.tsx
 │   ├── SearchBar.tsx
 │   ├── Filters.tsx
 │   ├── BusCard.tsx
-│   └── … (any extras)
 ├── ui/
 │   └── … (shadcn/ui components)
 ├── city-select.tsx

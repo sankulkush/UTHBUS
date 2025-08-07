@@ -8,25 +8,14 @@ export const metadata: Metadata = {
   title: "UTHBUS - Bus Booking System",
   description: "Book bus tickets easily and manage your travels",
 };
-import { OperatorAuthProvider } from '@/contexts/operator-auth-context';
-import { UserAuthProvider } from '@/contexts/user-auth-context';
 
 export default function RootLayout({
   children,
-}: {
-  children: React.ReactNode;
-}) {
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
     <html lang="en">
-      <body>
-        <OperatorAuthProvider>
-          <UserAuthProvider>
-            {children}
-          </UserAuthProvider>
-        </OperatorAuthProvider>
       <body className="antialiased">
         <UserAuthProvider>
           <OperatorAuthProvider>
@@ -36,6 +25,5 @@ export default function RootLayout({
         </UserAuthProvider>
       </body>
     </html>
-  );
   );
 }

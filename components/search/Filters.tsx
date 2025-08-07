@@ -58,21 +58,33 @@ export default function Filters({
   buses = []
 }: FiltersProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [lastMaxPrice, setLastMaxPrice] = useState(0);
 
   // Calculate max price from buses and set it as default max
   const maxPrice = buses.length > 0 
     ? Math.max(...buses.map(bus => bus.price))
     : 5000;
 
-  // Initialize price range to [0, maxPrice] if not set properly
+  // Reset price range when buses change and max price changes
   useEffect(() => {
-    if (filters.priceRange[1] === 5000 && maxPrice !== 5000) {
-      onFiltersChange({
-        ...filters,
-        priceRange: [0, maxPrice]
-      });
+    if (buses.length > 0 && maxPrice !== lastMaxPrice) {
+      // Only reset if the current max in filters is less than the new max price
+      // or if this is a significant change in the data set
+      const shouldReset = 
+        filters.priceRange[1] < maxPrice || 
+        lastMaxPrice === 0 || 
+        Math.abs(maxPrice - lastMaxPrice) > lastMaxPrice * 0.5; // 50% change threshold
+      
+      if (shouldReset) {
+        onFiltersChange({
+          ...filters,
+          priceRange: [0, maxPrice]
+        });
+      }
+      
+      setLastMaxPrice(maxPrice);
     }
-  }, [maxPrice, filters, onFiltersChange]);
+  }, [maxPrice, buses.length, filters, onFiltersChange, lastMaxPrice]);
 
   const handleBusTypeToggle = (type: string) => {
     const newBusTypes = filters.busType.includes(type)
@@ -172,15 +184,21 @@ export default function Filters({
       </div>
 
       {/* Filter Panel */}
-      <div className={`
-        fixed inset-0 z-50 bg-black bg-opacity-50 lg:static lg:bg-transparent lg:z-auto
-        ${isOpen ? 'block' : 'hidden lg:block'}
-      `}>
-        <div className={`
-          fixed right-0 top-0 h-full w-80 bg-white shadow-xl lg:static lg:w-full lg:shadow-lg lg:rounded-xl lg:border lg:border-gray-200
-          transform transition-transform duration-300 ease-in-out
-          ${isOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}
-        `}>
+      <div 
+        className={`
+          fixed inset-0 z-50 bg-black bg-opacity-50 lg:static lg:bg-transparent lg:z-auto
+          ${isOpen ? 'block' : 'hidden lg:block'}
+        `}
+        onClick={() => setIsOpen(false)}
+      >
+        <div 
+          className={`
+            fixed right-0 top-0 h-full w-80 bg-white shadow-xl lg:static lg:w-full lg:shadow-lg lg:rounded-xl lg:border lg:border-gray-200
+            transform transition-transform duration-300 ease-in-out
+            ${isOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}
+          `}
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="p-6 h-full overflow-y-auto">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">

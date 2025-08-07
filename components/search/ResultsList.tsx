@@ -1,8 +1,8 @@
-//resultlist
-'use client';
+// REPLACE your entire ResultsList component with this fixed version
 
-import { useState, useEffect } from 'react';
-import { Grid, List, SortAsc, SortDesc } from 'lucide-react';
+'use client';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { SortAsc, SortDesc } from 'lucide-react';
 import BusCard from './BusCard';
 import { ActiveBookingsService } from '@/components/operator/counter/services/active-booking.service';
 import type { IBus } from "@/components/operator/counter/types/counter.types";
@@ -31,12 +31,11 @@ interface ResultsListProps {
   }) => Promise<void>;
   filters: FilterState;
   currentUser?: UserProfile | null;
-  searchDate?: string; // Add search date prop
+  searchDate?: string;
 }
 
 type SortOption = 'departure' | 'price' | 'duration';
 type SortOrder = 'asc' | 'desc';
-type ViewMode = 'grid' | 'list';
 
 export default function ResultsList({ 
   buses, 
@@ -49,12 +48,19 @@ export default function ResultsList({
 }: ResultsListProps) {
   const [sortBy, setSortBy] = useState<SortOption>('departure');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [bookedSeatsMap, setBookedSeatsMap] = useState<{ [busId: string]: string[] }>({});
+  const [seatCheckLoading, setSeatCheckLoading] = useState(false);
   
-  const activeBookingsService = new ActiveBookingsService();
-
-  const calculateDuration = (departure: string, arrival: string) => {
+  // FIX: Create service instance only once using useMemo
+  const activeBookingsService = useMemo(() => new ActiveBookingsService(), []);
+  
+  // FIX: Memoize the date to prevent recreating
+  const travelDate = useMemo(() => 
+    searchDate || new Date().toISOString().split('T')[0], 
+    [searchDate]
+  );
+  
+  const calculateDuration = useCallback((departure: string, arrival: string) => {
     const depTime = new Date(`2024-01-01T${departure}`);
     const arrTime = new Date(`2024-01-01T${arrival}`);
     
@@ -63,109 +69,145 @@ export default function ResultsList({
     }
     
     return arrTime.getTime() - depTime.getTime();
-  };
+  }, []);
 
-  // Load booked seats for all buses for the specific search date
+  // FIX: Load booked seats only when buses or date changes, not on every render
   useEffect(() => {
+    let isMounted = true;
+    
     const loadBookedSeats = async () => {
-      const dateToCheck = searchDate || new Date().toISOString().split('T')[0];
+      if (buses.length === 0) return;
+      
+      setSeatCheckLoading(true);
       const bookedSeatsData: { [busId: string]: string[] } = {};
       
-      for (const bus of buses) {
-        try {
-          // Use the search date for checking booked seats
-          const seats = await activeBookingsService.getBookedSeats(bus.id, dateToCheck);
-          bookedSeatsData[bus.id] = seats;
-        } catch (error) {
-          console.error(`Error fetching booked seats for bus ${bus.id}:`, error);
-          bookedSeatsData[bus.id] = [];
+      try {
+        await Promise.all(
+          buses.map(async (bus) => {
+            try {
+              const seats = await activeBookingsService.getBookedSeats(bus.id, travelDate);
+              if (isMounted) {
+                bookedSeatsData[bus.id] = seats;
+              }
+            } catch (error) {
+              console.error(`Error fetching booked seats for bus ${bus.id}:`, error);
+              if (isMounted) {
+                bookedSeatsData[bus.id] = [];
+              }
+            }
+          })
+        );
+        
+        if (isMounted) {
+          setBookedSeatsMap(bookedSeatsData);
+        }
+      } catch (error) {
+        console.error('Error loading booked seats:', error);
+      } finally {
+        if (isMounted) {
+          setSeatCheckLoading(false);
         }
       }
-      
-      setBookedSeatsMap(bookedSeatsData);
     };
 
-    if (buses.length > 0) {
-      loadBookedSeats();
-    }
-  }, [buses, searchDate]); // Add searchDate as dependency
+    loadBookedSeats();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [buses, travelDate, activeBookingsService]);
 
-  // Apply filters to buses
-  const filteredBuses = buses.filter(bus => {
-    // Bus type filter (Micro, Deluxe, etc.)
-    if (filters.busType.length > 0) {
-      const matchesType = filters.busType.includes(bus.type);
-      if (!matchesType) return false;
-    }
-
-    // AC filter
-    if (filters.isAC !== null) {
-      if (filters.isAC && !bus.isAC) return false;
-      if (!filters.isAC && bus.isAC) return false;
-    }
-
-    // Price range filter
-    if (bus.price < filters.priceRange[0] || bus.price > filters.priceRange[1]) {
-      return false;
-    }
-
-    // Amenities filter
-    if (filters.amenities.length > 0) {
-      const hasAllAmenities = filters.amenities.every(amenity => 
-        bus.amenities && bus.amenities.includes(amenity)
-      );
-      if (!hasAllAmenities) return false;
-    }
-
-    // Departure time filter
-    if (filters.departureTime.length > 0) {
-      const departureHour = parseInt(bus.departureTime.split(':')[0]);
-      const isDayTime = departureHour >= 4 && departureHour <= 13; // 4 AM to 1 PM
-      const isNightTime = departureHour >= 14 || departureHour < 4; // 2 PM onwards and before 4 AM
-      
-      let matchesTime = false;
-      
-      if (filters.departureTime.includes('day') && isDayTime) {
-        matchesTime = true;
-      }
-      if (filters.departureTime.includes('night') && isNightTime) {
-        matchesTime = true;
+  // FIX: Memoize filtered buses to prevent recalculation
+  const filteredBuses = useMemo(() => {
+    return buses.filter(bus => {
+      // Bus type filter
+      if (filters.busType.length > 0 && !filters.busType.includes(bus.type)) {
+        return false;
       }
       
-      if (!matchesTime) return false;
-    }
+      // AC filter
+      if (filters.isAC !== null && bus.isAC !== filters.isAC) {
+        return false;
+      }
+      
+      // Price range filter
+      if (bus.price < filters.priceRange[0] || bus.price > filters.priceRange[1]) {
+        return false;
+      }
+      
+      // Amenities filter
+      if (filters.amenities.length > 0) {
+        const hasAllAmenities = filters.amenities.every(amenity => 
+          bus.amenities && bus.amenities.includes(amenity)
+        );
+        if (!hasAllAmenities) return false;
+      }
+      
+      // Departure time filter
+      if (filters.departureTime.length > 0) {
+        const departureHour = parseInt(bus.departureTime.split(':')[0]);
+        const isDayTime = departureHour >= 4 && departureHour <= 13;
+        const isNightTime = departureHour >= 14 || departureHour < 4;
+        
+        let matchesTime = false;
+        
+        if (filters.departureTime.includes('day') && isDayTime) {
+          matchesTime = true;
+        }
+        if (filters.departureTime.includes('night') && isNightTime) {
+          matchesTime = true;
+        }
+        
+        if (!matchesTime) return false;
+      }
+      
+      return true;
+    });
+  }, [buses, filters]);
 
-    return true;
-  });
+  // FIX: Memoize sorted buses
+  const sortedBuses = useMemo(() => {
+    return [...filteredBuses].sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortBy) {
+        case 'departure':
+          comparison = a.departureTime.localeCompare(b.departureTime);
+          break;
+        case 'price':
+          comparison = a.price - b.price;
+          break;
+        case 'duration':
+          const durationA = calculateDuration(a.departureTime, a.arrivalTime);
+          const durationB = calculateDuration(b.departureTime, b.arrivalTime);
+          comparison = durationA - durationB;
+          break;
+      }
+      
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+  }, [filteredBuses, sortBy, sortOrder, calculateDuration]);
 
-  const sortedBuses = [...filteredBuses].sort((a, b) => {
-    let comparison = 0;
-    
-    switch (sortBy) {
-      case 'departure':
-        comparison = a.departureTime.localeCompare(b.departureTime);
-        break;
-      case 'price':
-        comparison = a.price - b.price;
-        break;
-      case 'duration':
-        const durationA = calculateDuration(a.departureTime, a.arrivalTime);
-        const durationB = calculateDuration(b.departureTime, b.arrivalTime);
-        comparison = durationA - durationB;
-        break;
-    }
-    
-    return sortOrder === 'asc' ? comparison : -comparison;
-  });
-
-  const handleSort = (option: SortOption) => {
+  // FIX: Stable sort handler
+  const handleSort = useCallback((option: SortOption) => {
     if (sortBy === option) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
       setSortBy(option);
       setSortOrder('asc');
     }
-  };
+  }, [sortBy, sortOrder]);
+
+  // FIX: Stable booking handler
+  const handleBookingWrapper = useCallback(async (bookingData: any) => {
+    await onBookBus(bookingData);
+    // Reload booked seats after successful booking
+    const updatedSeats = await activeBookingsService.getBookedSeats(bookingData.busId, travelDate);
+    setBookedSeatsMap(prev => ({
+      ...prev,
+      [bookingData.busId]: updatedSeats
+    }));
+  }, [onBookBus, activeBookingsService, travelDate]);
 
   if (loading) {
     return (
@@ -296,51 +338,20 @@ export default function ResultsList({
               </button>
             </div>
           </div>
-
-          {/* View Mode Toggle */}
-          <div className="flex bg-gray-100 rounded-lg p-1">
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`p-2 rounded transition-colors ${
-                viewMode === 'grid'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-              title="Grid view"
-            >
-              <Grid className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`p-2 rounded transition-colors ${
-                viewMode === 'list'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-              title="List view"
-            >
-              <List className="w-4 h-4" />
-            </button>
-          </div>
         </div>
       </div>
 
-      {/* Bus Cards - Updated container to be wider */}
-      <div className={`
-        ${viewMode === 'grid' 
-          ? 'grid grid-cols-1 xl:grid-cols-2 gap-6' 
-          : 'space-y-6'
-        }
-      `}>
+      {/* Bus Cards - Only list view */}
+      <div className="space-y-6">
         {sortedBuses.map((bus) => (
           <BusCard
             key={bus.id}
             bus={bus}
-            onBook={onBookBus}
-            viewMode={viewMode}
+            onBook={handleBookingWrapper}
+            viewMode="list"
             bookedSeats={bookedSeatsMap[bus.id] || []}
             currentUser={currentUser}
-            searchDate={searchDate} // Pass search date to BusCard
+            searchDate={searchDate}
           />
         ))}
       </div>

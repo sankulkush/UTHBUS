@@ -1,18 +1,17 @@
 1. navbar shouldn't be sticky
-2. on key press, the focus of the form field is lost in the buscard>bookingmodal>passanger info
-3. There should be written "select you seat" or something similar above seat selector
-4. login with google in another device shows error. 
+2. 
+3.
+4. in second image you can see that the passenger name and number has only one character, this is an issue for all screens. When user tries to type anything in the form at passenger info, on key press, the focus of the form field is lost. that means the cursor gets lost and the form has to be clicked again to add more character, has to be clicked after every character input
 5. 
-6. 
+6. login with google in another device shows error. 
 7. RESPONSIVE MANDATORILY.
-8. Remove grid view
+8. 
 
 --------
-In Mobile:
-1. The texts in bus card gets overlapped.
-2. The bus card gets cropped off, after seat selector and bus details, the continue and 1,2,3 steps of booking can't be seen!
-3. The swap button between from and to in the search result page makes the search bar component looks huge, the swao button would rather look better between but in the right side such that from and to form field won't be too apart and the component won't look huge and ugly. 
-
+In Mobile view:
+1. 
+2. 
+3. 
 
 ---------
 Toast messages:
