@@ -109,17 +109,17 @@ export default function Homepage() {
             <div className="bg-white rounded-3xl shadow-lg overflow-visible relative z-20">
               <div className="grid grid-cols-1 md:grid-cols-12 gap-0">
                 {/* From */}
-                <div className="md:col-span-3 p-4 border-r border-gray-200">
+                <div className="md:col-span-3 p-4 md:border-r border-gray-200">
                   <CitySelect value={from} onChange={setFrom} placeholder="Kathmandu" label="From" />
                 </div>
 
                 {/* To */}
-                <div className="md:col-span-3 p-4 border-r border-gray-200">
+                <div className="md:col-span-3 p-4 md:border-r border-gray-200">
                   <CitySelect value={to} onChange={setTo} placeholder="Biratnagar" label="To" />
                 </div>
 
                 {/* Date */}
-                <div className="md:col-span-4 p-4 border-r border-gray-200">
+                <div className="md:col-span-4 p-4 md:border-r border-gray-200">
                   <DatePicker value={date} onChange={setDate} />
                 </div>
 
@@ -128,7 +128,7 @@ export default function Homepage() {
                   <Button
                     onClick={handleSearch}
                     disabled={isSearching}
-                    className="w-full h-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold text-sm rounded-none rounded-r-3xl border-0 shadow-lg transition-all duration-200 disabled:opacity-50"
+                    className="w-full h-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold text-sm rounded-3xl md:rounded-none md:rounded-r-3xl border-0 shadow-lg transition-all duration-200 disabled:opacity-50"
                   >
                     {isSearching ? "SEARCHING..." : "SEARCH BUSES"}
                   </Button>

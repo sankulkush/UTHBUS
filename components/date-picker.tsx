@@ -53,12 +53,22 @@ export default function DatePicker({ value, onChange }: DatePickerProps) {
     return { day, month, year }
   }
 
+  // Helper function to format date without timezone issues
+  const formatDateToString = (year: number, month: number, day: number) => {
+    const formattedMonth = String(month + 1).padStart(2, '0')
+    const formattedDay = String(day).padStart(2, '0')
+    return `${year}-${formattedMonth}-${formattedDay}`
+  }
+
   const getTodayDate = () => {
-    return new Date().toISOString().split("T")[0]
+    const today = new Date()
+    return formatDateToString(today.getFullYear(), today.getMonth(), today.getDate())
   }
 
   const getTomorrowDate = () => {
-    return new Date(Date.now() + 86400000).toISOString().split("T")[0]
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    return formatDateToString(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate())
   }
 
   const handleDateAreaClick = () => {
@@ -74,8 +84,8 @@ export default function DatePicker({ value, onChange }: DatePickerProps) {
   }
 
   const handleDateSelect = (day: number) => {
-    const selectedDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
-    const dateString = selectedDate.toISOString().split("T")[0]
+    // Use the helper function to avoid timezone conversion issues
+    const dateString = formatDateToString(currentMonth.getFullYear(), currentMonth.getMonth(), day)
     onChange(dateString)
     setShowCalendar(false)
   }
@@ -96,7 +106,9 @@ export default function DatePicker({ value, onChange }: DatePickerProps) {
     const daysInMonth = getDaysInMonth(currentMonth)
     const firstDay = getFirstDayOfMonth(currentMonth)
     const today = new Date()
-    const selectedDate = new Date(value)
+    
+    // Parse selected date safely
+    const [selectedYear, selectedMonth, selectedDay] = value.split('-').map(Number)
 
     const days = []
 
@@ -113,9 +125,9 @@ export default function DatePicker({ value, onChange }: DatePickerProps) {
         today.getFullYear() === currentMonth.getFullYear()
 
       const isSelected =
-        selectedDate.getDate() === day &&
-        selectedDate.getMonth() === currentMonth.getMonth() &&
-        selectedDate.getFullYear() === currentMonth.getFullYear()
+        selectedDay === day &&
+        selectedMonth - 1 === currentMonth.getMonth() && // selectedMonth is 1-based, getMonth() is 0-based
+        selectedYear === currentMonth.getFullYear()
 
       const isPast =
         new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day) <
