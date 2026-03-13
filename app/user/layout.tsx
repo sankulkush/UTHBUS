@@ -16,7 +16,7 @@ import {
   TicketIcon,
   Users
 } from "lucide-react"
-import UserAuthGuard from "@/components/Auth/UserAuthGuard"
+import UserAuthGuard from "@/components/auth/UserAuthGuard"
 
 const sidebarItems = [
   {
