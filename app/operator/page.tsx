@@ -1,7 +1,7 @@
 // app/operator/page.tsx
 "use client";
 
-import OperatorAuthGuard from "@/components/auth/OperatorAuthGuard";
+import OperatorAuthGuard from "@/components/Auth/OperatorAuthGuard";
 import { useRouter } from "next/navigation";
 
 export default function OperatorPortal() {

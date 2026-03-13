@@ -7,10 +7,10 @@ import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useUserAuth } from "@/contexts/user-auth-context";
 import { useOperatorAuth } from "@/contexts/operator-auth-context";
-import UserLoginModal from "@/components/auth/UserLoginModal";
-import UserSignupModal from "@/components/auth/UserSignupModal";
-import ProfileDropdown from "@/components/auth/ProfileDropdown";
-import OperatorProfileDropdown from "@/components/auth/OperatorProfileDropdown";
+import UserLoginModal from "@/components/Auth/UserLoginModal";
+import UserSignupModal from "@/components/Auth/UserSignupModal";
+import ProfileDropdown from "@/components/Auth/ProfileDropdown";
+import OperatorProfileDropdown from "@/components/Auth/OperatorProfileDropdown";
 
 export default function Navbar() {
   const pathname = usePathname();
