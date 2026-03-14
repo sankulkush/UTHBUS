@@ -5,18 +5,37 @@ import { auth } from 'firebase-admin'
 import { initializeApp, getApps, cert } from 'firebase-admin/app'
 
 // Initialize Firebase Admin if not already initialized
-if (!getApps().length) {
+const hasServiceAccount = Boolean(
+  process.env.FIREBASE_PROJECT_ID &&
+  process.env.FIREBASE_CLIENT_EMAIL &&
+  process.env.FIREBASE_PRIVATE_KEY
+)
+
+if (hasServiceAccount && !getApps().length) {
   initializeApp({
     credential: cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+      projectId: process.env.FIREBASE_PROJECT_ID!,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY!.replace(/\\n/g, '\n')
     })
   })
 }
 
 export async function GET(request: NextRequest) {
   try {
+    if (!hasServiceAccount) {
+      return NextResponse.json(
+        {
+          error: 'Firebase service account is not configured. Set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY.'
+        },
+        { status: 500 }
+      )
+    }
+
+    if (!getApps().length) {
+      return NextResponse.json({ error: 'Firebase Admin not initialized.' }, { status: 500 })
+    }
+
     const cookieStore = await cookies()
     const token = cookieStore.get('auth-token')?.value
 
