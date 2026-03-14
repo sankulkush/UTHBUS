@@ -1,4 +1,5 @@
 # UTHBUS
+**Production:** https://uthbus.vercel.app
 
 Online bus ticket booking web app built with Next.js 16, Firebase, and Tailwind CSS.
 
@@ -25,7 +26,7 @@ npm run dev
 
 Open `http://localhost:3000`
 
-Production: https://uthbus.vercel.app
+
 
 ## 🔧 Required environment variables
 Create `.env.local` with:
