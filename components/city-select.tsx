@@ -176,7 +176,7 @@ export default function CitySelect({ value, onChange, placeholder, label }: City
         </label>
       )}
       <div
-        className="flex items-center border border-border rounded-lg px-3 py-3 bg-background cursor-text hover:border-ring/60 transition-colors"
+        className="flex items-center border border-border/60 rounded-lg px-3 py-3 bg-slate-100 dark:bg-white/8 cursor-text hover:border-ring/60 transition-colors"
         onClick={handleInputClick}
       >
         <input
