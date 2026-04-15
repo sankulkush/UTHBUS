@@ -108,7 +108,7 @@ export default function BusCard({ bus, onSelectSeats, bookedSeats, searchDate }:
   );
 
   useEffect(() => {
-    if (!expanded) { setSelected([]); setShowDetails(true); setActiveTab('amenities'); }
+    if (!expanded) { setSelected([]); setShowDetails(false); setActiveTab('amenities'); }
   }, [expanded]);
 
   useEffect(() => {
