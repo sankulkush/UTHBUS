@@ -46,17 +46,37 @@ export default function CitySelect({ value, onChange, placeholder, label }: City
     return () => document.removeEventListener("click", handleOutside)
   }, [])
 
+  const updatePosition = () => {
+    if (isOpen && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect()
+      setDropdownPosition({
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+      })
+    }
+  }
+
   useEffect(() => {
     if (isOpen && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect()
       setDropdownPosition({
-        top: rect.bottom + window.scrollY + 4,
-        left: rect.left + window.scrollX,
+        top: rect.bottom + 4,
+        left: rect.left,
         width: rect.width,
       })
       inputRef.current?.focus()
     }
   }, [isOpen])
+
+  useEffect(() => {
+    window.addEventListener("scroll", updatePosition, { passive: true })
+    window.addEventListener("resize", updatePosition)
+    return () => {
+      window.removeEventListener("scroll", updatePosition)
+      window.removeEventListener("resize", updatePosition)
+    }
+  })
 
   const handleInputClick = () => setIsOpen(true)
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -156,13 +176,13 @@ export default function CitySelect({ value, onChange, placeholder, label }: City
         </label>
       )}
       <div
-        className="flex items-center border border-border rounded-lg px-3 py-2.5 bg-background cursor-text hover:border-ring/60 transition-colors"
+        className="flex items-center border border-border rounded-lg px-3 py-3 bg-background cursor-text hover:border-ring/60 transition-colors"
         onClick={handleInputClick}
       >
         <input
           ref={inputRef}
           type="text"
-          className="flex-1 outline-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60"
+          className="flex-1 outline-none bg-transparent text-base font-medium text-foreground placeholder:text-muted-foreground/70"
           value={displayValue}
           onChange={handleInputChange}
           placeholder={placeholder}
