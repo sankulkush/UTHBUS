@@ -110,7 +110,9 @@ export interface IActiveBookingData {
   to: string;
   date: string;
   time: string;
-  seatNumber: string;
+  /** @deprecated use seatNumbers */
+  seatNumber?: string;
+  seatNumbers: string[];
   passengerName: string;
   passengerPhone: string;
   boardingPoint: string;

@@ -26,7 +26,9 @@ export interface IActiveBooking {
   to: string;
   date: string;
   time: string;
-  seatNumber: string;
+  /** @deprecated use seatNumbers */
+  seatNumber?: string;
+  seatNumbers: string[];
   passengerName: string;
   passengerPhone: string;
   boardingPoint: string;
@@ -39,13 +41,14 @@ export interface IActiveBooking {
 }
 
 export class ActiveBookingsService {
-  /** Helper to reference the 'activeBookings' collection */
   private col() {
     return collection(firestore, "activeBookings");
   }
 
-  /** Create a new active booking */
-  async createActiveBooking(booking: Omit<IActiveBooking, "id" | "createdAt" | "updatedAt">): Promise<IActiveBooking> {
+  /** Create a new booking (supports multiple seats) */
+  async createActiveBooking(
+    booking: Omit<IActiveBooking, "id" | "createdAt" | "updatedAt">
+  ): Promise<IActiveBooking> {
     const bookingData = {
       ...booking,
       bookingTime: serverTimestamp(),
@@ -56,52 +59,8 @@ export class ActiveBookingsService {
     return { ...booking, id: ref.id };
   }
 
-  /** Get all active bookings for a specific operator */
-  async getActiveBookings(operatorId: string): Promise<IActiveBooking[]> {
-    const q = query(
-      this.col(),
-      where("operatorId", "==", operatorId),
-      where("status", "==", "booked"),
-      orderBy("bookingTime", "desc")
-    );
-    const snap = await getDocs(q);
-    return snap.docs.map((d) => {
-      const data = d.data() as Omit<IActiveBooking, 'id'>;
-      return { ...data, id: d.id };
-    });
-  }
-
-  /** FIXED: Get all bookings for a specific user (passenger) - ALL STATUSES */
-  async getUserBookings(userId: string): Promise<IActiveBooking[]> {
-    const q = query(
-      this.col(),
-      where("userId", "==", userId),
-      // REMOVED the status filter to get all bookings regardless of status
-      orderBy("bookingTime", "desc")
-    );
-    const snap = await getDocs(q);
-    return snap.docs.map((d) => {
-      const data = d.data() as Omit<IActiveBooking, 'id'>;
-      return { ...data, id: d.id };
-    });
-  }
-
-  /** NEW: Get user bookings by specific status */
-  async getUserBookingsByStatus(userId: string, status: "booked" | "cancelled" | "completed"): Promise<IActiveBooking[]> {
-    const q = query(
-      this.col(),
-      where("userId", "==", userId),
-      where("status", "==", status),
-      orderBy("bookingTime", "desc")
-    );
-    const snap = await getDocs(q);
-    return snap.docs.map((d) => {
-      const data = d.data() as Omit<IActiveBooking, 'id'>;
-      return { ...data, id: d.id };
-    });
-  }
-
-  /** NEW: Get booked seats for a specific bus on a specific date */
+  /** Get all booked seat labels for a bus on a specific date.
+   *  Handles both legacy docs (seatNumber: string) and new docs (seatNumbers: string[]). */
   async getBookedSeats(busId: string, date: string): Promise<string[]> {
     const q = query(
       this.col(),
@@ -110,76 +69,105 @@ export class ActiveBookingsService {
       where("status", "==", "booked")
     );
     const snap = await getDocs(q);
-    return snap.docs.map((d) => d.data().seatNumber);
+    const booked: string[] = [];
+    snap.docs.forEach((d) => {
+      const data = d.data();
+      if (Array.isArray(data.seatNumbers) && data.seatNumbers.length) {
+        booked.push(...data.seatNumbers);
+      } else if (data.seatNumber) {
+        // legacy single-seat booking
+        booked.push(data.seatNumber);
+      }
+    });
+    return booked;
   }
 
-  /** NEW: Check if a specific seat is available */
+  /** Check whether a single seat is still free */
   async isSeatAvailable(busId: string, date: string, seatNumber: string): Promise<boolean> {
-    const q = query(
-      this.col(),
-      where("busId", "==", busId),
-      where("date", "==", date),
-      where("seatNumber", "==", seatNumber),
-      where("status", "==", "booked")
-    );
-    const snap = await getDocs(q);
-    return snap.empty;
+    const booked = await this.getBookedSeats(busId, date);
+    return !booked.includes(seatNumber);
   }
 
-  /** Update an active booking */
+  /** Check whether ALL given seats are simultaneously free */
+  async areSeatAvailable(busId: string, date: string, seats: string[]): Promise<boolean> {
+    if (!seats.length) return false;
+    const booked = await this.getBookedSeats(busId, date);
+    return !seats.some((s) => booked.includes(s));
+  }
+
+  /** Get all active (booked-status) bookings for an operator */
+  async getActiveBookings(operatorId: string): Promise<IActiveBooking[]> {
+    const q = query(
+      this.col(),
+      where("operatorId", "==", operatorId),
+      where("status", "==", "booked"),
+      orderBy("bookingTime", "desc")
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => ({ ...(d.data() as Omit<IActiveBooking, "id">), id: d.id }));
+  }
+
+  /** Get ALL bookings for a user regardless of status */
+  async getUserBookings(userId: string): Promise<IActiveBooking[]> {
+    const q = query(
+      this.col(),
+      where("userId", "==", userId),
+      orderBy("bookingTime", "desc")
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => ({ ...(d.data() as Omit<IActiveBooking, "id">), id: d.id }));
+  }
+
+  /** Get user bookings filtered by status */
+  async getUserBookingsByStatus(
+    userId: string,
+    status: "booked" | "cancelled" | "completed"
+  ): Promise<IActiveBooking[]> {
+    const q = query(
+      this.col(),
+      where("userId", "==", userId),
+      where("status", "==", status),
+      orderBy("bookingTime", "desc")
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => ({ ...(d.data() as Omit<IActiveBooking, "id">), id: d.id }));
+  }
+
+  /** Update any fields on a booking */
   async updateActiveBooking(id: string, updates: Partial<IActiveBooking>): Promise<IActiveBooking> {
-    const bookingRef = docRef(firestore, "activeBookings", id);
-    const updateData = {
-      ...updates,
-      updatedAt: serverTimestamp(),
-    };
-    await updateDoc(bookingRef, updateData);
-    const updated = await getDoc(bookingRef);
-    const data = updated.data() as Omit<IActiveBooking, 'id'>;
-    return { ...data, id: updated.id };
+    const ref = docRef(firestore, "activeBookings", id);
+    await updateDoc(ref, { ...updates, updatedAt: serverTimestamp() });
+    const updated = await getDoc(ref);
+    return { ...(updated.data() as Omit<IActiveBooking, "id">), id: updated.id };
   }
 
-  /** Cancel an active booking */
+  /** Cancel a booking */
   async cancelActiveBooking(id: string): Promise<void> {
-    const bookingRef = docRef(firestore, "activeBookings", id);
-    await updateDoc(bookingRef, {
-      status: "cancelled",
-      updatedAt: serverTimestamp(),
-    });
+    const ref = docRef(firestore, "activeBookings", id);
+    await updateDoc(ref, { status: "cancelled", updatedAt: serverTimestamp() });
   }
 
-  /** Delete an active booking */
+  /** Hard-delete a booking */
   async deleteActiveBooking(id: string): Promise<void> {
-    const bookingRef = docRef(firestore, "activeBookings", id);
-    await deleteDoc(bookingRef);
+    await deleteDoc(docRef(firestore, "activeBookings", id));
   }
 
-  /** Get a specific active booking by ID */
+  /** Fetch a single booking by ID */
   async getActiveBookingById(id: string): Promise<IActiveBooking | null> {
-    const bookingRef = docRef(firestore, "activeBookings", id);
-    const doc = await getDoc(bookingRef);
-    if (doc.exists()) {
-      const data = doc.data() as Omit<IActiveBooking, 'id'>;
-      return { ...data, id: doc.id };
-    }
-    return null;
+    const ref = docRef(firestore, "activeBookings", id);
+    const d = await getDoc(ref);
+    if (!d.exists()) return null;
+    return { ...(d.data() as Omit<IActiveBooking, "id">), id: d.id };
   }
 
-  /** Get bookings for a specific bus */
+  /** All active bookings for a bus (any date) */
   async getBookingsForBus(busId: string): Promise<IActiveBooking[]> {
-    const q = query(
-      this.col(),
-      where("busId", "==", busId),
-      where("status", "==", "booked")
-    );
+    const q = query(this.col(), where("busId", "==", busId), where("status", "==", "booked"));
     const snap = await getDocs(q);
-    return snap.docs.map((d) => {
-      const data = d.data() as Omit<IActiveBooking, 'id'>;
-      return { ...data, id: d.id };
-    });
+    return snap.docs.map((d) => ({ ...(d.data() as Omit<IActiveBooking, "id">), id: d.id }));
   }
 
-  /** NEW: Get bookings for a specific bus on a specific date */
+  /** Active bookings for a bus on a specific date */
   async getBookingsForBusOnDate(busId: string, date: string): Promise<IActiveBooking[]> {
     const q = query(
       this.col(),
@@ -188,24 +176,17 @@ export class ActiveBookingsService {
       where("status", "==", "booked")
     );
     const snap = await getDocs(q);
-    return snap.docs.map((d) => {
-      const data = d.data() as Omit<IActiveBooking, 'id'>;
-      return { ...data, id: d.id };
-    });
+    return snap.docs.map((d) => ({ ...(d.data() as Omit<IActiveBooking, "id">), id: d.id }));
   }
 
-  /** NEW: Get ALL bookings for a specific operator (all statuses) */
+  /** All bookings for an operator (all statuses) */
   async getOperatorBookings(operatorId: string): Promise<IActiveBooking[]> {
     const q = query(
       this.col(),
       where("operatorId", "==", operatorId),
-      // Remove status filter to get all bookings regardless of status
       orderBy("bookingTime", "desc")
     );
     const snap = await getDocs(q);
-    return snap.docs.map((d) => {
-      const data = d.data() as Omit<IActiveBooking, 'id'>;
-      return { ...data, id: d.id };
-    });
+    return snap.docs.map((d) => ({ ...(d.data() as Omit<IActiveBooking, "id">), id: d.id }));
   }
 }

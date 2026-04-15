@@ -20,15 +20,7 @@ interface ResultsListProps {
   buses: IBus[];
   loading: boolean;
   error: string | null;
-  onBookBus: (bookingData: {
-    busId: string;
-    passengerName: string;
-    passengerPhone: string;
-    seatNumber: string;
-    totalPrice: number;
-    boardingPoint?: string;
-    droppingPoint?: string;
-  }) => Promise<void>;
+  onSelectSeats: (bus: IBus, seats: string[]) => void;
   filters: FilterState;
   currentUser?: UserProfile | null;
   searchDate?: string;
@@ -38,7 +30,7 @@ type SortOption = 'departure' | 'price' | 'duration';
 type SortOrder  = 'asc' | 'desc';
 
 export default function ResultsList({
-  buses, loading, error, onBookBus, filters, currentUser, searchDate
+  buses, loading, error, onSelectSeats, filters, currentUser, searchDate
 }: ResultsListProps) {
   const [sortBy, setSortBy]       = useState<SortOption>('departure');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
@@ -107,11 +99,9 @@ export default function ResultsList({
     else { setSortBy(option); setSortOrder('asc'); }
   }, [sortBy, sortOrder]);
 
-  const handleBookingWrapper = useCallback(async (bookingData: any) => {
-    await onBookBus(bookingData);
-    const updated = await activeBookingsService.getBookedSeats(bookingData.busId, travelDate);
-    setBookedSeatsMap((prev) => ({ ...prev, [bookingData.busId]: updated }));
-  }, [onBookBus, activeBookingsService, travelDate]);
+  const handleSelectSeats = useCallback((bus: IBus, seats: string[]) => {
+    onSelectSeats(bus, seats);
+  }, [onSelectSeats]);
 
   if (loading) {
     return (
@@ -220,7 +210,7 @@ export default function ResultsList({
           <BusCard
             key={bus.id}
             bus={bus}
-            onBook={handleBookingWrapper}
+            onSelectSeats={handleSelectSeats}
             viewMode="list"
             bookedSeats={bookedSeatsMap[bus.id] || []}
             currentUser={currentUser}

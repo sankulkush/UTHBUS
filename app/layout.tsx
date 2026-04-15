@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import { UserAuthProvider } from "@/contexts/user-auth-context";
 import { OperatorAuthProvider } from "@/contexts/operator-auth-context";
 import { ThemeProvider } from "@/components/theme-provider";
+import { BookingProvider } from "@/contexts/booking-context";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -33,8 +34,10 @@ export default function RootLayout({
         >
           <UserAuthProvider>
             <OperatorAuthProvider>
-              <Navbar />
-              {children}
+              <BookingProvider>
+                <Navbar />
+                {children}
+              </BookingProvider>
             </OperatorAuthProvider>
           </UserAuthProvider>
         </ThemeProvider>

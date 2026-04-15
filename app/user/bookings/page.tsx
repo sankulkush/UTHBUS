@@ -234,7 +234,7 @@ export default function BookingsPage() {
               <div class="row"><span class="label">To:</span> <span>${booking.to}</span></div>
               <div class="row"><span class="label">Date:</span> <span>${formatDate(booking.date)}</span></div>
               <div class="row"><span class="label">Time:</span> <span>${booking.time}</span></div>
-              <div class="row"><span class="label">Seat:</span> <span>${booking.seatNumber}</span></div>
+              <div class="row"><span class="label">Seat(s):</span> <span>${(booking.seatNumbers?.length ? booking.seatNumbers.join(', ') : booking.seatNumber) || 'N/A'}</span></div>
               <div class="row"><span class="label">Passenger:</span> <span>${booking.passengerName}</span></div>
               <div class="row"><span class="label">Phone:</span> <span>${booking.passengerPhone}</span></div>
               <div class="row"><span class="label">Amount:</span> <span>Rs. ${booking.amount}</span></div>
@@ -358,8 +358,14 @@ export default function BookingsPage() {
                   <div className="flex items-center space-x-2">
                     <UserIcon className="w-4 h-4 text-muted-foreground" />
                     <div>
-                      <p className="text-sm font-medium text-foreground">Seat {booking.seatNumber}</p>
-                      <p className="text-xs text-muted-foreground">Your Seat</p>
+                      <p className="text-sm font-medium text-foreground">
+                        {booking.seatNumbers?.length
+                          ? booking.seatNumbers.join(", ")
+                          : booking.seatNumber || "N/A"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {booking.seatNumbers?.length > 1 ? "Your Seats" : "Your Seat"}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
