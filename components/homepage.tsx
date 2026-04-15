@@ -388,7 +388,7 @@ export default function Homepage() {
 
             {/* ── Search card ─────────────────────────────────────────── */}
             <div className="animate-slide-up [animation-delay:200ms]">
-              <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-white/20 dark:border-border/60">
+              <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/30 dark:border-white/10 overflow-hidden">
 
                 {/* ── Desktop layout ── */}
                 <div className="hidden md:flex items-stretch">
@@ -438,17 +438,15 @@ export default function Homepage() {
                     <DatePicker value={date} onChange={setDate} />
                   </div>
 
-                  {/* Search */}
-                  <div className="p-2.5 flex items-center">
-                    <Button
-                      onClick={handleSearch}
-                      disabled={isSearching}
-                      className="min-w-[110px] h-auto min-h-[52px] px-6 rounded-xl text-sm font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-md transition-all"
-                    >
-                      <Search className="w-4 h-4 mr-2 shrink-0" />
-                      {isSearching ? "Searching…" : "Search"}
-                    </Button>
-                  </div>
+                  {/* Search — flush right, clipped by parent overflow-hidden */}
+                  <button
+                    onClick={handleSearch}
+                    disabled={isSearching}
+                    className="flex items-center justify-center gap-2 min-w-[120px] self-stretch px-7 text-sm font-bold bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground transition-all"
+                  >
+                    <Search className="w-4 h-4 shrink-0" />
+                    {isSearching ? "Searching…" : "Search"}
+                  </button>
                 </div>
 
                 {/* ── Mobile layout ── */}
