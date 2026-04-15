@@ -620,7 +620,7 @@ export default function Homepage() {
       {/* ── Footer ────────────────────────────────────────────────────────── */}
       <footer className="bg-slate-950 text-slate-300 py-12">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
             <div>
               <div className="text-xl font-extrabold mb-4 tracking-tight">
                 <span className="text-blue-400">uth</span>
@@ -651,6 +651,16 @@ export default function Homepage() {
                 {["Kathmandu – Pokhara", "Kathmandu – Biratnagar", "Kathmandu – Damak", "Biratnagar – Kakarvitta"].map(
                   (r) => <li key={r}><a href="#" className="hover:text-slate-100 transition-colors">{r}</a></li>
                 )}
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-semibold mb-4 text-[11px] uppercase tracking-widest text-slate-600">
+                Operator Portal
+              </h4>
+              <ul className="space-y-2 text-slate-400 text-sm">
+                <li><Link href="/operator/login" className="hover:text-slate-100 transition-colors">Operator Login</Link></li>
+                <li><Link href="/operator/register" className="hover:text-slate-100 transition-colors">Register as Operator</Link></li>
               </ul>
             </div>
 
