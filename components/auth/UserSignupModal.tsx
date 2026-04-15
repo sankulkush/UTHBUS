@@ -12,13 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 
 interface UserSignupModalProps {
   isOpen: boolean
@@ -29,7 +22,7 @@ interface UserSignupModalProps {
 export default function UserSignupModal({ isOpen, onClose, onSwitchToLogin }: UserSignupModalProps) {
   const [formData, setFormData] = useState({
     email: "", password: "", confirmPassword: "",
-    fullName: "", phoneNumber: "", dateOfBirth: "", gender: "", address: ""
+    fullName: "", phoneNumber: ""
   })
   const [error, setError] = useState("")
   const { signup, loginWithGoogle, loading } = useUserAuth()
@@ -42,7 +35,6 @@ export default function UserSignupModal({ isOpen, onClose, onSwitchToLogin }: Us
     try {
       await signup(formData.email, formData.password, {
         fullName: formData.fullName, phoneNumber: formData.phoneNumber,
-        dateOfBirth: formData.dateOfBirth, gender: formData.gender, address: formData.address
       })
       onClose()
       resetForm()
@@ -65,13 +57,13 @@ export default function UserSignupModal({ isOpen, onClose, onSwitchToLogin }: Us
     setFormData((p) => ({ ...p, [field]: e.target.value }))
 
   const resetForm = () =>
-    setFormData({ email: "", password: "", confirmPassword: "", fullName: "", phoneNumber: "", dateOfBirth: "", gender: "", address: "" })
+    setFormData({ email: "", password: "", confirmPassword: "", fullName: "", phoneNumber: "" })
 
   const handleClose = () => { onClose(); resetForm(); setError("") }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Create Account</DialogTitle>
           <DialogDescription>Sign up to start booking your bus tickets</DialogDescription>
@@ -107,29 +99,6 @@ export default function UserSignupModal({ isOpen, onClose, onSwitchToLogin }: Us
           <div className="space-y-1.5">
             <Label htmlFor="confirmPassword">Confirm Password *</Label>
             <Input id="confirmPassword" type="password" required value={formData.confirmPassword} onChange={set("confirmPassword")} placeholder="Confirm your password" />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="dateOfBirth">Date of Birth</Label>
-            <Input id="dateOfBirth" type="date" value={formData.dateOfBirth} onChange={set("dateOfBirth")} />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Gender</Label>
-            <Select onValueChange={(v) => setFormData((p) => ({ ...p, gender: v }))}>
-              <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="male">Male</SelectItem>
-                <SelectItem value="female">Female</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-                <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="address">Address</Label>
-            <Input id="address" type="text" value={formData.address} onChange={set("address")} placeholder="Your address" />
           </div>
 
           <div className="space-y-2.5">
