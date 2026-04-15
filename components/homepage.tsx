@@ -345,7 +345,7 @@ export default function Homepage() {
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden pt-16">
         {/* Wrapper — mobile: fixed height + cover; desktop: natural image height */}
-        <div className="relative min-h-[520px] md:min-h-0">
+        <div className="relative min-h-[620px] sm:min-h-[580px] md:min-h-0">
 
           {/* Image — natural size on desktop (no crop), cover on mobile */}
           <Image
@@ -353,7 +353,8 @@ export default function Homepage() {
             width={1808}
             height={592}
             priority
-            quality={85}
+            quality={80}
+            sizes="100vw"
             className="absolute inset-0 w-full h-full object-cover md:static md:w-full md:h-auto block"
             alt="Travel across Nepal"
           />
@@ -364,13 +365,13 @@ export default function Homepage() {
           {/* Bottom fade into page background */}
           <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent to-background pointer-events-none z-[2]" />
 
-          {/* Content — overlaid, shifted slightly above center */}
-          <div className="absolute inset-0 z-[3] flex flex-col justify-center pt-16 pb-12">
+          {/* Content — overlaid */}
+          <div className="absolute inset-0 z-[3] flex flex-col justify-center pt-6 pb-6 sm:pt-10 sm:pb-10 md:pt-16 md:pb-12">
             <div className="container mx-auto px-4">
               <div className="max-w-4xl mx-auto w-full">
 
             {/* Live pill */}
-            <div className="flex justify-center mb-5 animate-fade-in">
+            <div className="flex justify-center mb-3 md:mb-5 animate-fade-in">
               <span className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 text-white/90 text-xs font-medium px-4 py-1.5 rounded-full">
                 <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
                 Live seat availability · 50+ routes
@@ -378,12 +379,12 @@ export default function Homepage() {
             </div>
 
             {/* Headline */}
-            <h1 className="text-center text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight tracking-tight mb-3 animate-slide-up">
+            <h1 className="text-center text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight tracking-tight mb-2 md:mb-3 animate-slide-up">
               Book Bus Tickets
               <br />
               <span className="text-primary">Across Nepal</span>
             </h1>
-            <p className="text-center text-orange-400 text-xl md:text-2xl font-semibold mb-8 animate-slide-up [animation-delay:100ms]">
+            <p className="text-center text-orange-400 text-base sm:text-xl md:text-2xl font-semibold mb-5 md:mb-8 animate-slide-up [animation-delay:100ms]">
               सरल बुकिंग, सफल यात्रा
             </p>
 
@@ -455,8 +456,8 @@ export default function Homepage() {
                   {/* FROM + TO with overlaid swap */}
                   <div className="relative">
                     {/* FROM */}
-                    <div className="px-4 pt-4 pb-3">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5 flex items-center gap-1">
+                    <div className="px-3 pt-3 pb-2.5">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 flex items-center gap-1">
                         <MapPin className="w-2.5 h-2.5" /> From
                       </p>
                       <CitySelect
@@ -468,19 +469,19 @@ export default function Homepage() {
                     </div>
 
                     {/* Divider with overlaid swap button */}
-                    <div className="h-px bg-border/50 mx-4" />
+                    <div className="h-px bg-border/50 mx-3" />
                     <button
                       type="button"
                       onClick={handleSwap}
                       title="Swap cities"
-                      className="absolute right-5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:bg-primary/90 transition-all z-10"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:bg-primary/90 transition-all z-10"
                     >
-                      <ArrowLeftRight className="w-3.5 h-3.5" />
+                      <ArrowLeftRight className="w-3 h-3" />
                     </button>
 
                     {/* TO */}
-                    <div className="px-4 pt-3 pb-4">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5 flex items-center gap-1">
+                    <div className="px-3 pt-2.5 pb-3">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 flex items-center gap-1">
                         <MapPin className="w-2.5 h-2.5" /> To
                       </p>
                       <CitySelect
@@ -493,16 +494,16 @@ export default function Homepage() {
                   </div>
 
                   {/* DATE */}
-                  <div className="border-t border-border/50 px-4 py-3">
+                  <div className="border-t border-border/50 px-3 py-2.5">
                     <DatePicker value={date} onChange={setDate} />
                   </div>
 
                   {/* Search */}
-                  <div className="p-3 pt-2">
+                  <div className="px-3 pb-3 pt-2">
                     <button
                       onClick={handleSearch}
                       disabled={isSearching}
-                      className="w-full h-12 rounded-xl text-sm font-semibold tracking-wide disabled:opacity-50 text-white transition-all duration-200 flex items-center justify-center gap-2.5 bg-gradient-to-r from-[#f04535] to-[#c02818] hover:from-[#f55545] hover:to-[#d03020] [box-shadow:0_4px_16px_-2px_rgba(192,40,24,0.5),inset_0_1px_0_rgba(255,255,255,0.2)] hover:[box-shadow:0_6px_22px_-2px_rgba(192,40,24,0.65),inset_0_1px_0_rgba(255,255,255,0.2)]"
+                      className="w-full h-11 rounded-xl text-sm font-semibold tracking-wide disabled:opacity-50 text-white transition-all duration-200 flex items-center justify-center gap-2.5 bg-gradient-to-r from-[#f04535] to-[#c02818] hover:from-[#f55545] hover:to-[#d03020] [box-shadow:0_4px_16px_-2px_rgba(192,40,24,0.5),inset_0_1px_0_rgba(255,255,255,0.2)] hover:[box-shadow:0_6px_22px_-2px_rgba(192,40,24,0.65),inset_0_1px_0_rgba(255,255,255,0.2)]"
                     >
                       <Search className="w-4 h-4 shrink-0" />
                       {isSearching ? "Searching…" : "Search Buses"}
