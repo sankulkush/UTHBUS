@@ -57,8 +57,8 @@ export default function Navbar() {
         className={cn(
           "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
           scrolled
-            ? "bg-rose-50/90 dark:bg-[#070c1a]/90 backdrop-blur-md shadow-soft border-b border-border/60"
-            : "bg-rose-50/70 dark:bg-[#070c1a]/60 backdrop-blur-sm border-b border-transparent"
+            ? "bg-white/90 dark:bg-[#070c1a]/90 backdrop-blur-md shadow-soft border-b border-border/60"
+            : "bg-white/70 dark:bg-[#070c1a]/60 backdrop-blur-sm border-b border-transparent"
         )}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -158,7 +158,7 @@ export default function Navbar() {
 
         {/* Mobile menu */}
         {mobileOpen && (
-          <div className="md:hidden border-t border-border/60 bg-rose-50/95 dark:bg-[#070c1a]/95 backdrop-blur-md animate-slide-up">
+          <div className="md:hidden border-t border-border/60 bg-white/95 dark:bg-[#070c1a]/95 backdrop-blur-md animate-slide-up">
             <div className="max-w-7xl mx-auto px-4 py-3 space-y-0.5">
               {navLinks.map((link) => (
                 <Link
