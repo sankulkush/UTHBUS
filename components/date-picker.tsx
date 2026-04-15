@@ -36,8 +36,8 @@ export default function DatePicker({ value, onChange }: DatePickerProps) {
     if (showCalendar && triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect()
       setCalendarPosition({
-        top: rect.bottom + window.scrollY + 8,
-        left: rect.left + window.scrollX,
+        top: rect.bottom + 8,
+        left: rect.left,
       })
     }
   }, [showCalendar])

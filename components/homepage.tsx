@@ -343,27 +343,31 @@ export default function Homepage() {
     <div className="min-h-screen bg-background">
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <section className="relative min-h-[92vh] flex flex-col justify-center overflow-hidden">
-        {/* Background */}
-        <div className="absolute inset-0">
+      <section className="relative overflow-hidden pt-16">
+        {/* Wrapper — mobile: fixed height + cover; desktop: natural image height */}
+        <div className="relative min-h-[520px] md:min-h-0">
+
+          {/* Image — natural size on desktop (no crop), cover on mobile */}
           <Image
-            src="/Hero/bus1.png"
-            alt="Travel across Nepal"
-            fill
-            className="object-cover object-center"
+            src="/Destinations/hero3.png"
+            width={1808}
+            height={592}
             priority
             quality={85}
+            className="absolute inset-0 w-full h-full object-cover md:static md:w-full md:h-auto block"
+            alt="Travel across Nepal"
           />
-          {/* Dark overlay — lightens toward bottom where fade takes over */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-black/50 to-black/20" />
-        </div>
 
-        {/* Bottom fade into page background */}
-        <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-b from-transparent to-background pointer-events-none z-10" />
+          {/* Dark overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-black/50 to-black/20 z-[1]" />
 
-        {/* Content */}
-        <div className="relative z-20 container mx-auto px-4 py-28 md:py-24">
-          <div className="max-w-4xl mx-auto w-full">
+          {/* Bottom fade into page background */}
+          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent to-background pointer-events-none z-[2]" />
+
+          {/* Content — overlaid, shifted slightly above center */}
+          <div className="absolute inset-0 z-[3] flex flex-col justify-center pt-16 pb-12">
+            <div className="container mx-auto px-4">
+              <div className="max-w-4xl mx-auto w-full">
 
             {/* Live pill */}
             <div className="flex justify-center mb-5 animate-fade-in">
@@ -385,11 +389,12 @@ export default function Homepage() {
 
             {/* ── Search card ─────────────────────────────────────────── */}
             <div className="animate-slide-up [animation-delay:200ms]">
-              <div className="bg-card/96 backdrop-blur-md rounded-2xl shadow-2xl border border-white/10 dark:border-border/60">
-                <div className="flex flex-col md:flex-row">
+              <div className="bg-gray-100/85 dark:bg-slate-800/85 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/60 dark:border-white/10">
 
+                {/* ── Desktop layout ── */}
+                <div className="hidden md:flex items-stretch">
                   {/* FROM */}
-                  <div className="flex-1 px-5 pt-4 pb-4 md:py-4">
+                  <div className="flex-1 px-5 py-4">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-1">
                       <MapPin className="w-2.5 h-2.5" /> Departure
                     </p>
@@ -401,8 +406,8 @@ export default function Homepage() {
                     {fromError && <p className="text-destructive text-xs mt-1">{fromError}</p>}
                   </div>
 
-                  {/* Desktop swap */}
-                  <div className="hidden md:flex items-center justify-center px-0.5">
+                  {/* Swap */}
+                  <div className="flex items-center justify-center px-0.5">
                     <button
                       type="button"
                       onClick={handleSwap}
@@ -413,20 +418,8 @@ export default function Homepage() {
                     </button>
                   </div>
 
-                  {/* Mobile swap */}
-                  <div className="md:hidden flex items-center justify-center py-1 border-y border-border/40">
-                    <button
-                      type="button"
-                      onClick={handleSwap}
-                      className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors px-4 py-1.5 rounded-lg hover:bg-muted/60"
-                    >
-                      <ArrowLeftRight className="w-3.5 h-3.5" />
-                      Swap cities
-                    </button>
-                  </div>
-
                   {/* TO */}
-                  <div className="flex-1 px-5 pt-4 pb-4 md:py-4 md:border-l border-border/50">
+                  <div className="flex-1 px-5 py-4 border-l border-border/50">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-1">
                       <MapPin className="w-2.5 h-2.5" /> Destination
                     </p>
@@ -439,30 +432,90 @@ export default function Homepage() {
                   </div>
 
                   {/* Divider */}
-                  <div className="hidden md:block self-stretch w-px bg-border/50 my-3" />
+                  <div className="self-stretch w-px bg-border/50 my-3" />
 
                   {/* DATE */}
-                  <div className="flex-[1.1] px-5 pt-4 pb-4 md:py-4 border-t md:border-t-0 md:border-l border-border/50">
+                  <div className="flex-[1.1] px-5 py-4 border-l border-border/50">
+                    <DatePicker value={date} onChange={setDate} />
+                  </div>
+
+                  {/* Search — rounded right edge matches card */}
+                  <button
+                    onClick={handleSearch}
+                    disabled={isSearching}
+                    className="relative flex items-center justify-center gap-2.5 min-w-[130px] self-stretch px-8 text-sm font-semibold tracking-wide disabled:opacity-50 text-white rounded-r-2xl transition-all duration-200 bg-gradient-to-b from-[#f04535] to-[#c02818] hover:from-[#f55545] hover:to-[#d03020] [box-shadow:0_4px_20px_-2px_rgba(192,40,24,0.5),inset_0_1px_0_rgba(255,255,255,0.25)] hover:[box-shadow:0_6px_28px_-2px_rgba(192,40,24,0.65),inset_0_1px_0_rgba(255,255,255,0.25)]"
+                  >
+                    <Search className="w-4 h-4 shrink-0" />
+                    {isSearching ? "Searching…" : "Search"}
+                  </button>
+                </div>
+
+                {/* ── Mobile layout ── */}
+                <div className="md:hidden flex flex-col">
+                  {/* FROM + TO with overlaid swap */}
+                  <div className="relative">
+                    {/* FROM */}
+                    <div className="px-4 pt-4 pb-3">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5 flex items-center gap-1">
+                        <MapPin className="w-2.5 h-2.5" /> From
+                      </p>
+                      <CitySelect
+                        value={from}
+                        onChange={(v) => { setFrom(v); setFromError("") }}
+                        placeholder="Kathmandu"
+                      />
+                      {fromError && <p className="text-destructive text-xs mt-1">{fromError}</p>}
+                    </div>
+
+                    {/* Divider with overlaid swap button */}
+                    <div className="h-px bg-border/50 mx-4" />
+                    <button
+                      type="button"
+                      onClick={handleSwap}
+                      title="Swap cities"
+                      className="absolute right-5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:bg-primary/90 transition-all z-10"
+                    >
+                      <ArrowLeftRight className="w-3.5 h-3.5" />
+                    </button>
+
+                    {/* TO */}
+                    <div className="px-4 pt-3 pb-4">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5 flex items-center gap-1">
+                        <MapPin className="w-2.5 h-2.5" /> To
+                      </p>
+                      <CitySelect
+                        value={to}
+                        onChange={(v) => { setTo(v); setToError("") }}
+                        placeholder="Biratnagar"
+                      />
+                      {toError && <p className="text-destructive text-xs mt-1">{toError}</p>}
+                    </div>
+                  </div>
+
+                  {/* DATE */}
+                  <div className="border-t border-border/50 px-4 py-3">
                     <DatePicker value={date} onChange={setDate} />
                   </div>
 
                   {/* Search */}
-                  <div className="p-2.5 flex items-center">
-                    <Button
+                  <div className="p-3 pt-2">
+                    <button
                       onClick={handleSearch}
                       disabled={isSearching}
-                      className="w-full md:min-w-[110px] h-auto min-h-[52px] px-6 rounded-xl text-sm font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-md transition-all"
+                      className="w-full h-12 rounded-xl text-sm font-semibold tracking-wide disabled:opacity-50 text-white transition-all duration-200 flex items-center justify-center gap-2.5 bg-gradient-to-r from-[#f04535] to-[#c02818] hover:from-[#f55545] hover:to-[#d03020] [box-shadow:0_4px_16px_-2px_rgba(192,40,24,0.5),inset_0_1px_0_rgba(255,255,255,0.2)] hover:[box-shadow:0_6px_22px_-2px_rgba(192,40,24,0.65),inset_0_1px_0_rgba(255,255,255,0.2)]"
                     >
-                      <Search className="w-4 h-4 mr-2 shrink-0" />
-                      {isSearching ? "Searching…" : "Search"}
-                    </Button>
+                      <Search className="w-4 h-4 shrink-0" />
+                      {isSearching ? "Searching…" : "Search Buses"}
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </section>
+      </div>{/* closes z-[3] content wrapper */}
+    </div>{/* closes min-h wrapper */}
+  </section>
 
       {/* ── Route cards ───────────────────────────────────────────────────── */}
       <section className="pt-2 pb-14 bg-background">

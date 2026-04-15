@@ -5,9 +5,9 @@
 @layer base {
   :root {
     /* Surfaces */
-    --background: 0 0% 100%;
+    --background: 352 100% 97%;
     --foreground: 220 20% 10%;
-    --card: 0 0% 100%;
+    --card: 352 100% 97%;
     --card-foreground: 220 20% 10%;
     --popover: 0 0% 100%;
     --popover-foreground: 220 20% 10%;

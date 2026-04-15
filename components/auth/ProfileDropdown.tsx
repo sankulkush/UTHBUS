@@ -35,11 +35,9 @@ export default function ProfileDropdown() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={userProfile.email} alt={userProfile.fullName} />
-            <AvatarFallback>{initials}</AvatarFallback>
-          </Avatar>
+        <Button variant="ghost" size="sm" className="flex items-center gap-1.5 h-9 px-3 rounded-lg font-medium text-muted-foreground hover:text-foreground">
+          <User className="h-4 w-4 shrink-0" />
+          <span className="text-sm">Account</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
