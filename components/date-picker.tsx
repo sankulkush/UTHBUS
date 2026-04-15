@@ -28,11 +28,8 @@ export default function DatePicker({ value, onChange }: DatePickerProps) {
         setShowCalendar(false)
       }
     }
-
     document.addEventListener("mousedown", handleClickOutside)
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
+    return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
   useEffect(() => {
@@ -47,48 +44,33 @@ export default function DatePicker({ value, onChange }: DatePickerProps) {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
-    const day = date.getDate()
-    const month = date.toLocaleDateString("en-US", { month: "short" })
-    const year = date.getFullYear()
-    return { day, month, year }
+    return {
+      day: date.getDate(),
+      month: date.toLocaleDateString("en-US", { month: "short" }),
+      year: date.getFullYear(),
+      weekday: date.toLocaleDateString("en-US", { weekday: "short" }),
+    }
   }
 
-  const getTodayDate = () => {
-    return new Date().toISOString().split("T")[0]
-  }
+  const getTodayDate = () => new Date().toISOString().split("T")[0]
+  const getTomorrowDate = () => new Date(Date.now() + 86400000).toISOString().split("T")[0]
 
-  const getTomorrowDate = () => {
-    return new Date(Date.now() + 86400000).toISOString().split("T")[0]
-  }
-
-  const handleDateAreaClick = () => {
-    setShowCalendar(!showCalendar)
-  }
-
-  const getDaysInMonth = (date: Date) => {
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
-  }
-
-  const getFirstDayOfMonth = (date: Date) => {
-    return new Date(date.getFullYear(), date.getMonth(), 1).getDay()
-  }
+  const getDaysInMonth = (date: Date) =>
+    new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
+  const getFirstDayOfMonth = (date: Date) =>
+    new Date(date.getFullYear(), date.getMonth(), 1).getDay()
 
   const handleDateSelect = (day: number) => {
-    const selectedDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
-    const dateString = selectedDate.toISOString().split("T")[0]
-    onChange(dateString)
+    const selected = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
+    onChange(selected.toISOString().split("T")[0])
     setShowCalendar(false)
   }
 
   const navigateMonth = (direction: "prev" | "next") => {
     setCurrentMonth((prev) => {
-      const newMonth = new Date(prev)
-      if (direction === "prev") {
-        newMonth.setMonth(prev.getMonth() - 1)
-      } else {
-        newMonth.setMonth(prev.getMonth() + 1)
-      }
-      return newMonth
+      const next = new Date(prev)
+      next.setMonth(prev.getMonth() + (direction === "next" ? 1 : -1))
+      return next
     })
   }
 
@@ -97,26 +79,20 @@ export default function DatePicker({ value, onChange }: DatePickerProps) {
     const firstDay = getFirstDayOfMonth(currentMonth)
     const today = new Date()
     const selectedDate = new Date(value)
-
     const days = []
 
-    // Empty cells for days before the first day of the month
     for (let i = 0; i < firstDay; i++) {
-      days.push(<div key={`empty-${i}`} className="w-8 h-8"></div>)
+      days.push(<div key={`e-${i}`} />)
     }
-
-    // Days of the month
     for (let day = 1; day <= daysInMonth; day++) {
       const isToday =
         today.getDate() === day &&
         today.getMonth() === currentMonth.getMonth() &&
         today.getFullYear() === currentMonth.getFullYear()
-
       const isSelected =
         selectedDate.getDate() === day &&
         selectedDate.getMonth() === currentMonth.getMonth() &&
         selectedDate.getFullYear() === currentMonth.getFullYear()
-
       const isPast =
         new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day) <
         new Date(today.getFullYear(), today.getMonth(), today.getDate())
@@ -128,72 +104,60 @@ export default function DatePicker({ value, onChange }: DatePickerProps) {
           disabled={isPast}
           className={`w-8 h-8 text-sm rounded-full transition-colors ${
             isSelected
-              ? "bg-red-600 text-white"
+              ? "bg-primary text-primary-foreground font-semibold"
               : isToday
-                ? "bg-blue-100 text-blue-600 font-semibold"
-                : isPast
-                  ? "text-gray-300 cursor-not-allowed"
-                  : "hover:bg-gray-100 text-gray-700"
+              ? "bg-primary/10 text-primary font-semibold"
+              : isPast
+              ? "text-muted-foreground/30 cursor-not-allowed"
+              : "hover:bg-muted text-foreground"
           }`}
         >
           {day}
-        </button>,
+        </button>
       )
     }
-
     return days
   }
+
+  const { day, month, year, weekday } = formatDate(value)
 
   const CalendarDropdown = () => (
     <div
       ref={calendarRef}
-      className="fixed bg-white border border-gray-200 rounded-lg shadow-2xl p-4 w-80"
-      style={{
-        top: calendarPosition.top,
-        left: calendarPosition.left,
-        zIndex: 9999,
-      }}
+      className="fixed bg-card border border-border rounded-xl shadow-soft-lg p-4 w-72"
+      style={{ top: calendarPosition.top, left: calendarPosition.left, zIndex: 9999 }}
     >
-      {/* Calendar Header */}
-      <div className="flex items-center justify-between mb-4">
-        <Button variant="ghost" size="sm" onClick={() => navigateMonth("prev")} className="p-1 hover:bg-gray-100">
+      <div className="flex items-center justify-between mb-3">
+        <Button variant="ghost" size="sm" onClick={() => navigateMonth("prev")} className="p-1 h-7 w-7 hover:bg-muted">
           <ChevronLeftIcon className="w-4 h-4" />
         </Button>
-
-        <h3 className="font-semibold text-gray-800">
+        <h3 className="font-semibold text-foreground text-sm">
           {currentMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
         </h3>
-
-        <Button variant="ghost" size="sm" onClick={() => navigateMonth("next")} className="p-1 hover:bg-gray-100">
+        <Button variant="ghost" size="sm" onClick={() => navigateMonth("next")} className="p-1 h-7 w-7 hover:bg-muted">
           <ChevronRightIcon className="w-4 h-4" />
         </Button>
       </div>
 
-      {/* Days of week header */}
       <div className="grid grid-cols-7 gap-1 mb-2">
-        {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
-          <div key={day} className="text-center text-xs font-medium text-gray-500 py-2">
-            {day}
+        {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
+          <div key={d} className="text-center text-[10px] font-semibold text-muted-foreground py-1.5 uppercase tracking-wide">
+            {d}
           </div>
         ))}
       </div>
 
-      {/* Calendar Grid */}
       <div className="grid grid-cols-7 gap-1">{renderCalendar()}</div>
 
-      {/* Quick Actions */}
-      <div className="flex justify-between mt-4 pt-3 border-t border-gray-100">
-        <Button variant="ghost" size="sm" onClick={() => setShowCalendar(false)} className="text-gray-600">
+      <div className="flex justify-between mt-3 pt-3 border-t border-border">
+        <Button variant="ghost" size="sm" onClick={() => setShowCalendar(false)} className="text-muted-foreground text-xs h-7">
           Cancel
         </Button>
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => {
-            onChange(getTodayDate())
-            setShowCalendar(false)
-          }}
-          className="text-blue-600"
+          onClick={() => { onChange(getTodayDate()); setShowCalendar(false) }}
+          className="text-primary text-xs h-7"
         >
           Today
         </Button>
@@ -201,55 +165,52 @@ export default function DatePicker({ value, onChange }: DatePickerProps) {
     </div>
   )
 
-  return (
-    <>
-      <div ref={triggerRef}>
-        <div className="flex items-center h-16 space-x-3">
-          {/* Date Display - Clickable */}
-          <div className="flex items-center space-x-3 cursor-pointer flex-1" onClick={handleDateAreaClick}>
-            <CalendarIcon className="w-5 h-5 text-gray-400" />
-            <div className="flex-1">
-              <div className="text-xs text-gray-500 mb-1">Date</div>
-              <div className="text-lg font-medium">
-                {formatDate(value).day} {formatDate(value).month} {formatDate(value).year}
-              </div>
-            </div>
-          </div>
+  const isToday = value === getTodayDate()
+  const isTomorrow = value === getTomorrowDate()
 
-          {/* Today/Tomorrow buttons - NOT clickable for calendar */}
-          <div className="flex flex-col space-y-1">
-            <Button
-              type="button"
-              onClick={() => onChange(getTodayDate())}
-              variant="outline"
-              size="sm"
-              className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all duration-200 hover:scale-105 ${
-                value === getTodayDate()
-                  ? "bg-gradient-to-r from-red-500 to-red-600 text-white border-red-600 shadow-md"
-                  : "bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100 hover:border-gray-400"
-              }`}
-            >
-              Today
-            </Button>
-            <Button
-              type="button"
-              onClick={() => onChange(getTomorrowDate())}
-              variant="outline"
-              size="sm"
-              className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all duration-200 hover:scale-105 ${
-                value === getTomorrowDate()
-                  ? "bg-gradient-to-r from-red-500 to-red-600 text-white border-red-600 shadow-md"
-                  : "bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100 hover:border-gray-400"
-              }`}
-            >
-              Tomorrow
-            </Button>
+  return (
+    <div ref={triggerRef}>
+      {/* Date display row */}
+      <div
+        className="flex items-center space-x-2.5 cursor-pointer"
+        onClick={() => setShowCalendar(!showCalendar)}
+      >
+        <CalendarIcon className="w-4 h-4 text-muted-foreground shrink-0" />
+        <div>
+          <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide leading-none mb-0.5">Date</div>
+          <div className="text-sm font-semibold text-foreground whitespace-nowrap">
+            {weekday}, {day} {month} {year}
           </div>
         </div>
       </div>
 
-      {/* Calendar Portal - Renders outside form boundaries */}
+      {/* Quick chips — below date display */}
+      <div className="flex gap-1.5 mt-2">
+        <button
+          type="button"
+          onClick={() => onChange(getTodayDate())}
+          className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
+            isToday
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-transparent text-muted-foreground border-border hover:bg-muted hover:text-foreground"
+          }`}
+        >
+          Today
+        </button>
+        <button
+          type="button"
+          onClick={() => onChange(getTomorrowDate())}
+          className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
+            isTomorrow
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-transparent text-muted-foreground border-border hover:bg-muted hover:text-foreground"
+          }`}
+        >
+          Tmrw
+        </button>
+      </div>
+
       {showCalendar && typeof window !== "undefined" && createPortal(<CalendarDropdown />, document.body)}
-    </>
+    </div>
   )
 }

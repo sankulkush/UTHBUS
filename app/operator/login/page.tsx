@@ -1,60 +1,53 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
-import { signInWithEmailAndPassword } from "firebase/auth"
-import { auth } from "@/lib/firebase"
-import { useRouter } from "next/navigation"
+import React, { useState } from "react"
+import { useOperatorAuth } from "@/contexts/operator-auth-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import Link from "next/link"
 
 export default function OperatorLogin() {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  })
-  const [loading, setLoading] = useState(false)
+  const { login, loading } = useOperatorAuth()
+  const [formData, setFormData] = useState({ email: "", password: "" })
   const [error, setError] = useState("")
-  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
     setError("")
-
     try {
-      await signInWithEmailAndPassword(auth, formData.email, formData.password)
-      router.push("/operator")
-    } catch (error: any) {
-      console.error("Error signing in:", error)
-      setError("Invalid email or password")
-    } finally {
-      setLoading(false)
+      await login(formData.email, formData.password)
+      // OperatorAuthContext.login() handles the redirect to /operator
+    } catch (err: any) {
+      setError(err.message || "Invalid email or password")
     }
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({
-      ...prev,
-      [e.target.name]: e.target.value,
-    }))
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Operator Login</CardTitle>
+          <div className="mb-2 text-2xl font-extrabold tracking-tight">
+            <span className="text-blue-600 dark:text-blue-400">uth</span>
+            <span className="text-primary">bus</span>
+          </div>
+          <CardTitle className="text-xl font-bold">Operator Login</CardTitle>
           <CardDescription>Sign in to your operator account</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {error && <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md">{error}</div>}
+            {error && (
+              <div className="bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
 
-            <div>
+            <div className="space-y-1.5">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
@@ -67,7 +60,7 @@ export default function OperatorLogin() {
               />
             </div>
 
-            <div>
+            <div className="space-y-1.5">
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
@@ -81,15 +74,15 @@ export default function OperatorLogin() {
             </div>
 
             <Button type="submit" disabled={loading} className="w-full">
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? "Signing in…" : "Sign In"}
             </Button>
 
-            <div className="text-center text-sm text-gray-600">
-              Don't have an account?{" "}
-              <a href="/operator/register" className="text-blue-600 hover:underline">
+            <p className="text-center text-sm text-muted-foreground">
+              Don&apos;t have an account?{" "}
+              <Link href="/operator/register" className="text-primary hover:underline font-medium">
                 Register here
-              </a>
-            </div>
+              </Link>
+            </p>
           </form>
         </CardContent>
       </Card>

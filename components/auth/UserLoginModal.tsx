@@ -19,49 +19,31 @@ interface UserLoginModalProps {
   onSwitchToSignup: () => void
 }
 
-export default function UserLoginModal({
-  isOpen,
-  onClose,
-  onSwitchToSignup
-}: UserLoginModalProps) {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  })
+export default function UserLoginModal({ isOpen, onClose, onSwitchToSignup }: UserLoginModalProps) {
+  const [formData, setFormData] = useState({ email: "", password: "" })
   const [error, setError] = useState("")
   const { login, loginWithGoogle, loading } = useUserAuth()
 
-  // in components/Auth/UserLoginModal.tsx
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
+    e.preventDefault()
+    setError("")
     try {
-      await login(formData.email, formData.password);
-      // ✅ only close on real success
-      onClose();
-      setFormData({ email: "", password: "" });
+      await login(formData.email, formData.password)
+      onClose()
+      setFormData({ email: "", password: "" })
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message)
     }
-  };
+  }
 
   const handleGoogleLogin = async () => {
-    setError("");
+    setError("")
     try {
-      await loginWithGoogle();
-      // ✅ only close on real success
-      onClose();
+      await loginWithGoogle()
+      onClose()
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message)
     }
-  };
-
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }))
   }
 
   const handleClose = () => {
@@ -74,71 +56,52 @@ export default function UserLoginModal({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Welcome Back</DialogTitle>
-          <DialogDescription>
-            Sign in to your account to continue
-          </DialogDescription>
+          <DialogTitle>Welcome back</DialogTitle>
+          <DialogDescription>Sign in to your account to continue</DialogDescription>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
+            <div className="bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 rounded-lg text-sm">
               {error}
             </div>
           )}
 
-          <div>
+          <div className="space-y-1.5">
             <Label htmlFor="email">Email</Label>
             <Input
-              id="email"
-              name="email"
-              type="email"
-              required
+              id="email" name="email" type="email" required
               value={formData.email}
-              onChange={handleChange}
+              onChange={(e) => setFormData((p) => ({ ...p, email: e.target.value }))}
               placeholder="your@email.com"
             />
           </div>
 
-          <div>
+          <div className="space-y-1.5">
             <Label htmlFor="password">Password</Label>
             <Input
-              id="password"
-              name="password"
-              type="password"
-              required
+              id="password" name="password" type="password" required
               value={formData.password}
-              onChange={handleChange}
+              onChange={(e) => setFormData((p) => ({ ...p, password: e.target.value }))}
               placeholder="Your password"
             />
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             <Button type="submit" disabled={loading} className="w-full">
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? "Signing in…" : "Sign In"}
             </Button>
-            
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleGoogleLogin}
-              disabled={loading}
-              className="w-full"
-            >
+            <Button type="button" variant="outline" onClick={handleGoogleLogin} disabled={loading} className="w-full">
               Continue with Google
             </Button>
           </div>
 
-          <div className="text-center text-sm text-gray-600">
-            Don't have an account?{" "}
-            <button
-              type="button"
-              onClick={onSwitchToSignup}
-              className="text-blue-600 hover:underline"
-            >
+          <p className="text-center text-sm text-muted-foreground">
+            Don&apos;t have an account?{" "}
+            <button type="button" onClick={onSwitchToSignup} className="text-primary hover:underline font-medium">
               Sign up here
             </button>
-          </div>
+          </p>
         </form>
       </DialogContent>
     </Dialog>
