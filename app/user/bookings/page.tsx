@@ -42,16 +42,16 @@ function BookingTabs({ activeTab, onTabChange, counts }: BookingTabsProps) {
   ]
 
   return (
-    <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg mb-6">
+    <div className="flex space-x-1 bg-muted p-1 rounded-lg mb-6">
       {tabs.map((tab) => (
         <button
           key={tab.id}
           onClick={() => onTabChange(tab.id)}
           className={`
             flex-1 flex items-center justify-center py-2 px-4 rounded-md text-sm font-medium transition-all
-            ${activeTab === tab.id 
-              ? 'bg-white shadow-sm text-gray-900' 
-              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+            ${activeTab === tab.id
+              ? 'bg-card shadow-soft text-foreground'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
             }
           `}
         >
@@ -59,9 +59,9 @@ function BookingTabs({ activeTab, onTabChange, counts }: BookingTabsProps) {
           {tab.count > 0 && (
             <span className={`
               ml-2 px-2 py-0.5 text-xs rounded-full
-              ${activeTab === tab.id 
-                ? 'bg-gray-200 text-gray-700' 
-                : 'bg-gray-300 text-gray-600'
+              ${activeTab === tab.id
+                ? 'bg-muted text-muted-foreground'
+                : 'bg-border text-muted-foreground'
               }
             `}>
               {tab.count}
@@ -156,13 +156,13 @@ export default function BookingsPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "booked":
-        return "bg-green-100 text-green-800"
+        return "bg-green-500/15 text-green-700 dark:text-green-400"
       case "cancelled":
-        return "bg-red-100 text-red-800"
+        return "bg-destructive/15 text-destructive"
       case "completed":
-        return "bg-blue-100 text-blue-800"
+        return "bg-blue-500/15 text-blue-700 dark:text-blue-400"
       default:
-        return "bg-gray-100 text-gray-800"
+        return "bg-muted text-muted-foreground"
     }
   }
   
@@ -255,10 +255,10 @@ export default function BookingsPage() {
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center space-x-2 mb-2">
-          <TicketIcon className="w-6 h-6 text-red-600" />
-          <h1 className="text-2xl font-bold text-gray-900">My Bookings</h1>
+          <TicketIcon className="w-5 h-5 text-primary" />
+          <h1 className="text-xl font-bold text-foreground">My Bookings</h1>
         </div>
-        <p className="text-gray-600">View and manage your bus bookings</p>
+        <p className="text-muted-foreground text-sm">View and manage your bus bookings</p>
       </div>
       
       {/* Tabs */}
@@ -270,13 +270,13 @@ export default function BookingsPage() {
       
       {/* Results Summary */}
       <div className="mb-4 flex items-center justify-between">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-muted-foreground">
           Showing {filteredBookings.length} of {bookings.length} bookings
         </p>
         <Button 
           onClick={fetchUserBookings} 
           disabled={isLoading}
-          className="bg-red-600 hover:bg-red-700"
+          className=""
         >
           <RefreshCwIcon className="w-4 h-4 mr-2" />
           {isLoading ? "Loading..." : "Refresh"}
@@ -287,24 +287,24 @@ export default function BookingsPage() {
       {isLoading ? (
         <Card>
           <CardContent className="p-8 text-center">
-            <RefreshCwIcon className="w-8 h-8 animate-spin text-red-600 mx-auto mb-4" />
-            <p className="text-gray-600">Loading your bookings...</p>
+            <RefreshCwIcon className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading your bookings…</p>
           </CardContent>
         </Card>
       ) : filteredBookings.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center">
-            <TicketIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Bookings Found</h3>
-            <p className="text-gray-600 mb-4">
-              {activeTab === 'upcoming' ? "You don't have any upcoming bookings." : 
-               activeTab === 'past' ? "You don't have any past bookings." : 
+            <TicketIcon className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">No Bookings Found</h3>
+            <p className="text-muted-foreground mb-4">
+              {activeTab === 'upcoming' ? "You don't have any upcoming bookings." :
+               activeTab === 'past' ? "You don't have any past bookings." :
                "You don't have any cancelled bookings."}
             </p>
             {bookings.length === 0 && (
-              <Button 
-                onClick={() => window.location.href = '/'} 
-                className="mt-4 bg-red-600 hover:bg-red-700"
+              <Button
+                onClick={() => window.location.href = '/'}
+                className="mt-4"
               >
                 Search Buses
               </Button>
@@ -314,19 +314,19 @@ export default function BookingsPage() {
       ) : (
         <div className="space-y-4">
           {filteredBookings.map((booking) => (
-            <Card key={booking.id} className="hover:shadow-md transition-shadow">
+            <Card key={booking.id} className="hover:shadow-soft-md transition-shadow">
               <CardContent className="p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-start space-x-4">
-                    <div className="bg-red-100 p-3 rounded-lg">
-                      <BusIcon className="w-6 h-6 text-red-600" />
+                    <div className="bg-primary/10 p-3 rounded-lg">
+                      <BusIcon className="w-6 h-6 text-primary" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-lg">{booking.busName}</h3>
-                      <p className="text-sm text-gray-600 mb-1">
+                      <h3 className="font-semibold text-lg text-foreground">{booking.busName}</h3>
+                      <p className="text-sm text-muted-foreground mb-1">
                         {booking.from} → {booking.to}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         Booking ID: {booking.id}
                       </p>
                     </div>
@@ -335,38 +335,38 @@ export default function BookingsPage() {
                     <Badge className={getStatusColor(booking.status)}>
                       {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                     </Badge>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-sm text-muted-foreground mt-1">
                       Booked: {formatBookingTime(booking.bookingTime)}
                     </p>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                   <div className="flex items-center space-x-2">
-                    <CalendarIcon className="w-4 h-4 text-gray-400" />
+                    <CalendarIcon className="w-4 h-4 text-muted-foreground" />
                     <div>
-                      <p className="text-sm font-medium">{formatDate(booking.date)}</p>
-                      <p className="text-xs text-gray-500">Travel Date</p>
+                      <p className="text-sm font-medium text-foreground">{formatDate(booking.date)}</p>
+                      <p className="text-xs text-muted-foreground">Travel Date</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <ClockIcon className="w-4 h-4 text-gray-400" />
+                    <ClockIcon className="w-4 h-4 text-muted-foreground" />
                     <div>
-                      <p className="text-sm font-medium">{booking.time}</p>
-                      <p className="text-xs text-gray-500">Departure</p>
+                      <p className="text-sm font-medium text-foreground">{booking.time}</p>
+                      <p className="text-xs text-muted-foreground">Departure</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <UserIcon className="w-4 h-4 text-gray-400" />
+                    <UserIcon className="w-4 h-4 text-muted-foreground" />
                     <div>
-                      <p className="text-sm font-medium">Seat {booking.seatNumber}</p>
-                      <p className="text-xs text-gray-500">Your Seat</p>
+                      <p className="text-sm font-medium text-foreground">Seat {booking.seatNumber}</p>
+                      <p className="text-xs text-muted-foreground">Your Seat</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <CreditCardIcon className="w-4 h-4 text-red-600" />
+                    <CreditCardIcon className="w-4 h-4 text-primary" />
                     <div>
-                      <p className="text-sm font-medium">Rs. {booking.amount.toLocaleString()}</p>
-                      <p className="text-xs text-gray-500">Amount Paid</p>
+                      <p className="text-sm font-medium text-foreground">Rs. {booking.amount.toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground">Amount Paid</p>
                     </div>
                   </div>
                 </div>
@@ -376,8 +376,8 @@ export default function BookingsPage() {
                       <div className="flex items-center space-x-2">
                         <MapPinIcon className="w-4 h-4 text-green-600" />
                         <div>
-                          <p className="text-sm font-medium">{booking.boardingPoint}</p>
-                          <p className="text-xs text-gray-500">Boarding Point</p>
+                          <p className="text-sm font-medium text-foreground">{booking.boardingPoint}</p>
+                          <p className="text-xs text-muted-foreground">Boarding Point</p>
                         </div>
                       </div>
                     )}
@@ -385,15 +385,15 @@ export default function BookingsPage() {
                       <div className="flex items-center space-x-2">
                         <MapPinIcon className="w-4 h-4 text-red-600" />
                         <div>
-                          <p className="text-sm font-medium">{booking.droppingPoint}</p>
-                          <p className="text-xs text-gray-500">Dropping Point</p>
+                          <p className="text-sm font-medium text-foreground">{booking.droppingPoint}</p>
+                          <p className="text-xs text-muted-foreground">Dropping Point</p>
                         </div>
                       </div>
                     )}
                   </div>
                 )}
                 {/* Action Buttons */}
-                <div className="flex flex-wrap gap-2 pt-4 border-t">
+                <div className="flex flex-wrap gap-2 pt-4 border-t border-border">
                   <Button
                     size="sm"
                     variant="outline"
@@ -408,7 +408,7 @@ export default function BookingsPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="text-red-600 hover:bg-red-50"
+                      className="text-destructive hover:bg-destructive/10 border-destructive/30"
                       onClick={() => handleCancelBooking(booking.id!)}
                     >
                       Cancel Booking

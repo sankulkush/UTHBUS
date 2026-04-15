@@ -29,14 +29,10 @@ export default function CitySelect({ value, onChange, placeholder, label }: City
     .sort((a, b) => a.name.localeCompare(b.name))
   const filteredOther = filteredCities.filter(c => !c.popular)
 
-  // Sync internal query when parent value changes or on close
   useEffect(() => {
-    if (!isOpen) {
-      setSearchQuery(value)
-    }
+    if (!isOpen) setSearchQuery(value)
   }, [value, isOpen])
 
-  // Close on outside click (click event)
   useEffect(() => {
     const handleOutside = (e: MouseEvent) => {
       if (
@@ -50,7 +46,6 @@ export default function CitySelect({ value, onChange, placeholder, label }: City
     return () => document.removeEventListener("click", handleOutside)
   }, [])
 
-  // Calculate dropdown position
   useEffect(() => {
     if (isOpen && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect()
@@ -64,20 +59,16 @@ export default function CitySelect({ value, onChange, placeholder, label }: City
   }, [isOpen])
 
   const handleInputClick = () => setIsOpen(true)
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value)
     setIsOpen(true)
   }
-
   const handleClear = () => {
     onChange("")
     setSearchQuery("")
     setIsOpen(true)
   }
-
   const handleCitySelect = (cityName: string) => {
-    console.log("[CitySelect] selected:", cityName)
     onChange(cityName)
     setIsOpen(false)
   }
@@ -89,25 +80,27 @@ export default function CitySelect({ value, onChange, placeholder, label }: City
       ref={dropdownRef}
       onMouseDown={e => e.stopPropagation()}
       onClick={e => e.stopPropagation()}
-      className="fixed bg-white border border-gray-200 rounded-lg shadow-xl max-h-80 overflow-y-auto z-50"
+      className="fixed bg-card border border-border rounded-xl shadow-soft-lg max-h-80 overflow-y-auto z-[9999]"
       style={dropdownPosition}
     >
       <div className="p-2">
         {filteredPopular.length > 0 && (
           <>
-            <div className="text-xs font-semibold text-gray-500 mb-2 px-2">POPULAR</div>
+            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5 px-2 pt-1">
+              Popular
+            </div>
             {filteredPopular.map(city => (
               <div
                 key={city.id}
                 onClick={() => handleCitySelect(city.name)}
-                className="flex items-center space-x-3 p-3 hover:bg-gray-50 cursor-pointer rounded-md"
+                className="flex items-center space-x-3 p-2.5 hover:bg-muted/60 cursor-pointer rounded-lg transition-colors"
               >
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <MapPinIcon className="w-4 h-4 text-blue-600" />
+                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
+                  <MapPinIcon className="w-4 h-4 text-primary" />
                 </div>
                 <div>
-                  <div className="font-medium">{city.name}</div>
-                  <div className="text-xs text-gray-500">
+                  <div className="font-medium text-foreground text-sm">{city.name}</div>
+                  <div className="text-xs text-muted-foreground">
                     {city.district}, {city.province}
                   </div>
                 </div>
@@ -118,20 +111,22 @@ export default function CitySelect({ value, onChange, placeholder, label }: City
         {filteredOther.length > 0 && (
           <>
             {filteredPopular.length > 0 && (
-              <div className="text-xs font-semibold text-gray-500 mb-2 px-2 mt-4">OTHERS</div>
+              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5 px-2 mt-3">
+                Other Cities
+              </div>
             )}
             {filteredOther.map(city => (
               <div
                 key={city.id}
                 onClick={() => handleCitySelect(city.name)}
-                className="flex items-center space-x-3 p-3 hover:bg-gray-50 cursor-pointer rounded-md"
+                className="flex items-center space-x-3 p-2.5 hover:bg-muted/60 cursor-pointer rounded-lg transition-colors"
               >
-                <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                  <MapPinIcon className="w-4 h-4 text-gray-600" />
+                <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center shrink-0">
+                  <MapPinIcon className="w-4 h-4 text-muted-foreground" />
                 </div>
                 <div>
-                  <div className="font-medium">{city.name}</div>
-                  <div className="text-xs text-gray-500">
+                  <div className="font-medium text-foreground text-sm">{city.name}</div>
+                  <div className="text-xs text-muted-foreground">
                     {city.district}, {city.province}
                   </div>
                 </div>
@@ -140,12 +135,12 @@ export default function CitySelect({ value, onChange, placeholder, label }: City
           </>
         )}
         {filteredCities.length === 0 && searchQuery && (
-          <div className="p-4 text-center text-gray-500">
-            <p className="text-sm">No cities found for “{searchQuery}”</p>
+          <div className="p-4 text-center text-muted-foreground">
+            <p className="text-sm">No cities found for &ldquo;{searchQuery}&rdquo;</p>
           </div>
         )}
         {!searchQuery && filteredCities.length === 0 && (
-          <div className="p-4 text-center text-gray-500">
+          <div className="p-4 text-center text-muted-foreground">
             <p className="text-sm">Start typing to search</p>
           </div>
         )}
@@ -156,18 +151,18 @@ export default function CitySelect({ value, onChange, placeholder, label }: City
   return (
     <div ref={containerRef} className="relative w-full">
       {label && (
-        <label className="block text-xs font-medium text-gray-700 mb-1">
+        <label className="block text-xs font-medium text-muted-foreground mb-1.5">
           {label}
         </label>
       )}
       <div
-        className="flex items-center border rounded-md px-3 py-2 bg-white cursor-text"
+        className="flex items-center border border-border rounded-lg px-3 py-2.5 bg-background cursor-text hover:border-ring/60 transition-colors"
         onClick={handleInputClick}
       >
         <input
           ref={inputRef}
           type="text"
-          className="flex-1 outline-none bg-transparent text-sm"
+          className="flex-1 outline-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60"
           value={displayValue}
           onChange={handleInputChange}
           placeholder={placeholder}
@@ -175,13 +170,13 @@ export default function CitySelect({ value, onChange, placeholder, label }: City
         {value && !isOpen && (
           <button
             type="button"
-            className="ml-2 text-gray-400 hover:text-gray-600"
+            className="ml-2 text-muted-foreground hover:text-foreground transition-colors"
             onClick={handleClear}
           >
             <XIcon className="w-4 h-4" />
           </button>
         )}
-        <ChevronDownIcon className="w-4 h-4 ml-2 text-gray-400" />
+        <ChevronDownIcon className="w-4 h-4 ml-2 text-muted-foreground shrink-0" />
       </div>
       {isOpen && createPortal(<Dropdown />, document.body)}
     </div>
