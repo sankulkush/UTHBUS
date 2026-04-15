@@ -10,7 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import * as VisuallyHidden from "@radix-ui/react-visually-hidden"
 import Image from "next/image"
 import Link from "next/link"
 import CitySelect from "@/components/city-select"
@@ -159,9 +158,7 @@ function RouteInsightModal({
   return (
     <Dialog open={!!route} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md p-0 overflow-hidden rounded-2xl border-border gap-0 [&>button]:z-10 [&>button]:text-white [&>button]:opacity-80 [&>button]:hover:opacity-100 [&>button]:top-3 [&>button]:right-3 [&>button]:bg-black/30 [&>button]:rounded-full [&>button]:w-7 [&>button]:h-7 [&>button]:flex [&>button]:items-center [&>button]:justify-center">
-        <VisuallyHidden.Root>
-          <DialogTitle>{route?.name ?? "Route Details"}</DialogTitle>
-        </VisuallyHidden.Root>
+        <DialogTitle className="sr-only">{route?.name ?? "Route Details"}</DialogTitle>
         {route && (
           <>
             {/* Image header */}

@@ -15,7 +15,7 @@ import {
   Bell,
   ChevronDown,
 } from "lucide-react"
-import UserAuthGuard from "@/components/Auth/UserAuthGuard"
+import UserAuthGuard from "@/components/auth/UserAuthGuard"
 
 const sidebarItems = [
   { title: "My Bookings",      href: "/user/bookings",      icon: TicketIcon },
