@@ -94,7 +94,7 @@ export default function BusCard({ bus, onSelectSeats, bookedSeats, searchDate }:
   const [expanded, setExpanded]       = useState(false);
   const [selected, setSelected]       = useState<string[]>([]);
   const [activeTab, setActiveTab]     = useState<TabId>('amenities');
-  const [showDetails, setShowDetails] = useState(true);
+  const [showDetails, setShowDetails] = useState(false);
   const cardRef                       = useRef<HTMLDivElement>(null);
 
   const layout = useMemo(
