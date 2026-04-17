@@ -19,6 +19,14 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import SearchCTA from "./SearchCTA"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
 
 export const metadata: Metadata = {
   title: "Kakarvitta to Kathmandu Bus Tickets | Book Purwa Bus Online | UTHBUS",
@@ -125,15 +133,44 @@ const whyUthbus = [
 const relatedRoutes = [
   { label: "Kathmandu to Kakarvitta",  href: "/search?from=Kathmandu&to=Kakarvitta" },
   { label: "Biratnagar to Kathmandu",  href: "/biratnagar-to-kathmandu-bus" },
-  { label: "Jhapa to Kathmandu",       href: "/search?from=Jhapa&to=Kathmandu" },
+  { label: "Kathmandu to Damak",       href: "/kathmandu-to-damak-bus" },
   { label: "Kakarvitta to Pokhara",    href: "/search?from=Kakarvitta&to=Pokhara" },
 ]
+
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((faq) => ({
+    "@type": "Question",
+    name: faq.q,
+    acceptedAnswer: { "@type": "Answer", text: faq.a },
+  })),
+}
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function KakarvittaToKathmanduPage() {
   return (
     <div className="min-h-screen bg-background pt-16">
+
+      {/* ── Breadcrumb ── */}
+      <div className="px-4 py-2.5 border-b border-border/50 bg-background">
+        <div className="max-w-4xl mx-auto">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link href="/">Home</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>Kakarvitta to Kathmandu Bus</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+      </div>
 
       {/* ── Hero ── */}
       <section className="bg-card border-b border-border py-14 px-4">
@@ -459,6 +496,12 @@ export default function KakarvittaToKathmanduPage() {
           </p>
         </div>
       </section>
+
+      {/* ── FAQ Schema JSON-LD ── */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
 
     </div>
   )

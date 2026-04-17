@@ -14,8 +14,13 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "UTHBUS - Bus Booking System",
-  description: "Book bus tickets easily and manage your travels",
+  title: {
+    default: "UTHBUS – Book Bus Tickets Online in Nepal",
+    template: "%s | UTHBUS",
+  },
+  description:
+    "Book bus tickets online across Nepal. Real-time seat availability, verified operators, instant e-ticket. Kathmandu to Pokhara, Biratnagar, Dharan, Itahari, Damak, and more.",
+  metadataBase: new URL("https://uthbus.com"),
 };
 
 export default function RootLayout({

@@ -18,6 +18,14 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import SearchCTA from "./SearchCTA"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
 
 export const metadata: Metadata = {
   title: "Kathmandu to Itahari Bus Tickets | Book Online | UTHBUS",
@@ -141,6 +149,25 @@ const faqSchema = {
 export default function KathmanduToItahariPage() {
   return (
     <div className="min-h-screen bg-background pt-16">
+
+      {/* ── Breadcrumb ── */}
+      <div className="px-4 py-2.5 border-b border-border/50 bg-background">
+        <div className="max-w-4xl mx-auto">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link href="/">Home</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>Kathmandu to Itahari Bus</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+      </div>
 
       {/* ── Hero ── */}
       <section className="bg-card border-b border-border py-14 px-4">

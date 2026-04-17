@@ -46,6 +46,16 @@ interface RouteData {
   highlight: string
 }
 
+// Maps route name → dedicated SEO page (where one exists)
+const ROUTE_SEO_PAGES: Record<string, string> = {
+  Pokhara:    "/kathmandu-to-pokhara-bus",
+  Biratnagar: "/biratnagar-to-kathmandu-bus",
+  Damak:      "/kathmandu-to-damak-bus",
+  Kakarvitta: "/kakarvitta-to-kathmandu-bus",
+  Itahari:    "/kathmandu-to-itahari-bus",
+  Dharan:     "/kathmandu-to-dharan-bus",
+}
+
 const ALL_ROUTES: RouteData[] = [
   {
     name: "Kathmandu",
@@ -235,6 +245,17 @@ function RouteInsightModal({
                 <Search className="w-4 h-4 mr-2" />
                 Search Buses to {route.name}
               </Button>
+
+              {/* SEO page link — only shown when a dedicated route guide exists */}
+              {ROUTE_SEO_PAGES[route.name] && (
+                <Link
+                  href={ROUTE_SEO_PAGES[route.name]}
+                  className="flex items-center justify-center gap-1 text-sm text-primary hover:text-primary/80 font-medium transition-colors"
+                >
+                  Route guide &amp; travel info
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </Link>
+              )}
             </div>
           </>
         )}
@@ -648,9 +669,17 @@ export default function Homepage() {
                 Popular Routes
               </h4>
               <ul className="space-y-2 text-slate-400 text-sm">
-                {["Kathmandu – Pokhara", "Kathmandu – Biratnagar", "Kathmandu – Damak", "Biratnagar – Kakarvitta"].map(
-                  (r) => <li key={r}><a href="#" className="hover:text-slate-100 transition-colors">{r}</a></li>
-                )}
+                {[
+                  { label: "Kathmandu – Pokhara",    href: "/kathmandu-to-pokhara-bus" },
+                  { label: "Kathmandu – Itahari",    href: "/kathmandu-to-itahari-bus" },
+                  { label: "Kathmandu – Dharan",     href: "/kathmandu-to-dharan-bus" },
+                  { label: "Kathmandu – Damak",      href: "/kathmandu-to-damak-bus" },
+                  { label: "Biratnagar – Kathmandu", href: "/biratnagar-to-kathmandu-bus" },
+                ].map((r) => (
+                  <li key={r.href}>
+                    <Link href={r.href} className="hover:text-slate-100 transition-colors">{r.label}</Link>
+                  </li>
+                ))}
               </ul>
             </div>
 

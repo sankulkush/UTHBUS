@@ -19,6 +19,14 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import SearchCTA from "./SearchCTA"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
 
 export const metadata: Metadata = {
   title: "Kathmandu to Pokhara Bus Tickets | Book Online – UthBus",
@@ -121,15 +129,44 @@ const faqs = [
 const relatedRoutes = [
   { label: "Pokhara to Kathmandu",      href: "/search?from=Pokhara&to=Kathmandu" },
   { label: "Kathmandu to Biratnagar",   href: "/search?from=Kathmandu&to=Biratnagar" },
-  { label: "Kathmandu to Dharan",       href: "/search?from=Kathmandu&to=Dharan" },
-  { label: "Pokhara to Biratnagar",     href: "/search?from=Pokhara&to=Biratnagar" },
+  { label: "Kathmandu to Dharan",       href: "/kathmandu-to-dharan-bus" },
+  { label: "Kathmandu to Itahari",      href: "/kathmandu-to-itahari-bus" },
 ]
+
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((faq) => ({
+    "@type": "Question",
+    name: faq.q,
+    acceptedAnswer: { "@type": "Answer", text: faq.a },
+  })),
+}
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function KathmanduToPokharaPage() {
   return (
     <div className="min-h-screen bg-background pt-16">
+
+      {/* ── Breadcrumb ── */}
+      <div className="px-4 py-2.5 border-b border-border/50 bg-background">
+        <div className="max-w-4xl mx-auto">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link href="/">Home</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>Kathmandu to Pokhara Bus</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+      </div>
 
       {/* ── Hero ── */}
       <section className="bg-card border-b border-border py-14 px-4">
@@ -353,6 +390,12 @@ export default function KathmanduToPokharaPage() {
           </p>
         </div>
       </section>
+
+      {/* ── FAQ Schema JSON-LD ── */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
 
     </div>
   )

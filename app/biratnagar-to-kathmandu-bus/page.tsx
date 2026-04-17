@@ -21,6 +21,14 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import SearchCTA from "./SearchCTA"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
 
 export const metadata: Metadata = {
   title: "Biratnagar to Kathmandu Bus Tickets | Book Online in Nepal | UTHBUS",
@@ -145,17 +153,46 @@ const faqs = [
 ]
 
 const relatedRoutes = [
-  { label: "Kathmandu to Biratnagar", href: "/search?from=Kathmandu&to=Biratnagar" },
-  { label: "Dharan to Kathmandu",     href: "/search?from=Dharan&to=Kathmandu" },
-  { label: "Itahari to Kathmandu",    href: "/search?from=Itahari&to=Kathmandu" },
-  { label: "Biratnagar to Pokhara",   href: "/search?from=Biratnagar&to=Pokhara" },
+  { label: "Kathmandu to Biratnagar",  href: "/search?from=Kathmandu&to=Biratnagar" },
+  { label: "Kakarvitta to Kathmandu",  href: "/kakarvitta-to-kathmandu-bus" },
+  { label: "Kathmandu to Damak",       href: "/kathmandu-to-damak-bus" },
+  { label: "Biratnagar to Pokhara",    href: "/search?from=Biratnagar&to=Pokhara" },
 ]
+
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((faq) => ({
+    "@type": "Question",
+    name: faq.q,
+    acceptedAnswer: { "@type": "Answer", text: faq.a },
+  })),
+}
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function BiratnagarToKathmanduPage() {
   return (
     <div className="min-h-screen bg-background pt-16">
+
+      {/* ── Breadcrumb ── */}
+      <div className="px-4 py-2.5 border-b border-border/50 bg-background">
+        <div className="max-w-4xl mx-auto">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link href="/">Home</Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>Biratnagar to Kathmandu Bus</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+      </div>
 
       {/* ── Hero ── */}
       <section className="bg-card border-b border-border py-14 px-4">
@@ -422,6 +459,12 @@ export default function BiratnagarToKathmanduPage() {
           </p>
         </div>
       </section>
+
+      {/* ── FAQ Schema JSON-LD ── */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
 
     </div>
   )
