@@ -16,52 +16,36 @@ import { firestore } from "@/lib/firebase";
 import type { IBusService, IBus } from "../types/counter.types";
 
 export class BusService implements IBusService {
-  /** Helper to reference the 'buses' collection */
   private col() {
     return collection(firestore, "buses");
   }
 
-  /** Fetch all buses for a specific operator */
   async getBuses(operatorId: string): Promise<IBus[]> {
     const q = query(this.col(), where("operatorId", "==", operatorId));
     const snap = await getDocs(q);
-    return snap.docs.map((d) => {
-      const data = d.data() as Omit<IBus, 'id'>;
-      return { ...data, id: d.id };
-    });
+    return snap.docs.map((d) => ({ ...d.data() as Omit<IBus, "id">, id: d.id }));
   }
 
-  /** Create a new bus document */
   async createBus(bus: Omit<IBus, "id">): Promise<IBus> {
-    const busData = {
+    const ref = await addDoc(this.col(), {
       ...bus,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-    };
-    const ref = await addDoc(this.col(), busData);
+    });
     return { ...bus, id: ref.id };
   }
 
-  /** Update an existing bus */
   async updateBus(id: string, updates: Partial<IBus>): Promise<IBus> {
-    const busRef = docRef(firestore, "buses", id);
-    const updateData = {
-      ...updates,
-      updatedAt: serverTimestamp(),
-    };
-    await updateDoc(busRef, updateData);
-    const updated = await getDoc(busRef);
-    const data = updated.data() as Omit<IBus, 'id'>;
-    return { ...data, id: updated.id };
+    const ref = docRef(firestore, "buses", id);
+    await updateDoc(ref, { ...updates, updatedAt: serverTimestamp() });
+    const updated = await getDoc(ref);
+    return { ...updated.data() as Omit<IBus, "id">, id: updated.id };
   }
 
-  /** Delete a bus by ID */
   async deleteBus(id: string): Promise<void> {
-    const busRef = docRef(firestore, "buses", id);
-    await deleteDoc(busRef);
+    await deleteDoc(docRef(firestore, "buses", id));
   }
 
-  /** Search buses for a specific operator matching origin and destination */
   async searchBuses(from: string, to: string, date: string, operatorId: string): Promise<IBus[]> {
     const q = query(
       this.col(),
@@ -71,13 +55,10 @@ export class BusService implements IBusService {
       where("status", "==", "Active")
     );
     const snap = await getDocs(q);
-    return snap.docs.map((d) => {
-      const data = d.data() as Omit<IBus, 'id'>;
-      return { ...data, id: d.id };
-    });
+    const buses = snap.docs.map((d) => ({ ...d.data() as Omit<IBus, "id">, id: d.id }));
+    return buses.filter((b) => !b.unavailableDates?.includes(date));
   }
 
-  /** NEW: Search all buses globally (across all operators) for homepage search */
   async searchAllBuses(from: string, to: string, date: string): Promise<IBus[]> {
     const q = query(
       this.col(),
@@ -86,30 +67,21 @@ export class BusService implements IBusService {
       where("status", "==", "Active")
     );
     const snap = await getDocs(q);
-    return snap.docs.map((d) => {
-      const data = d.data() as Omit<IBus, 'id'>;
-      return { ...data, id: d.id };
-    });
+    const buses = snap.docs.map((d) => ({ ...d.data() as Omit<IBus, "id">, id: d.id }));
+    // Filter out buses marked unavailable on this date
+    return buses.filter((b) => !b.unavailableDates?.includes(date));
   }
 
-  /** Get a specific bus by ID */
   async getBusById(id: string): Promise<IBus | null> {
-    const busRef = docRef(firestore, "buses", id);
-    const doc = await getDoc(busRef);
-    if (doc.exists()) {
-      const data = doc.data() as Omit<IBus, 'id'>;
-      return { ...data, id: doc.id };
-    }
-    return null;
+    const ref = docRef(firestore, "buses", id);
+    const doc = await getDoc(ref);
+    if (!doc.exists()) return null;
+    return { ...doc.data() as Omit<IBus, "id">, id: doc.id };
   }
 
-  /** Get all buses with basic info (for search results) */
   async getAllBuses(): Promise<IBus[]> {
     const q = query(this.col(), where("status", "==", "Active"));
     const snap = await getDocs(q);
-    return snap.docs.map((d) => {
-      const data = d.data() as Omit<IBus, 'id'>;
-      return { ...data, id: d.id };
-    });
+    return snap.docs.map((d) => ({ ...d.data() as Omit<IBus, "id">, id: d.id }));
   }
 }

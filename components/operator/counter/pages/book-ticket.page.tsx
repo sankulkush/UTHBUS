@@ -128,11 +128,12 @@ export function BookTicketPage() {
         userId: operator.uid, // Using operator as user for now
         busId: selectedBus.id,
         busName: selectedBus.name,
+        busType: selectedBus.type,
         from: formData.from,
         to: formData.to,
         date: formData.date,
         time: selectedBus.departureTime,
-        seatNumber: seatNum,
+        seatNumber: String(seatNum),
         passengerName: formData.passengerName,
         passengerPhone: formData.passengerPhone,
         boardingPoint: formData.boardingPoint || "", // Default to empty string if not provided

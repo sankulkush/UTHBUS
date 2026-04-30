@@ -1,5 +1,18 @@
-// Core Types following Interface Segregation Principle
-export type MenuItem = "book-ticket" | "my-buses" | "booked-transactions" | "booking-history"
+// Core section type for the new portal navigation
+export type ActiveSection =
+  | "dashboard"
+  | "bookings"
+  | "trips"
+  | "buses"
+  | "routes"
+  | "seats"
+  | "reports"
+  | "notifications"
+  | "settings"
+  | "book-ticket"
+
+// Backward compatibility alias
+export type MenuItem = ActiveSection
 
 export interface IOperator {
   id: string
@@ -27,12 +40,13 @@ export interface IBus {
   status: BusStatus
   nextRoute?: string
   nextDeparture?: string
-  // New timing fields
   departureTime: string
   arrivalTime: string
   duration: string
   price: number
   seatCapacity: number
+  // Date-based availability: bus won't appear in search on these dates
+  unavailableDates?: string[] // YYYY-MM-DD
 }
 
 export interface IBooking {
@@ -64,11 +78,26 @@ export interface IDashboardStats {
   activeBuses: number
 }
 
+export interface INotification {
+  id: string
+  type: "new_booking" | "cancellation" | "trip_alert" | "seat_warning"
+  title: string
+  message: string
+  bookingId?: string
+  read: boolean
+  createdAt: any
+  passengerName?: string
+  busName?: string
+  from?: string
+  to?: string
+  amount?: number
+  isOnline?: boolean
+}
+
 export type BusType = "Micro" | "Deluxe" | "AC Deluxe"
 export type BusStatus = "Active" | "Maintenance" | "Inactive"
 export type BookingStatus = "Confirmed" | "Pending" | "Cancelled" | "Completed"
 
-// Service Interfaces following Dependency Inversion Principle
 export interface IBookingService {
   createBooking(booking: Omit<IBooking, "id" | "bookingDate">): Promise<IBooking>
   getBookings(operatorId: string): Promise<IBooking[]>
@@ -78,14 +107,13 @@ export interface IBookingService {
 }
 
 export interface IBusService {
-  getBuses(operatorId: string): Promise<IBus[]>;
-  createBus(bus: Omit<IBus, "id">): Promise<IBus>;
-  updateBus(id: string, updates: Partial<IBus>): Promise<IBus>;
-  deleteBus(id: string): Promise<void>;
-  searchBuses(from: string, to: string, date: string, operatorId: string): Promise<IBus[]>;
-  getBusById(id: string): Promise<IBus | null>;
-  // New method for global search
-  searchAllBuses(from: string, to: string, date: string): Promise<IBus[]>;
+  getBuses(operatorId: string): Promise<IBus[]>
+  createBus(bus: Omit<IBus, "id">): Promise<IBus>
+  updateBus(id: string, updates: Partial<IBus>): Promise<IBus>
+  deleteBus(id: string): Promise<void>
+  searchBuses(from: string, to: string, date: string, operatorId: string): Promise<IBus[]>
+  getBusById(id: string): Promise<IBus | null>
+  searchAllBuses(from: string, to: string, date: string): Promise<IBus[]>
 }
 
 export interface IDashboardService {
@@ -101,23 +129,23 @@ export interface IAuthService {
 }
 
 export interface IActiveBookingData {
-  operatorId: string;
-  userId?: string;
-  busId: string;
-  busName: string;
-  busType: string;
-  from: string;
-  to: string;
-  date: string;
-  time: string;
+  operatorId: string
+  userId?: string
+  busId: string
+  busName: string
+  busType: string
+  from: string
+  to: string
+  date: string
+  time: string
   /** @deprecated use seatNumbers */
-  seatNumber?: string;
-  seatNumbers: string[];
-  passengerName: string;
-  passengerPhone: string;
-  boardingPoint: string;
-  droppingPoint: string;
-  amount: number;
-  status: "booked" | "cancelled" | "completed";
-  bookingTime: any;
+  seatNumber?: string
+  seatNumbers: string[]
+  passengerName: string
+  passengerPhone: string
+  boardingPoint: string
+  droppingPoint: string
+  amount: number
+  status: "booked" | "cancelled" | "completed"
+  bookingTime: any
 }

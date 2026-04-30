@@ -1,117 +1,217 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 import {
-  TicketIcon,
-  BusIcon,
-  ClipboardListIcon,
-  HistoryIcon,
-  MenuIcon,
-  LogOutIcon,
-  ChevronLeftIcon,
-} from "lucide-react"
-import type { MenuItem } from "../types/counter.types"
-import { useCounter } from "../context/counter-context"
-import { useAuth } from "@/contexts/auth-context"
-import { useRouter } from "next/navigation"
+  LayoutDashboard,
+  BookOpen,
+  Route,
+  Bus,
+  Map,
+  Grid3x3,
+  BarChart3,
+  Bell,
+  Settings,
+  Ticket,
+  LogOut,
+  ChevronLeft,
+  Menu,
+  X,
+} from "lucide-react";
+import type { ActiveSection } from "../types/counter.types";
+import { useCounter } from "../context/counter-context";
+import { useAuth } from "@/contexts/auth-context";
+import { useRouter } from "next/navigation";
 
 interface SidebarProps {
-  activeMenuItem: MenuItem
-  onMenuItemChange: (item: MenuItem) => void
-  collapsed: boolean
-  onToggleCollapse: () => void
+  activeSection: ActiveSection;
+  onSectionChange: (s: ActiveSection) => void;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
+  mobileOpen: boolean;
+  onMobileClose: () => void;
 }
 
-const menuItems = [
-  { id: "book-ticket" as MenuItem, label: "Book Ticket", icon: TicketIcon },
-  { id: "my-buses" as MenuItem, label: "My Buses", icon: BusIcon },
-  { id: "booked-transactions" as MenuItem, label: "Booked Transactions", icon: ClipboardListIcon },
-  { id: "booking-history" as MenuItem, label: "Booking History", icon: HistoryIcon },
-]
+const navItems = [
+  { id: "dashboard" as ActiveSection, label: "Dashboard", icon: LayoutDashboard, group: "main" },
+  { id: "bookings" as ActiveSection, label: "Bookings", icon: BookOpen, group: "main" },
+  { id: "book-ticket" as ActiveSection, label: "Book Ticket", icon: Ticket, group: "main" },
+  { id: "trips" as ActiveSection, label: "Trips", icon: Route, group: "ops" },
+  { id: "buses" as ActiveSection, label: "Buses", icon: Bus, group: "ops" },
+  { id: "routes" as ActiveSection, label: "Routes", icon: Map, group: "ops" },
+  { id: "seats" as ActiveSection, label: "Seats", icon: Grid3x3, group: "ops" },
+  { id: "reports" as ActiveSection, label: "Reports", icon: BarChart3, group: "more" },
+  { id: "notifications" as ActiveSection, label: "Notifications", icon: Bell, group: "more" },
+  { id: "settings" as ActiveSection, label: "Settings", icon: Settings, group: "more" },
+];
 
-export function Sidebar({ activeMenuItem, onMenuItemChange, collapsed, onToggleCollapse }: SidebarProps) {
-  const { operator } = useCounter()
-  const { logout } = useAuth()
-  const router = useRouter()
+const groups = [
+  { key: "main", label: "Operations" },
+  { key: "ops", label: "Management" },
+  { key: "more", label: "More" },
+];
+
+export function Sidebar({
+  activeSection,
+  onSectionChange,
+  collapsed,
+  onToggleCollapse,
+  mobileOpen,
+  onMobileClose,
+}: SidebarProps) {
+  const { operator, unreadCount } = useCounter();
+  const { logout } = useAuth();
+  const router = useRouter();
 
   const handleLogout = async () => {
     try {
-      await logout()
-      router.push('/operator/login')
-    } catch (error) {
-      console.error("Logout error:", error)
-    }
-  }
+      await logout();
+      router.push("/operator/login");
+    } catch {}
+  };
 
-  return (
-    <div
-      className={cn(
-        "bg-white border-r border-gray-200 flex flex-col transition-all duration-300 shadow-sm",
-        collapsed ? "w-16" : "w-64",
-      )}
-    >
+  const handleSelect = (id: ActiveSection) => {
+    onSectionChange(id);
+    onMobileClose();
+  };
+
+  const SidebarInner = () => (
+    <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b border-gray-200">
-        <div className="flex items-center justify-between">
-          {!collapsed && (
-            <div className="flex items-center space-x-2">
-              <BusIcon className="w-6 h-6 text-red-600" />
-              <span className="text-lg font-bold">
-                <span className="text-blue-600">uth</span>
-                <span className="text-red-600">bus</span>
-              </span>
+      <div className="flex items-center justify-between px-4 py-4 border-b border-border shrink-0">
+        {!collapsed && (
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
+              <Bus className="w-4 h-4 text-primary-foreground" />
             </div>
-          )}
-          <Button variant="ghost" size="sm" onClick={onToggleCollapse} className="p-1">
-            {collapsed ? <MenuIcon className="w-4 h-4" /> : <ChevronLeftIcon className="w-4 h-4" />}
-          </Button>
-        </div>
-        {!collapsed && operator && (
-          <div className="mt-3 text-sm text-gray-600">
-            <p className="font-medium">{operator.companyName}</p>
-            <p className="text-xs">{operator.name}</p>
+            <div className="min-w-0">
+              <p className="text-sm font-bold leading-tight truncate">
+                <span className="text-blue-600 dark:text-blue-400">uth</span>
+                <span className="text-primary">bus</span>
+              </p>
+              <p className="text-[10px] text-muted-foreground truncate">Operator Portal</p>
+            </div>
           </div>
         )}
+        {collapsed && (
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center mx-auto">
+            <Bus className="w-4 h-4 text-primary-foreground" />
+          </div>
+        )}
+        <button
+          onClick={collapsed ? onToggleCollapse : onToggleCollapse}
+          className="hidden lg:flex w-7 h-7 rounded-md hover:bg-muted items-center justify-center text-muted-foreground hover:text-foreground transition-colors shrink-0"
+        >
+          {collapsed ? <Menu className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+        </button>
+        <button
+          onClick={onMobileClose}
+          className="lg:hidden w-7 h-7 rounded-md hover:bg-muted flex items-center justify-center text-muted-foreground"
+        >
+          <X className="w-4 h-4" />
+        </button>
       </div>
 
-      {/* Menu Items */}
-      <nav className="flex-1 p-2">
-        <div className="space-y-1">
-          {menuItems.map((item) => {
-            const Icon = item.icon
-            const isActive = activeMenuItem === item.id
-
-            return (
-              <Button
-                key={item.id}
-                variant={isActive ? "default" : "ghost"}
-                className={cn(
-                  "w-full justify-start text-left",
-                  collapsed ? "px-2" : "px-3",
-                  isActive ? "bg-red-600 text-white hover:bg-red-700" : "text-gray-700 hover:bg-gray-100",
-                )}
-                onClick={() => onMenuItemChange(item.id)}
-              >
-                <Icon className={cn("w-4 h-4", collapsed ? "" : "mr-3")} />
-                {!collapsed && <span>{item.label}</span>}
-              </Button>
-            )
-          })}
+      {/* Operator info */}
+      {!collapsed && operator && (
+        <div className="px-4 py-3 border-b border-border shrink-0">
+          <p className="text-xs font-semibold text-foreground truncate">
+            {operator.companyName || operator.name}
+          </p>
+          <p className="text-[11px] text-muted-foreground truncate">{operator.email}</p>
         </div>
+      )}
+
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4">
+        {groups.map((group) => {
+          const items = navItems.filter((i) => i.group === group.key);
+          return (
+            <div key={group.key}>
+              {!collapsed && (
+                <p className="px-2 mb-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  {group.label}
+                </p>
+              )}
+              <div className="space-y-0.5">
+                {items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeSection === item.id;
+                  const badge = item.id === "notifications" && unreadCount > 0 ? unreadCount : 0;
+
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => handleSelect(item.id)}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-2 py-2 rounded-lg text-sm font-medium transition-all group",
+                        isActive
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted",
+                        collapsed && "justify-center px-2"
+                      )}
+                      title={collapsed ? item.label : undefined}
+                    >
+                      <div className="relative shrink-0">
+                        <Icon className="w-4 h-4" />
+                        {badge > 0 && (
+                          <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-destructive rounded-full text-[9px] text-white flex items-center justify-center font-bold">
+                            {badge > 9 ? "9+" : badge}
+                          </span>
+                        )}
+                      </div>
+                      {!collapsed && <span className="truncate">{item.label}</span>}
+                      {!collapsed && badge > 0 && (
+                        <span className="ml-auto shrink-0 px-1.5 py-0.5 rounded-full bg-destructive text-white text-[10px] font-bold">
+                          {badge}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
       </nav>
 
-      {/* Footer */}
-      <div className="p-2 border-t border-gray-200">
-        <Button
-          variant="ghost"
-          className={cn("w-full justify-start text-red-600 hover:bg-red-50", collapsed ? "px-2" : "px-3")}
+      {/* Logout */}
+      <div className="px-2 py-3 border-t border-border shrink-0">
+        <button
           onClick={handleLogout}
+          className={cn(
+            "w-full flex items-center gap-3 px-2 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all",
+            collapsed && "justify-center"
+          )}
+          title={collapsed ? "Logout" : undefined}
         >
-          <LogOutIcon className={cn("w-4 h-4", collapsed ? "" : "mr-3")} />
+          <LogOut className="w-4 h-4 shrink-0" />
           {!collapsed && <span>Logout</span>}
-        </Button>
+        </button>
       </div>
     </div>
-  )
+  );
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <aside
+        className={cn(
+          "hidden lg:flex flex-col h-screen bg-card border-r border-border transition-all duration-300 shrink-0",
+          collapsed ? "w-[60px]" : "w-56"
+        )}
+      >
+        <SidebarInner />
+      </aside>
+
+      {/* Mobile sidebar overlay */}
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-30 flex flex-col w-64 bg-card border-r border-border lg:hidden transition-transform duration-300",
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        <SidebarInner />
+      </aside>
+    </>
+  );
 }
