@@ -94,7 +94,7 @@ export interface INotification {
   isOnline?: boolean
 }
 
-export type BusType = "Micro" | "Deluxe" | "AC Deluxe"
+export type BusType = "Micro" | "Hiace" | "Deluxe" | "AC Deluxe"
 export type BusStatus = "Active" | "Maintenance" | "Inactive"
 export type BookingStatus = "Confirmed" | "Pending" | "Cancelled" | "Completed"
 

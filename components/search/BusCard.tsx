@@ -28,10 +28,19 @@ function buildLayout(bus: IBus, booked: string[], selected: string[]): SeatRow[]
     label, booked: booked.includes(label), selected: selected.includes(label),
   });
   if (bus.type === 'Micro') {
+    // 5 rows × 3 cols = 15 seats
     return Array.from({ length: 5 }, (_, r) => [
       cell(`A${r + 1}`), cell(`B${r + 1}`), cell(`C${r + 1}`),
     ]);
   }
+  if (bus.type === 'Hiace') {
+    // 5 rows of 2+1 with aisle = 15 seats: H1-H15
+    return Array.from({ length: 5 }, (_, r) => {
+      const base = r * 3;
+      return [cell(`H${base + 1}`), cell(`H${base + 2}`), null, cell(`H${base + 3}`)];
+    });
+  }
+  // Deluxe / AC Deluxe — 36 seats
   const rows: SeatRow[] = [];
   for (let r = 0; r < 9; r++) {
     if (r === 0)      rows.push([cell('A'),   cell('B'),   null, cell('क'), cell('ख')]);
@@ -84,6 +93,7 @@ function getBusTypeColor(type: string) {
   switch (type) {
     case 'AC Deluxe': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
     case 'Micro':     return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
+    case 'Hiace':     return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300';
     default:          return 'bg-muted text-muted-foreground';
   }
 }

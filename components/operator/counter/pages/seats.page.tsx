@@ -1,41 +1,16 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Grid3x3, Calendar, Bus, RefreshCw } from "lucide-react";
+import { Grid3x3, Calendar, RefreshCw } from "lucide-react";
 import { useCounter } from "../context/counter-context";
 import { ActiveBookingsService } from "../services/active-booking.service";
-import type { IBus } from "../types/counter.types";
+import { SeatMapView } from "../components/seat-map";
 
 const service = new ActiveBookingsService();
 
 function todayStr() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-function SeatGrid({ capacity, booked }: { capacity: number; booked: string[] }) {
-  const seats = Array.from({ length: capacity }, (_, i) => String(i + 1));
-  const cols = capacity <= 20 ? 5 : 4;
-
-  return (
-    <div className={`grid gap-1.5`} style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
-      {seats.map((s) => {
-        const isBooked = booked.includes(s);
-        return (
-          <div
-            key={s}
-            className={`aspect-square rounded-lg flex items-center justify-center text-[11px] font-semibold transition-colors ${
-              isBooked
-                ? "bg-red-500 text-white"
-                : "bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800"
-            }`}
-          >
-            {s}
-          </div>
-        );
-      })}
-    </div>
-  );
 }
 
 export function SeatsPage() {
@@ -114,11 +89,11 @@ export function SeatsPage() {
               </div>
               <div className="flex items-center gap-4 text-xs mb-3">
                 <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded bg-red-500" />
+                  <div className="w-3 h-3 rounded bg-muted/60 border border-border/50" />
                   <span className="text-muted-foreground">Booked ({bookedSeats.length})</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded bg-green-100 dark:bg-green-950/50 border border-green-200 dark:border-green-800" />
+                  <div className="w-3 h-3 rounded bg-background border border-border" />
                   <span className="text-muted-foreground">Available ({availableCount})</span>
                 </div>
                 <span className="ml-auto font-semibold text-foreground">{fillPct}% full</span>
@@ -132,18 +107,20 @@ export function SeatsPage() {
             </div>
           )}
 
-          {/* Seat grid */}
+          {/* Seat map */}
           {selectedBus && (
             <div className="bg-card border border-border rounded-xl p-5">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-4">
-                Seat Map — {selectedBus.seatCapacity} seats
+                Seat Map — {selectedBus.type} · {selectedBus.seatCapacity} seats
               </p>
               {loading ? (
                 <div className="flex items-center justify-center py-10">
                   <RefreshCw className="w-5 h-5 text-muted-foreground animate-spin" />
                 </div>
               ) : (
-                <SeatGrid capacity={selectedBus.seatCapacity} booked={bookedSeats} />
+                <div className="flex justify-center">
+                  <SeatMapView bus={selectedBus} booked={bookedSeats} />
+                </div>
               )}
             </div>
           )}
