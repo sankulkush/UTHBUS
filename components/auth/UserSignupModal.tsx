@@ -17,9 +17,10 @@ interface UserSignupModalProps {
   isOpen: boolean
   onClose: () => void
   onSwitchToLogin: () => void
+  onLoginSuccess?: () => void
 }
 
-export default function UserSignupModal({ isOpen, onClose, onSwitchToLogin }: UserSignupModalProps) {
+export default function UserSignupModal({ isOpen, onClose, onSwitchToLogin, onLoginSuccess }: UserSignupModalProps) {
   const [formData, setFormData] = useState({
     email: "", password: "", confirmPassword: "",
     fullName: "", phoneNumber: ""
@@ -38,6 +39,7 @@ export default function UserSignupModal({ isOpen, onClose, onSwitchToLogin }: Us
       })
       onClose()
       resetForm()
+      onLoginSuccess?.()
     } catch (err: any) {
       setError(err.message || "Signup failed")
     }
@@ -48,6 +50,7 @@ export default function UserSignupModal({ isOpen, onClose, onSwitchToLogin }: Us
     try {
       await loginWithGoogle()
       onClose()
+      onLoginSuccess?.()
     } catch (err: any) {
       setError(err.message || "Google signup failed")
     }

@@ -179,6 +179,33 @@ export class ActiveBookingsService {
     return snap.docs.map((d) => ({ ...(d.data() as Omit<IActiveBooking, "id">), id: d.id }));
   }
 
+  /** Returns true when a 'booked' booking's departure datetime has already passed. */
+  static isDeparturePast(booking: IActiveBooking): boolean {
+    if (booking.status !== "booked") return false;
+    try {
+      const [y, m, d] = booking.date.split("-").map(Number);
+      const [h, min] = (booking.time || "00:00").split(":").map(Number);
+      return new Date(y, m - 1, d, h, min) < new Date();
+    } catch {
+      return false;
+    }
+  }
+
+  /** Marks any 'booked' bookings whose departure has passed as 'completed' in
+   *  Firestore, then returns the same array with those statuses already updated.
+   *  Safe to call on every page load — it's a no-op when nothing is stale. */
+  async autoCompletePastBookings(bookings: IActiveBooking[]): Promise<IActiveBooking[]> {
+    const past = bookings.filter((b) => ActiveBookingsService.isDeparturePast(b));
+    if (past.length) {
+      await Promise.all(
+        past.map((b) => this.updateActiveBooking(b.id!, { status: "completed" }))
+      );
+    }
+    return bookings.map((b) =>
+      past.find((p) => p.id === b.id) ? { ...b, status: "completed" as const } : b
+    );
+  }
+
   /** All bookings for an operator (all statuses) */
   async getOperatorBookings(operatorId: string): Promise<IActiveBooking[]> {
     const q = query(

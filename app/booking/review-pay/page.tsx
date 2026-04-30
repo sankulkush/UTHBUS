@@ -1,12 +1,12 @@
 // app/booking/review-pay/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useBooking } from "@/contexts/booking-context";
 import { useUserAuth } from "@/contexts/user-auth-context";
 import { ActiveBookingsService } from "@/components/operator/counter/services/active-booking.service";
-import { ArrowLeft, CheckCircle2, ChevronRight, Loader2, AlertTriangle } from "lucide-react";
+import { ArrowLeft, ChevronRight, Loader2, AlertTriangle } from "lucide-react";
 
 const service = new ActiveBookingsService();
 
@@ -15,13 +15,13 @@ export default function ReviewPayPage() {
   const { booking, clearBooking } = useBooking();
   const { userProfile } = useUserAuth();
 
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState("");
-  const [success, setSuccess]   = useState(false);
-  const [bookingId, setBookingId] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState("");
+  const confirmedRef = useRef(false);
 
-  // Redirect if state is incomplete
+  // Redirect if booking state is incomplete (skip after successful confirmation)
   useEffect(() => {
+    if (confirmedRef.current) return;
     if (!booking.bus || !booking.seats.length || !booking.passenger.name) {
       router.replace("/");
     }
@@ -43,6 +43,13 @@ export default function ReviewPayPage() {
     if (a < d) a.setDate(a.getDate() + 1);
     const ms = a.getTime() - d.getTime();
     return `${Math.floor(ms / 3_600_000)}h ${Math.floor((ms % 3_600_000) / 60_000)}m`;
+  };
+
+  const formatDisplayDate = (ds: string) => {
+    const [y, m, d] = ds.split("-").map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString("en-US", {
+      weekday: "short", month: "long", day: "numeric",
+    });
   };
 
   const handleConfirm = async () => {
@@ -77,78 +84,15 @@ export default function ReviewPayPage() {
         bookingTime: null,
       });
 
-      setBookingId(result.id || "");
-      setSuccess(true);
+      confirmedRef.current = true;
       clearBooking();
+      router.push(`/booking/ticket/${result.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Booking failed. Please try again.");
-    } finally {
       setLoading(false);
     }
   };
 
-  // ── Success screen ──────────────────────────────────────────────────────────
-  if (success) {
-    return (
-      <div className="min-h-screen bg-muted/30 pt-16 flex items-center justify-center px-4">
-        <div className="bg-card border border-border rounded-2xl p-8 max-w-md w-full text-center space-y-4 shadow-soft-md">
-          <div className="flex justify-center">
-            <CheckCircle2 className="w-16 h-16 text-emerald-500" />
-          </div>
-          <h1 className="text-xl font-bold text-foreground">Booking confirmed!</h1>
-          <p className="text-muted-foreground text-sm">
-            Your ticket has been booked. Show this at the boarding point.
-          </p>
-
-          <div className="bg-muted/50 rounded-xl p-4 text-left space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Booking ID</span>
-              <span className="font-mono font-semibold text-foreground">{bookingId.slice(0, 8).toUpperCase()}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Bus</span>
-              <span className="font-medium text-foreground">{bus.name}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Route</span>
-              <span className="font-medium text-foreground">{from} → {to}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Date</span>
-              <span className="font-medium text-foreground">
-                {date ? new Date(date).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }) : date}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Seats</span>
-              <span className="font-medium text-foreground">{seats.join(", ")}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Amount paid</span>
-              <span className="font-semibold text-foreground">NPR {total.toLocaleString()}</span>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2 pt-2">
-            <button
-              onClick={() => router.push("/user/bookings")}
-              className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition-all"
-            >
-              View my bookings
-            </button>
-            <button
-              onClick={() => router.push("/")}
-              className="w-full py-2.5 rounded-lg border border-border text-foreground font-medium text-sm hover:bg-muted/50 transition-all"
-            >
-              Back to home
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ── Review screen ───────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-muted/30 pt-16">
       <div className="max-w-2xl mx-auto px-4 py-8">
@@ -206,9 +150,7 @@ export default function ReviewPayPage() {
                 </>
               )}
               <span className="text-border">·</span>
-              <span>
-                {date ? new Date(date).toLocaleDateString("en-US", { weekday: "short", month: "long", day: "numeric" }) : date}
-              </span>
+              <span>{date ? formatDisplayDate(date) : date}</span>
             </div>
           </div>
 

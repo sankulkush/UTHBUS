@@ -48,17 +48,18 @@ function BookingTabs({ activeTab, onTabChange, counts }: BookingTabsProps) {
           key={tab.id}
           onClick={() => onTabChange(tab.id)}
           className={`
-            flex-1 flex items-center justify-center py-2 px-4 rounded-md text-sm font-medium transition-all
+            flex-1 flex flex-col sm:flex-row items-center justify-center
+            py-2 px-1 sm:px-3 gap-0.5 rounded-md text-xs sm:text-sm font-medium transition-all min-w-0
             ${activeTab === tab.id
               ? 'bg-card shadow-soft text-foreground'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
             }
           `}
         >
-          <span className={tab.color}>{tab.label}</span>
+          <span className={`${tab.color} truncate`}>{tab.label}</span>
           {tab.count > 0 && (
             <span className={`
-              ml-2 px-2 py-0.5 text-xs rounded-full
+              shrink-0 px-1.5 py-0.5 text-xs rounded-full leading-none
               ${activeTab === tab.id
                 ? 'bg-muted text-muted-foreground'
                 : 'bg-border text-muted-foreground'
@@ -127,8 +128,10 @@ export default function BookingsPage() {
     if (!userProfile) return
     setIsLoading(true)
     try {
-      const userBookings = await activeBookingsService.getUserBookings(userProfile.uid)
-      setBookings(userBookings)
+      const raw = await activeBookingsService.getUserBookings(userProfile.uid)
+      // Auto-complete any bookings whose departure time has already passed
+      const updated = await activeBookingsService.autoCompletePastBookings(raw)
+      setBookings(updated)
     } catch (error) {
       console.error("Error fetching user bookings:", error)
       alert("Error loading your bookings")

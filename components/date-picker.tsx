@@ -10,40 +10,85 @@ interface DatePickerProps {
   onChange: (value: string) => void
 }
 
+// Returns YYYY-MM-DD using local time, never UTC — avoids timezone day-shift bugs
+// e.g. for Nepal (UTC+5:45), new Date().toISOString() can return yesterday's date
+function toLocalDateStr(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, "0")
+  const day = String(d.getDate()).padStart(2, "0")
+  return `${y}-${m}-${day}`
+}
+
 export default function DatePicker({ value, onChange }: DatePickerProps) {
   const [showCalendar, setShowCalendar] = useState(false)
   const [currentMonth, setCurrentMonth] = useState(new Date())
-  const [calendarPosition, setCalendarPosition] = useState({ top: 0, left: 0 })
+  const [calendarStyle, setCalendarStyle] = useState<React.CSSProperties>({})
   const calendarRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLDivElement>(null)
 
+  // Close calendar when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handler = (e: MouseEvent) => {
       if (
-        calendarRef.current &&
-        !calendarRef.current.contains(event.target as Node) &&
-        triggerRef.current &&
-        !triggerRef.current.contains(event.target as Node)
+        calendarRef.current && !calendarRef.current.contains(e.target as Node) &&
+        triggerRef.current && !triggerRef.current.contains(e.target as Node)
       ) {
         setShowCalendar(false)
       }
     }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
   }, [])
 
+  // Close calendar on any scroll — position is stale once the page moves
   useEffect(() => {
-    if (showCalendar && triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect()
-      setCalendarPosition({
-        top: rect.bottom + 8,
-        left: rect.left,
-      })
+    if (!showCalendar) return
+    const handler = () => setShowCalendar(false)
+    window.addEventListener("scroll", handler, { passive: true, capture: true })
+    return () => window.removeEventListener("scroll", handler, { capture: true })
+  }, [showCalendar])
+
+  // Recalculate position whenever the calendar opens
+  useEffect(() => {
+    if (!showCalendar || !triggerRef.current) return
+    const rect = triggerRef.current.getBoundingClientRect()
+    const CALENDAR_W = 288 // w-72
+    const CALENDAR_H = 330 // approximate rendered height
+
+    const isMobile = window.innerWidth < 640
+
+    if (isMobile) {
+      // Center horizontally; position below trigger but clamp to viewport
+      const left = Math.max(8, Math.min(
+        (window.innerWidth - CALENDAR_W) / 2,
+        window.innerWidth - CALENDAR_W - 8,
+      ))
+      const spaceBelow = window.innerHeight - rect.bottom - 8
+      const top = spaceBelow >= CALENDAR_H
+        ? rect.bottom + 8
+        : Math.max(8, window.innerHeight - CALENDAR_H - 8)
+      setCalendarStyle({ top, left })
+    } else {
+      // Desktop: anchor below trigger, flip above if not enough space below
+      const left = Math.min(rect.left, window.innerWidth - CALENDAR_W - 8)
+      const top = rect.bottom + 8 + CALENDAR_H > window.innerHeight
+        ? Math.max(8, rect.top - CALENDAR_H - 8)
+        : rect.bottom + 8
+      setCalendarStyle({ top: Math.max(8, top), left: Math.max(8, left) })
     }
   }, [showCalendar])
 
+  const getTodayDate = () => toLocalDateStr(new Date())
+  const getTomorrowDate = () => {
+    const d = new Date()
+    d.setDate(d.getDate() + 1)
+    return toLocalDateStr(d)
+  }
+
+  // Parse YYYY-MM-DD as local date (not UTC) to avoid display off-by-one
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
+    const [y, m, d] = dateString.split("-").map(Number)
+    const date = new Date(y, m - 1, d)
     return {
       day: date.getDate(),
       month: date.toLocaleDateString("en-US", { month: "short" }),
@@ -52,17 +97,17 @@ export default function DatePicker({ value, onChange }: DatePickerProps) {
     }
   }
 
-  const getTodayDate = () => new Date().toISOString().split("T")[0]
-  const getTomorrowDate = () => new Date(Date.now() + 86400000).toISOString().split("T")[0]
-
   const getDaysInMonth = (date: Date) =>
     new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
   const getFirstDayOfMonth = (date: Date) =>
     new Date(date.getFullYear(), date.getMonth(), 1).getDay()
 
   const handleDateSelect = (day: number) => {
-    const selected = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
-    onChange(selected.toISOString().split("T")[0])
+    // Build date string from local parts — avoids UTC shift bug
+    const d = String(day).padStart(2, "0")
+    const m = String(currentMonth.getMonth() + 1).padStart(2, "0")
+    const y = currentMonth.getFullYear()
+    onChange(`${y}-${m}-${d}`)
     setShowCalendar(false)
   }
 
@@ -78,7 +123,8 @@ export default function DatePicker({ value, onChange }: DatePickerProps) {
     const daysInMonth = getDaysInMonth(currentMonth)
     const firstDay = getFirstDayOfMonth(currentMonth)
     const today = new Date()
-    const selectedDate = new Date(value)
+    // Parse value as local date parts to avoid UTC-shift in comparisons
+    const [sy, sm, sd] = value ? value.split("-").map(Number) : [0, 0, 0]
     const days = []
 
     for (let i = 0; i < firstDay; i++) {
@@ -90,9 +136,9 @@ export default function DatePicker({ value, onChange }: DatePickerProps) {
         today.getMonth() === currentMonth.getMonth() &&
         today.getFullYear() === currentMonth.getFullYear()
       const isSelected =
-        selectedDate.getDate() === day &&
-        selectedDate.getMonth() === currentMonth.getMonth() &&
-        selectedDate.getFullYear() === currentMonth.getFullYear()
+        sd === day &&
+        sm - 1 === currentMonth.getMonth() &&
+        sy === currentMonth.getFullYear()
       const isPast =
         new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day) <
         new Date(today.getFullYear(), today.getMonth(), today.getDate())
@@ -125,7 +171,7 @@ export default function DatePicker({ value, onChange }: DatePickerProps) {
     <div
       ref={calendarRef}
       className="fixed bg-card border border-border rounded-xl shadow-soft-lg p-4 w-72"
-      style={{ top: calendarPosition.top, left: calendarPosition.left, zIndex: 9999 }}
+      style={{ ...calendarStyle, zIndex: 9999 }}
     >
       <div className="flex items-center justify-between mb-3">
         <Button variant="ghost" size="sm" onClick={() => navigateMonth("prev")} className="p-1 h-7 w-7 hover:bg-muted">

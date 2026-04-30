@@ -147,9 +147,10 @@ export function BookedTransactionsPage() {
 
     setIsLoading(true)
     try {
-      // Now using getOperatorBookings to get ALL bookings regardless of status
-      const bookings = await activeBookingsService.getOperatorBookings(operator.uid)
-      setAllBookings(bookings)
+      const raw = await activeBookingsService.getOperatorBookings(operator.uid)
+      // Auto-complete any bookings whose departure time has already passed
+      const updated = await activeBookingsService.autoCompletePastBookings(raw)
+      setAllBookings(updated)
     } catch (error) {
       console.error("Error fetching bookings:", error)
       alert("Error loading bookings")

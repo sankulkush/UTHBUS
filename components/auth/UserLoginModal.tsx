@@ -17,9 +17,10 @@ interface UserLoginModalProps {
   isOpen: boolean
   onClose: () => void
   onSwitchToSignup: () => void
+  onLoginSuccess?: () => void
 }
 
-export default function UserLoginModal({ isOpen, onClose, onSwitchToSignup }: UserLoginModalProps) {
+export default function UserLoginModal({ isOpen, onClose, onSwitchToSignup, onLoginSuccess }: UserLoginModalProps) {
   const [formData, setFormData] = useState({ email: "", password: "" })
   const [error, setError] = useState("")
   const { login, loginWithGoogle, loading } = useUserAuth()
@@ -31,6 +32,7 @@ export default function UserLoginModal({ isOpen, onClose, onSwitchToSignup }: Us
       await login(formData.email, formData.password)
       onClose()
       setFormData({ email: "", password: "" })
+      onLoginSuccess?.()
     } catch (err: any) {
       setError(err.message)
     }
@@ -41,6 +43,7 @@ export default function UserLoginModal({ isOpen, onClose, onSwitchToSignup }: Us
     try {
       await loginWithGoogle()
       onClose()
+      onLoginSuccess?.()
     } catch (err: any) {
       setError(err.message)
     }

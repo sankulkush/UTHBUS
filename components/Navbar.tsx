@@ -10,6 +10,7 @@ import { useUserAuth } from "@/contexts/user-auth-context";
 import { useOperatorAuth } from "@/contexts/operator-auth-context";
 import UserLoginModal from "@/components/auth/UserLoginModal";
 import UserSignupModal from "@/components/auth/UserSignupModal";
+import WelcomePromoModal from "@/components/auth/WelcomePromoModal";
 import ProfileDropdown from "@/components/auth/ProfileDropdown";
 import OperatorProfileDropdown from "@/components/auth/OperatorProfileDropdown";
 import { Sun, Moon, LogIn } from "lucide-react";
@@ -22,6 +23,7 @@ export default function Navbar() {
   const { theme, setTheme } = useTheme();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showSignupModal, setShowSignupModal] = useState(false);
+  const [showWelcomePromo, setShowWelcomePromo] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -38,6 +40,8 @@ export default function Navbar() {
   const isUserLoggedIn = !!userProfile;
   const isOperatorLoggedIn = !!operator;
   const isDark = theme === "dark";
+
+  const handleLoginSuccess = () => setShowWelcomePromo(true);
 
   return (
     <>
@@ -84,15 +88,15 @@ export default function Navbar() {
               {/* Not logged in */}
               {!isUserLoggedIn && !isOperatorLoggedIn && (
                 <>
-                  {/* Mobile: single login icon */}
+                  {/* Mobile: icon + "Login" text */}
                   <Button
                     variant="ghost"
-                    size="icon"
-                    className="md:hidden h-9 w-9 rounded-lg text-muted-foreground hover:text-foreground"
+                    size="sm"
+                    className="md:hidden flex items-center gap-1.5 h-9 px-2.5 rounded-lg text-muted-foreground hover:text-foreground"
                     onClick={() => setShowLoginModal(true)}
-                    aria-label="Log in"
                   >
-                    <LogIn className="h-4 w-4" />
+                    <LogIn className="h-4 w-4 shrink-0" />
+                    <span className="text-sm font-medium">Login</span>
                   </Button>
 
                   {/* Desktop: text buttons */}
@@ -123,6 +127,7 @@ export default function Navbar() {
       <UserLoginModal
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
+        onLoginSuccess={handleLoginSuccess}
         onSwitchToSignup={() => {
           setShowLoginModal(false);
           setShowSignupModal(true);
@@ -131,10 +136,16 @@ export default function Navbar() {
       <UserSignupModal
         isOpen={showSignupModal}
         onClose={() => setShowSignupModal(false)}
+        onLoginSuccess={handleLoginSuccess}
         onSwitchToLogin={() => {
           setShowSignupModal(false);
           setShowLoginModal(true);
         }}
+      />
+      <WelcomePromoModal
+        isOpen={showWelcomePromo}
+        onClose={() => setShowWelcomePromo(false)}
+        userName={userProfile?.fullName}
       />
     </>
   );

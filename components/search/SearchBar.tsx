@@ -6,6 +6,11 @@ import { Search, RefreshCw, Edit, X, ArrowRight } from 'lucide-react';
 import CitySelect from '@/components/city-select';
 import DatePicker from '@/components/date-picker';
 
+// Returns YYYY-MM-DD in local time — avoids UTC timezone day-shift
+function toLocalDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+}
+
 interface SearchBarProps {
   onSearch?: (searchData: { from: string; to: string; date: string }) => void;
   defaultFrom?: string;
@@ -25,7 +30,7 @@ export default function SearchBar({
   const [formData, setFormData] = useState({
     from: defaultFrom,
     to: defaultTo,
-    date: defaultDate || new Date().toISOString().split('T')[0],
+    date: defaultDate || toLocalDateStr(new Date()),
   });
   const [isLoading, setIsLoading] = useState(false);
   const [showMobileModal, setShowMobileModal] = useState(false);
@@ -33,7 +38,7 @@ export default function SearchBar({
   useEffect(() => {
     const fromParam = searchParams.get('from') || '';
     const toParam   = searchParams.get('to')   || '';
-    const dateParam = searchParams.get('date') || new Date().toISOString().split('T')[0];
+    const dateParam = searchParams.get('date') || toLocalDateStr(new Date());
     setFormData({ from: fromParam, to: toParam, date: dateParam });
   }, [searchParams]);
 

@@ -321,7 +321,10 @@ function AllRoutesModal({
 export default function Homepage() {
   const [from, setFrom] = useState("Kathmandu")
   const [to, setTo] = useState("Biratnagar")
-  const [date, setDate] = useState(() => new Date().toISOString().split("T")[0])
+  const [date, setDate] = useState(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+  })
   const [isSearching, setIsSearching] = useState(false)
   const [fromError, setFromError] = useState("")
   const [toError, setToError] = useState("")
