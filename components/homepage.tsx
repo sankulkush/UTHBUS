@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useUserAuth } from "@/contexts/user-auth-context"
+import { useOperatorAuth } from "@/contexts/operator-auth-context"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -332,6 +334,20 @@ export default function Homepage() {
   const [viewAllOpen, setViewAllOpen] = useState(false)
   const [imgErrors, setImgErrors] = useState<Set<string>>(new Set())
   const router = useRouter()
+  const { userProfile } = useUserAuth()
+  const { operator } = useOperatorAuth()
+
+  const isOperatorLoggedIn = !!operator && operator.isOperator === true && operator.isUser === false
+  const isUserLoggedIn = !!userProfile && userProfile.isUser === true && userProfile.isOperator === false
+
+  // Operators always belong in the counter portal — redirect on homepage.
+  useEffect(() => {
+    if (isOperatorLoggedIn) {
+      router.replace("/operator/counter")
+    }
+  }, [isOperatorLoggedIn, router])
+
+  if (isOperatorLoggedIn) return null
 
   const handleSearch = async () => {
     setFromError("")
@@ -686,15 +702,17 @@ export default function Homepage() {
               </ul>
             </div>
 
-            <div>
-              <h4 className="font-semibold mb-4 text-[11px] uppercase tracking-widest text-slate-600">
-                Operator Portal
-              </h4>
-              <ul className="space-y-2 text-slate-400 text-sm">
-                <li><Link href="/operator/login" className="hover:text-slate-100 transition-colors">Operator Login</Link></li>
-                <li><Link href="/operator/register" className="hover:text-slate-100 transition-colors">Register as Operator</Link></li>
-              </ul>
-            </div>
+            {!isUserLoggedIn && !isOperatorLoggedIn && (
+              <div>
+                <h4 className="font-semibold mb-4 text-[11px] uppercase tracking-widest text-slate-600">
+                  Operator Portal
+                </h4>
+                <ul className="space-y-2 text-slate-400 text-sm">
+                  <li><Link href="/operator/login" className="hover:text-slate-100 transition-colors">Operator Login</Link></li>
+                  <li><Link href="/operator/register" className="hover:text-slate-100 transition-colors">Register as Operator</Link></li>
+                </ul>
+              </div>
+            )}
 
             <div>
               <h4 className="font-semibold mb-4 text-[11px] uppercase tracking-widest text-slate-600">

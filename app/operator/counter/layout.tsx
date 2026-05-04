@@ -2,20 +2,31 @@
 "use client"
 
 import { useOperatorAuth } from "@/contexts/operator-auth-context"
+import { useUserAuth } from "@/contexts/user-auth-context"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 
 export default function CounterLayout({ children }: { children: React.ReactNode }) {
-  const { operator, loading } = useOperatorAuth()
+  const { operator, loading: operatorLoading } = useOperatorAuth()
+  const { userProfile, loading: userLoading } = useUserAuth()
   const router = useRouter()
+  const loading = operatorLoading || userLoading
+
+  const isUserLoggedIn = !!userProfile && userProfile.isUser === true && userProfile.isOperator === false
+  const isOperatorLoggedIn = !!operator && operator.isOperator === true && operator.isUser === false
 
   useEffect(() => {
     if (loading) return
+    // Regular users have no business in the counter portal — bounce to homepage.
+    if (isUserLoggedIn) {
+      router.replace("/")
+      return
+    }
     // Block anyone who is not a verified operator account.
-    if (!operator || operator.isOperator !== true || operator.isUser !== false) {
+    if (!isOperatorLoggedIn) {
       router.replace("/operator/login")
     }
-  }, [operator, loading, router])
+  }, [loading, isUserLoggedIn, isOperatorLoggedIn, router])
 
   if (loading) {
     return (
@@ -29,7 +40,7 @@ export default function CounterLayout({ children }: { children: React.ReactNode 
   }
 
   // Render nothing until role is confirmed — the useEffect handles redirect.
-  if (!operator || operator.isOperator !== true || operator.isUser !== false) {
+  if (!isOperatorLoggedIn) {
     return null
   }
 
