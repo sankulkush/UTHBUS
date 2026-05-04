@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import type { ActiveSection } from "../types/counter.types";
 import { useCounter } from "../context/counter-context";
-import { useAuth } from "@/contexts/auth-context";
+import { useOperatorAuth } from "@/contexts/operator-auth-context";
 import { useRouter } from "next/navigation";
 
 interface SidebarProps {
@@ -59,7 +59,7 @@ export function Sidebar({
   onMobileClose,
 }: SidebarProps) {
   const { operator, unreadCount } = useCounter();
-  const { logout } = useAuth();
+  const { logout } = useOperatorAuth();
   const router = useRouter();
 
   const handleLogout = async () => {

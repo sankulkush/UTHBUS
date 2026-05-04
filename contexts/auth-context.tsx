@@ -16,6 +16,8 @@ export interface OperatorProfile {
   address?: string
   description?: string
   contactNumber?: string
+  isOperator?: boolean
+  isUser?: boolean
   createdAt?: any
   updatedAt?: any
 }
@@ -60,7 +62,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
-  // Load operator profile from Firestore
+  // Load operator profile from Firestore — never auto-creates.
   const loadOperatorProfile = async (user: User) => {
     try {
       const operatorDoc = await getDoc(doc(db, "operators", user.uid))
@@ -68,20 +70,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         const operatorData = operatorDoc.data() as OperatorProfile
         setOperator({ ...operatorData, uid: user.uid })
       } else {
-        // Create basic profile if it doesn't exist
-        const basicProfile: OperatorProfile = {
-          uid: user.uid,
-          email: user.email!,
-          name: user.displayName || "",
-          phoneNumber: "",
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        }
-        await setDoc(doc(db, "operators", user.uid), basicProfile)
-        setOperator(basicProfile)
+        setOperator(null)
       }
     } catch (error) {
       console.error("Error loading operator profile:", error)
+      setOperator(null)
     }
   }
 
@@ -156,7 +149,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
       const user = userCredential.user
 
-      // Create operator profile in Firestore
+      // Create operator profile in Firestore with role flags
       const operatorProfile: OperatorProfile = {
         uid: user.uid,
         email: user.email!,
@@ -165,6 +158,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         companyName: profileData.companyName,
         licenseNumber: '',
         address: profileData.address || '',
+        isOperator: true,
+        isUser: false,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       }

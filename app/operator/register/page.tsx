@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
-import { useAuth } from "@/contexts/auth-context"
+import { useOperatorAuth } from "@/contexts/operator-auth-context"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -13,7 +13,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 export default function OperatorRegister() {
-  const { register } = useAuth()
+  const { register } = useOperatorAuth()
   const [formData, setFormData] = useState({
     email: "",
     password: "",

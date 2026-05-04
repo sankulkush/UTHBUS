@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import { Save, User, Building2, Phone, Mail, MapPin, FileText, CheckCircle2 } from "lucide-react";
-import { useAuth } from "@/contexts/auth-context";
+import { useOperatorAuth } from "@/contexts/operator-auth-context";
 import { doc, updateDoc } from "firebase/firestore";
 import { firestore as db } from "@/firebaseConfig";
 
 export function SettingsPage() {
-  const { operator, user } = useAuth();
+  const { operator } = useOperatorAuth();
   const [form, setForm] = useState({
-    fullName: operator?.name || "",
+    name: operator?.name || "",
     email: operator?.email || "",
     phoneNumber: operator?.phoneNumber || "",
     companyName: operator?.companyName || "",
@@ -25,11 +25,10 @@ export function SettingsPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!operator) return;
     setSaving(true);
     try {
-      // Update in operators collection (as used by auth-context)
-      await updateDoc(doc(db, "operators", user.uid), {
+      await updateDoc(doc(db, "operators", operator.uid), {
         ...form,
         updatedAt: new Date().toISOString(),
       });
@@ -43,7 +42,7 @@ export function SettingsPage() {
   };
 
   const fields = [
-    { key: "fullName", label: "Full Name", icon: User, type: "text" },
+    { key: "name", label: "Full Name", icon: User, type: "text" },
     { key: "email", label: "Email Address", icon: Mail, type: "email", disabled: true },
     { key: "phoneNumber", label: "Personal Phone", icon: Phone, type: "tel" },
     { key: "companyName", label: "Company Name", icon: Building2, type: "text" },
