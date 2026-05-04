@@ -1,19 +1,12 @@
 // app/operator/layout.tsx
-"use client"
-import { AuthProvider } from "@/contexts/auth-context"
+// No extra provider needed here — OperatorAuthProvider is already in app/layout.tsx.
 import { Toaster } from "@/components/ui/toaster"
 
-export default function OperatorLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function OperatorLayout({ children }: { children: React.ReactNode }) {
   return (
-    <AuthProvider>
-      <div className="min-h-screen bg-gray-50">
-        {children}
-      </div>
+    <>
+      {children}
       <Toaster />
-    </AuthProvider>
+    </>
   )
 }

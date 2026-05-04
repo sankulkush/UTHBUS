@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation"
 export interface OperatorProfile {
   uid: string
   email: string
-  fullName: string
+  name: string
   phoneNumber: string
   companyName?: string
   licenseNumber?: string
@@ -32,7 +32,7 @@ interface OperatorAuthContextType {
     contactNumber?: string
     address?: string
     description?: string
-    fullName?: string
+    name?: string
     phoneNumber?: string
   }) => Promise<void>
   logout: () => Promise<void>
@@ -61,66 +61,52 @@ export const OperatorAuthProvider = ({ children }: OperatorAuthProviderProps) =>
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
-  // Load operator profile from Firestore
-  const loadOperatorProfile = async (user: User) => {
-  try {
-    const userDoc = await getDoc(doc(db, "users", user.uid))
-    if (userDoc.exists()) {
-      const userData = userDoc.data() as OperatorProfile
-      if (userData.isOperator === true && userData.isUser === false) {
-        setOperator({ ...userData, uid: user.uid })
-      } else {
-        setOperator(null)
+  // Load operator profile from the operators collection.
+  // Only succeeds if the document exists AND has isOperator: true, isUser: false.
+  const loadOperatorProfile = async (firebaseUser: User) => {
+    try {
+      const snap = await getDoc(doc(db, "operators", firebaseUser.uid))
+      if (snap.exists()) {
+        const data = snap.data() as OperatorProfile
+        if (data.isOperator === true && data.isUser === false) {
+          setOperator({ ...data, uid: firebaseUser.uid })
+          return
+        }
       }
-    } else {
+      setOperator(null)
+    } catch {
       setOperator(null)
     }
-  } catch (error) {
-    setOperator(null)
   }
-}
 
-  // Get and set Firebase ID token
-  const setUserToken = async (user: User) => {
+  const setUserToken = async (firebaseUser: User) => {
     try {
-      const idToken = await user.getIdToken()
+      const idToken = await firebaseUser.getIdToken()
       setToken(idToken)
-      
-      // Store token in httpOnly cookie via API route (if exists)
       try {
-        await fetch('/api/auth/set-token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: idToken })
+        await fetch("/api/auth/set-token", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: idToken }),
         })
-      } catch (apiError) {
-        // API route might not exist, continue without it
-        console.log("Token API not available")
-      }
+      } catch { /* API route optional */ }
     } catch (error) {
       console.error("Error setting token:", error)
     }
   }
 
-  // Monitor auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
-        if (user) {
-          setUser(user)
-          await setUserToken(user)
-          await loadOperatorProfile(user)
+        if (firebaseUser) {
+          setUser(firebaseUser)
+          await setUserToken(firebaseUser)
+          await loadOperatorProfile(firebaseUser)
         } else {
           setUser(null)
           setOperator(null)
           setToken(null)
-          
-          // Clear token cookie (if API exists)
-          try {
-            await fetch('/api/auth/clear-token', { method: 'POST' })
-          } catch (apiError) {
-            // API route might not exist, continue without it
-          }
+          try { await fetch("/api/auth/clear-token", { method: "POST" }) } catch { /* optional */ }
         }
       } catch (error) {
         console.error("Auth state change error:", error)
@@ -128,162 +114,114 @@ export const OperatorAuthProvider = ({ children }: OperatorAuthProviderProps) =>
         setLoading(false)
       }
     })
-
     return () => unsubscribe()
   }, [])
 
-  // Login function
+  // Login: authenticate, then verify the account is a real operator.
   const login = async (email: string, password: string) => {
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password)
-      const user = userCredential.user
-      
-      // Check if this is an operator account
-      const userDoc = await getDoc(doc(db, "users", user.uid))
-      if (userDoc.exists()) {
-        const userData = userDoc.data()
-        if (!userData.isOperator || userData.isUser) {
-          await signOut(auth)
-          throw new Error("This account is not registered as an operator. Please use the passenger login.")
-        }
-      } else {
-        await signOut(auth)
-        throw new Error("Account profile not found.")
-      }
-      
-      await setUserToken(user)
-      await loadOperatorProfile(user)
-      
-      router.push('/operator/counter')
-    } catch (error: any) {
-      throw new Error(error.message || "Login failed")
-    }
-  }
+    const userCredential = await signInWithEmailAndPassword(auth, email, password)
+    const firebaseUser = userCredential.user
 
-  // Register function (for operators)
-  const register = async (email: string, password: string, profileData: {
-    companyName: string
-    contactNumber?: string
-    address?: string
-    description?: string
-    fullName?: string
-    phoneNumber?: string
-  }) => {
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-      const user = userCredential.user
-
-      // Create operator profile in Firestore
-      const operatorProfile: OperatorProfile = {
-        uid: user.uid,
-        email: user.email!,
-        fullName: profileData.fullName || profileData.companyName,
-        phoneNumber: profileData.phoneNumber || profileData.contactNumber || '',
-        companyName: profileData.companyName,
-        licenseNumber: '',
-        address: profileData.address || '',
-        description: profileData.description || '',
-        contactNumber: profileData.contactNumber || '',
-        isOperator: true,
-        isUser: false,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      }
-
-      await setDoc(doc(db, "users", user.uid), operatorProfile)
-      
-      await setUserToken(user)
-      setOperator(operatorProfile)
-      
-      router.push('/operator/counter')
-    } catch (error: any) {
-      throw new Error(error.message || "Registration failed")
-    }
-  }
-
-  // Logout function
-  const logout = async () => {
-    try {
+    const snap = await getDoc(doc(db, "operators", firebaseUser.uid))
+    if (!snap.exists()) {
       await signOut(auth)
-      
-      // Clear token cookie (if API exists)
-      try {
-        await fetch('/api/auth/clear-token', { method: 'POST' })
-      } catch (apiError) {
-        // API route might not exist, continue without it
-      }
-      
-      setUser(null)
-      setOperator(null)
-      setToken(null)
-      
-      router.push('/operator/login')
-    } catch (error: any) {
-      throw new Error(error.message || "Logout failed")
+      throw new Error("No operator account found for this email. Please register as an operator first.")
     }
+    const data = snap.data() as OperatorProfile
+    if (data.isOperator !== true || data.isUser !== false) {
+      await signOut(auth)
+      throw new Error("This account is not authorised as an operator.")
+    }
+
+    await setUserToken(firebaseUser)
+    setOperator({ ...data, uid: firebaseUser.uid })
+    router.push("/operator/counter")
   }
 
-  // Update profile function
+  // Register: create Firebase Auth user + operators collection document with role flags.
+  const register = async (
+    email: string,
+    password: string,
+    profileData: {
+      companyName: string
+      contactNumber?: string
+      address?: string
+      description?: string
+      name?: string
+      phoneNumber?: string
+    }
+  ) => {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password)
+    const firebaseUser = userCredential.user
+
+    const operatorProfile: OperatorProfile = {
+      uid: firebaseUser.uid,
+      email: firebaseUser.email!,
+      name: profileData.name || profileData.companyName,
+      phoneNumber: profileData.phoneNumber || profileData.contactNumber || "",
+      companyName: profileData.companyName,
+      licenseNumber: "",
+      address: profileData.address || "",
+      description: profileData.description || "",
+      contactNumber: profileData.contactNumber || "",
+      isOperator: true,
+      isUser: false,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    }
+
+    // Write to operators collection — this is the single source of truth for operator accounts.
+    await setDoc(doc(db, "operators", firebaseUser.uid), operatorProfile)
+
+    await setUserToken(firebaseUser)
+    setOperator(operatorProfile)
+    router.push("/operator/counter")
+  }
+
+  const logout = async () => {
+    await signOut(auth)
+    try { await fetch("/api/auth/clear-token", { method: "POST" }) } catch { /* optional */ }
+    setUser(null)
+    setOperator(null)
+    setToken(null)
+    router.push("/operator/login")
+  }
+
   const updateProfile = async (profileData: Partial<OperatorProfile>) => {
-    if (!user || !operator) {
-      throw new Error("No authenticated user")
+    if (!user || !operator) throw new Error("No authenticated operator")
+    const updatedData = {
+      ...profileData,
+      updatedAt: serverTimestamp(),
+      // Role flags are immutable — never let a profile update change them.
+      isOperator: true,
+      isUser: false,
     }
-
-    try {
-      const updatedData = {
-        ...profileData,
-        updatedAt: serverTimestamp(),
-        // Ensure role flags remain correct
-        isOperator: true,
-        isUser: false
-      }
-
-      await updateDoc(doc(db, "users", user.uid), updatedData)
-      
-      // Update local state
-      setOperator(prev => prev ? { ...prev, ...updatedData } : null)
-    } catch (error: any) {
-      throw new Error(error.message || "Profile update failed")
-    }
+    await updateDoc(doc(db, "operators", user.uid), updatedData)
+    setOperator((prev) => (prev ? { ...prev, ...updatedData } : null))
   }
 
-  // Refresh token function
   const refreshToken = async () => {
     if (!user) return
-
     try {
-      const idToken = await user.getIdToken(true) // Force refresh
+      const idToken = await user.getIdToken(true)
       setToken(idToken)
-      
-      // Update cookie (if API exists)
       try {
-        await fetch('/api/auth/set-token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: idToken })
+        await fetch("/api/auth/set-token", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: idToken }),
         })
-      } catch (apiError) {
-        // API route might not exist, continue without it
-      }
+      } catch { /* optional */ }
     } catch (error) {
       console.error("Error refreshing token:", error)
     }
   }
 
-  const value: OperatorAuthContextType = {
-    user,
-    operator,
-    token,
-    loading,
-    login,
-    register,
-    logout,
-    updateProfile,
-    refreshToken
-  }
-
   return (
-    <OperatorAuthContext.Provider value={value}>
+    <OperatorAuthContext.Provider value={{
+      user, operator, token, loading,
+      login, register, logout, updateProfile, refreshToken,
+    }}>
       {children}
     </OperatorAuthContext.Provider>
   )

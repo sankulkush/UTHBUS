@@ -6,10 +6,10 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { UserIcon, SaveIcon, AlertCircleIcon, CheckCircleIcon } from "lucide-react"
-import { useAuth } from "@/contexts/auth-context"
+import { useOperatorAuth } from "@/contexts/operator-auth-context"
 
 export default function OperatorProfilePage() {
-  const { operator, updateProfile } = useAuth()
+  const { operator, updateProfile } = useOperatorAuth()
   const [formData, setFormData] = useState({
     name: "",
     phoneNumber: "",

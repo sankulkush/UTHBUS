@@ -8,8 +8,8 @@ import React, {
   useRef,
   useCallback,
 } from "react";
-import { useAuth } from "@/contexts/auth-context";
-import type { OperatorProfile } from "@/contexts/auth-context";
+import { useOperatorAuth } from "@/contexts/operator-auth-context";
+import type { OperatorProfile } from "@/contexts/operator-auth-context";
 import type { IBus, IBooking, IDashboardStats, INotification } from "../types/counter.types";
 import { BusService } from "../services/bus.service";
 import { BookingService } from "../services/booking.service";
@@ -66,7 +66,7 @@ interface CounterContextType {
 const CounterContext = createContext<CounterContextType | undefined>(undefined);
 
 export function CounterProvider({ children }: { children: React.ReactNode }) {
-  const { operator: authOperator, loading: authLoading } = useAuth();
+  const { operator: authOperator, loading: authLoading } = useOperatorAuth();
   const [buses, setBuses] = useState<IBus[]>([]);
   const [bookings, setBookings] = useState<IBooking[]>([]);
   const [activeBookings, setActiveBookings] = useState<IActiveBooking[]>([]);
