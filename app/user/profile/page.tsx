@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useUserAuth } from "@/contexts/user-auth-context"
+import { ActiveBookingsService } from "@/components/operator/counter/services/active-booking.service"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,6 +19,8 @@ import {
   X
 } from "lucide-react"
 
+const bookingService = new ActiveBookingsService()
+
 export default function ProfilePage() {
   const { user, userProfile, updateProfile } = useUserAuth()
   const [isEditing, setIsEditing] = useState(false)
@@ -27,6 +30,32 @@ export default function ProfilePage() {
     dateOfBirth: userProfile?.dateOfBirth || ""
   })
   const [isSaving, setIsSaving] = useState(false)
+  const [stats, setStats] = useState<{ totalBookings: number; amountSpent: number }>({
+    totalBookings: 0,
+    amountSpent: 0,
+  })
+
+  // Pull live booking stats from Firestore. Uses the same booking semantics
+  // the rest of the app relies on: cancelled bookings don't count toward
+  // "total bookings" or "amount spent".
+  useEffect(() => {
+    if (!userProfile?.uid) return
+    let cancelled = false
+    bookingService
+      .getUserBookings(userProfile.uid)
+      .then((all) => {
+        if (cancelled) return
+        const valid = all.filter((b) => b.status !== "cancelled")
+        setStats({
+          totalBookings: valid.length,
+          amountSpent: valid.reduce((sum, b) => sum + (b.amount || 0), 0),
+        })
+      })
+      .catch((e) => {
+        console.error("Failed to load booking stats:", e)
+      })
+    return () => { cancelled = true }
+  }, [userProfile?.uid])
 
   if (!userProfile) {
     return (
@@ -207,13 +236,13 @@ export default function ProfilePage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <Card>
                 <CardContent className="p-4 text-center">
-                  <h5 className="text-2xl font-bold text-primary">0</h5>
+                  <h5 className="text-2xl font-bold text-primary">{stats.totalBookings}</h5>
                   <p className="text-sm text-muted-foreground">Total Bookings</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4 text-center">
-                  <h5 className="text-2xl font-bold text-foreground">Rs. 0</h5>
+                  <h5 className="text-2xl font-bold text-foreground">Rs. {stats.amountSpent.toLocaleString()}</h5>
                   <p className="text-sm text-muted-foreground">Amount Spent</p>
                 </CardContent>
               </Card>

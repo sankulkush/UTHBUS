@@ -121,19 +121,21 @@ export function SeatMapView({ bus, booked }: { bus: IBus; booked: string[] }) {
 }
 
 // ── Interactive picker (book-ticket.page.tsx) ─────────────────────────────────
+// Multi-seat selection — click a seat to add, click again to remove. Same UX
+// as the user portal's BusCard seat picker.
 
 export function SeatMapPicker({
   bus,
   booked,
   selected,
-  onSelect,
+  onToggle,
 }: {
   bus: IBus;
   booked: string[];
-  selected: string;
-  onSelect: (seat: string) => void;
+  selected: string[];
+  onToggle: (seat: string) => void;
 }) {
-  const layout = buildBusLayout(bus.type, booked, selected ? [selected] : []);
+  const layout = buildBusLayout(bus.type, booked, selected);
 
   return (
     <SeatMapShell
@@ -164,7 +166,7 @@ export function SeatMapPicker({
                 key={cell.label}
                 type="button"
                 disabled={cell.booked}
-                onClick={() => onSelect(cell.selected ? "" : cell.label)}
+                onClick={() => onToggle(cell.label)}
                 title={cell.booked ? `${cell.label} — Booked` : cell.label}
                 className={`w-[34px] h-[34px] rounded-lg text-[10px] font-semibold flex items-center justify-center border transition-all duration-100 select-none shadow-sm ${
                   cell.selected

@@ -18,10 +18,7 @@ import {
   query,
   where,
   getDocs,
-  orderBy,
   onSnapshot,
-  limit,
-  Timestamp,
 } from "firebase/firestore";
 import { firestore } from "@/lib/firebase";
 
@@ -93,16 +90,21 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
   const refreshActiveBookings = async () => {
     if (!authOperator) return;
     try {
+      // No server-side orderBy here — sort client-side to avoid the
+      // composite (operatorId + bookingTime) Firestore index requirement
+      // that can fail silently in production.
       const q = query(
         collection(firestore, "activeBookings"),
-        where("operatorId", "==", authOperator.uid),
-        orderBy("bookingTime", "desc")
+        where("operatorId", "==", authOperator.uid)
       );
       const snapshot = await getDocs(q);
-      const data: IActiveBooking[] = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      } as IActiveBooking));
+      const data: IActiveBooking[] = snapshot.docs
+        .map((doc) => ({ id: doc.id, ...doc.data() } as IActiveBooking))
+        .sort((a: any, b: any) => {
+          const ta = a.bookingTime?.toMillis?.() ?? 0;
+          const tb = b.bookingTime?.toMillis?.() ?? 0;
+          return tb - ta;
+        });
       setActiveBookings(data);
     } catch (error) {
       console.error("Error fetching active bookings:", error);
@@ -175,70 +177,93 @@ export function CounterProvider({ children }: { children: React.ReactNode }) {
     return busService.searchAllBuses(from, to, date);
   };
 
-  // Real-time notification listener
+  // Real-time listener — keeps both notifications AND activeBookings live so
+  // the dashboard's today's-bookings/revenue stats stay accurate without a
+  // manual refresh.
+  //
+  // Intentionally avoids `orderBy + limit` on the server: that requires a
+  // composite Firestore index (operatorId + bookingTime) which can fail
+  // silently in production and break the listener. Sorting/trimming is done
+  // client-side instead.
   useEffect(() => {
     if (!authOperator || authLoading) return;
     initialLoadDone.current = false;
 
     const q = query(
       collection(firestore, "activeBookings"),
-      where("operatorId", "==", authOperator.uid),
-      orderBy("bookingTime", "desc"),
-      limit(40)
+      where("operatorId", "==", authOperator.uid)
     );
 
-    const unsubscribe = onSnapshot(q, (snap) => {
-      if (!initialLoadDone.current) {
-        // First load: show as already-read history
-        const initial: INotification[] = snap.docs.map((doc) => {
-          const d = doc.data() as any;
-          const seats = d.seatNumbers?.join(", ") || d.seatNumber || "—";
-          return {
-            id: doc.id,
-            type: "new_booking" as const,
-            title: d.userId ? "Online Booking" : "Counter Booking",
-            message: `${d.passengerName} · ${seats} · ${d.busName} · ${d.from} → ${d.to}`,
-            bookingId: doc.id,
-            read: true,
-            createdAt: d.bookingTime,
-            passengerName: d.passengerName,
-            busName: d.busName,
-            from: d.from,
-            to: d.to,
-            amount: d.amount,
-            isOnline: !!d.userId,
-          };
-        });
-        setNotifications(initial);
-        initialLoadDone.current = true;
-        return;
-      }
+    const sortByTimeDesc = (a: any, b: any) => {
+      const ta = a.bookingTime?.toMillis?.() ?? 0;
+      const tb = b.bookingTime?.toMillis?.() ?? 0;
+      return tb - ta;
+    };
 
-      // Subsequent real-time changes
-      snap.docChanges().forEach((change) => {
-        if (change.type === "added") {
-          const d = change.doc.data() as any;
-          const seats = d.seatNumbers?.join(", ") || d.seatNumber || "—";
-          const isOnline = !!d.userId;
-          const newNotif: INotification = {
-            id: change.doc.id,
-            type: "new_booking",
-            title: isOnline ? "New Online Booking" : "New Counter Booking",
-            message: `${d.passengerName} booked ${seats} on ${d.busName} (${d.from} → ${d.to})`,
-            bookingId: change.doc.id,
-            read: false,
-            createdAt: d.bookingTime,
-            passengerName: d.passengerName,
-            busName: d.busName,
-            from: d.from,
-            to: d.to,
-            amount: d.amount,
-            isOnline,
-          };
-          setNotifications((prev) => [newNotif, ...prev]);
+    const unsubscribe = onSnapshot(
+      q,
+      (snap) => {
+        // Always sync activeBookings from the snapshot so derived stats are live
+        const allBookings: IActiveBooking[] = snap.docs
+          .map((doc) => ({ id: doc.id, ...(doc.data() as any) } as IActiveBooking))
+          .sort(sortByTimeDesc);
+        setActiveBookings(allBookings);
+
+        if (!initialLoadDone.current) {
+          // First load: show recent N as already-read history
+          const initial: INotification[] = allBookings.slice(0, 40).map((b: any) => {
+            const seats = b.seatNumbers?.join(", ") || b.seatNumber || "—";
+            return {
+              id: b.id,
+              type: "new_booking" as const,
+              title: b.userId ? "Online Booking" : "Counter Booking",
+              message: `${b.passengerName} · ${seats} · ${b.busName} · ${b.from} → ${b.to}`,
+              bookingId: b.id,
+              read: true,
+              createdAt: b.bookingTime,
+              passengerName: b.passengerName,
+              busName: b.busName,
+              from: b.from,
+              to: b.to,
+              amount: b.amount,
+              isOnline: !!b.userId,
+            };
+          });
+          setNotifications(initial);
+          initialLoadDone.current = true;
+          return;
         }
-      });
-    });
+
+        // Subsequent real-time changes — surface a notification for new bookings
+        snap.docChanges().forEach((change) => {
+          if (change.type === "added") {
+            const d = change.doc.data() as any;
+            const seats = d.seatNumbers?.join(", ") || d.seatNumber || "—";
+            const isOnline = !!d.userId;
+            const newNotif: INotification = {
+              id: change.doc.id,
+              type: "new_booking",
+              title: isOnline ? "New Online Booking" : "New Counter Booking",
+              message: `${d.passengerName} booked ${seats} on ${d.busName} (${d.from} → ${d.to})`,
+              bookingId: change.doc.id,
+              read: false,
+              createdAt: d.bookingTime,
+              passengerName: d.passengerName,
+              busName: d.busName,
+              from: d.from,
+              to: d.to,
+              amount: d.amount,
+              isOnline,
+            };
+            setNotifications((prev) => [newNotif, ...prev]);
+          }
+        });
+      },
+      (err) => {
+        // Surface listener errors so we don't fail silently
+        console.error("activeBookings listener error:", err);
+      }
+    );
 
     return () => unsubscribe();
   }, [authOperator, authLoading]);

@@ -1,24 +1,21 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import {
-  Plus, Pencil, Trash2, ToggleLeft, ToggleRight, X,
+  Plus, Pencil, Trash2, X,
   Bus, CheckCircle2, AlertCircle, Wrench, Calendar,
-  ChevronDown, ChevronUp,
+  MapPin, Clock, Tag, Settings2, Hash,
 } from "lucide-react";
 import { useCounter } from "../context/counter-context";
 import { BusService } from "../services/bus.service";
 import type { IBus, BusType, BusStatus } from "../types/counter.types";
+import CitySelect from "@/components/city-select";
 
 const busService = new BusService();
 
-const CITIES = [
-  "Kathmandu", "Pokhara", "Chitwan", "Butwal", "Nepalgunj",
-  "Dharan", "Biratnagar", "Janakpur", "Birgunj", "Lumbini",
-  "Damak", "Itahari", "Kakarvitta",
-];
-
 const AMENITIES = ["Wi-Fi", "Charging Point", "Sofa Seat", "TV", "Water Bottle", "CCTV", "Blanket", "Snacks"];
+
+const BUS_TYPES: BusType[] = ["Micro", "Hiace", "Deluxe", "AC Deluxe"];
 
 const DEFAULT_BUS: Omit<IBus, "id"> = {
   operatorId: "",
@@ -62,12 +59,100 @@ interface BusFormProps {
   loading: boolean;
 }
 
+// Section header for the multi-section form
+function SectionHeader({ icon: Icon, title, hint }: { icon: React.ElementType; title: string; hint?: string }) {
+  return (
+    <div className="flex items-center gap-2 mb-3">
+      <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+        <Icon className="w-3.5 h-3.5" />
+      </div>
+      <div>
+        <h3 className="text-sm font-semibold text-foreground leading-none">{title}</h3>
+        {hint && <p className="text-[11px] text-muted-foreground mt-0.5">{hint}</p>}
+      </div>
+    </div>
+  );
+}
+
+// Chip-input that parses values on Enter / comma — preserves the in-progress
+// raw input so trailing punctuation doesn't get eaten while the user types.
+function ChipInput({
+  values,
+  onChange,
+  placeholder,
+}: {
+  values: string[];
+  onChange: (next: string[]) => void;
+  placeholder?: string;
+}) {
+  const [draft, setDraft] = useState("");
+
+  const commit = (raw: string) => {
+    const tokens = raw.split(",").map((s) => s.trim()).filter(Boolean);
+    if (!tokens.length) return;
+    const next = [...values];
+    for (const t of tokens) if (!next.includes(t)) next.push(t);
+    onChange(next);
+    setDraft("");
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      if (draft.trim()) commit(draft);
+    } else if (e.key === "Backspace" && !draft && values.length) {
+      onChange(values.slice(0, -1));
+    }
+  };
+
+  const handleBlur = () => {
+    if (draft.trim()) commit(draft);
+  };
+
+  const remove = (v: string) => onChange(values.filter((x) => x !== v));
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 px-2.5 py-2 bg-background border border-border rounded-lg focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary/60 transition-all min-h-[42px]">
+      {values.map((v) => (
+        <span
+          key={v}
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary text-xs font-medium"
+        >
+          {v}
+          <button
+            type="button"
+            onClick={() => remove(v)}
+            className="hover:bg-primary/20 rounded p-0.5 -mr-0.5"
+            tabIndex={-1}
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </span>
+      ))}
+      <input
+        value={draft}
+        onChange={(e) => {
+          const v = e.target.value;
+          // If the user pasted/typed a comma, commit immediately
+          if (v.includes(",")) commit(v);
+          else setDraft(v);
+        }}
+        onKeyDown={handleKeyDown}
+        onBlur={handleBlur}
+        placeholder={values.length ? "" : placeholder}
+        className="flex-1 min-w-[100px] outline-none bg-transparent text-sm text-foreground placeholder:text-muted-foreground/70"
+      />
+    </div>
+  );
+}
+
 function BusForm({ initial, operatorId, onSave, onCancel, loading }: BusFormProps) {
   const [form, setForm] = useState<Omit<IBus, "id"> & { id?: string }>({
     ...DEFAULT_BUS,
     operatorId,
     ...initial,
   });
+  const [error, setError] = useState("");
 
   const set = (k: keyof IBus, v: any) => setForm((p) => ({ ...p, [k]: v }));
 
@@ -75,204 +160,246 @@ function BusForm({ initial, operatorId, onSave, onCancel, loading }: BusFormProp
     set("amenities", form.amenities.includes(a) ? form.amenities.filter((x) => x !== a) : [...form.amenities, a]);
   };
 
-  const handleBoardingInput = (val: string) => {
-    set("boardingPoints", val.split(",").map((s) => s.trim()).filter(Boolean));
-  };
-
-  const handleDroppingInput = (val: string) => {
-    set("droppingPoints", val.split(",").map((s) => s.trim()).filter(Boolean));
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+    if (!form.startPoint) return setError("Please choose an origin city.");
+    if (!form.endPoint) return setError("Please choose a destination city.");
+    if (form.startPoint === form.endPoint) return setError("Origin and destination must be different.");
     onSave(form);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/50 overflow-y-auto">
-      <div className="bg-card border border-border rounded-2xl w-full max-w-xl my-4 shadow-2xl">
-        <div className="flex items-center justify-between p-5 border-b border-border">
-          <h2 className="font-semibold text-foreground">{form.id ? "Edit Bus" : "Add New Bus"}</h2>
-          <button onClick={onCancel} className="w-7 h-7 rounded-md hover:bg-muted flex items-center justify-center text-muted-foreground">
+    <div className="fixed inset-0 z-50 flex items-start justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+      <div className="bg-card border border-border rounded-2xl w-full max-w-2xl my-2 sm:my-6 shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-border">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+              <Bus className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="font-semibold text-foreground text-base leading-none">
+                {form.id ? "Edit Bus" : "Add New Bus"}
+              </h2>
+              <p className="text-xs text-muted-foreground mt-1">
+                {form.id ? "Update fleet details" : "Register a new bus into your fleet"}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onCancel}
+            className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-5">
-          {/* Basic info */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2">
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Bus Name *</label>
-              <input
-                required
-                value={form.name}
-                onChange={(e) => set("name", e.target.value)}
-                placeholder="e.g. Pokhara Express"
-                className="w-full px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 text-foreground"
-              />
+        <form onSubmit={handleSubmit} className="px-5 sm:px-6 py-5 space-y-6">
+          {/* ── Identity ── */}
+          <section>
+            <SectionHeader icon={Tag} title="Identity" hint="Name & classification" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="sm:col-span-2">
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Bus Name *</label>
+                <input
+                  required
+                  value={form.name}
+                  onChange={(e) => set("name", e.target.value)}
+                  placeholder="e.g. Pokhara Express"
+                  className="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/60 text-foreground transition-all"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Type *</label>
+                <select
+                  value={form.type}
+                  onChange={(e) => set("type", e.target.value as BusType)}
+                  className="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/60 text-foreground transition-all"
+                >
+                  {BUS_TYPES.map((t) => <option key={t}>{t}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Model</label>
+                <input
+                  value={form.model}
+                  onChange={(e) => set("model", e.target.value)}
+                  placeholder="e.g. Coaster"
+                  className="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/60 text-foreground transition-all"
+                />
+              </div>
             </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Type *</label>
-              <select
-                value={form.type}
-                onChange={(e) => set("type", e.target.value as BusType)}
-                className="w-full px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 text-foreground"
-              >
-                {["Micro", "Deluxe", "AC Deluxe"].map((t) => <option key={t}>{t}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Seat Capacity *</label>
-              <input
-                type="number" min="1"
-                value={form.seatCapacity}
-                onChange={(e) => set("seatCapacity", Number(e.target.value))}
-                className="w-full px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 text-foreground"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Model</label>
-              <input
-                value={form.model}
-                onChange={(e) => set("model", e.target.value)}
-                placeholder="e.g. Coaster"
-                className="w-full px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 text-foreground"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Status *</label>
-              <select
-                value={form.status}
-                onChange={(e) => set("status", e.target.value as BusStatus)}
-                className="w-full px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 text-foreground"
-              >
-                {["Active", "Maintenance", "Inactive"].map((s) => <option key={s}>{s}</option>)}
-              </select>
-            </div>
-          </div>
+          </section>
 
-          {/* AC toggle */}
-          <div className="flex items-center gap-3">
+          {/* ── Configuration ── */}
+          <section>
+            <SectionHeader icon={Settings2} title="Configuration" hint="Capacity, status, AC" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block flex items-center gap-1">
+                  <Hash className="w-3 h-3" /> Seat Capacity *
+                </label>
+                <input
+                  type="number" min="1" required
+                  value={form.seatCapacity}
+                  onChange={(e) => set("seatCapacity", Number(e.target.value))}
+                  className="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/60 text-foreground transition-all"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Status *</label>
+                <select
+                  value={form.status}
+                  onChange={(e) => set("status", e.target.value as BusStatus)}
+                  className="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/60 text-foreground transition-all"
+                >
+                  {["Active", "Maintenance", "Inactive"].map((s) => <option key={s}>{s}</option>)}
+                </select>
+              </div>
+            </div>
+            <label className="flex items-center gap-3 mt-3 px-3 py-2.5 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted transition-colors">
+              <button
+                type="button"
+                onClick={() => set("isAC", !form.isAC)}
+                className={`w-10 h-6 rounded-full transition-colors shrink-0 ${form.isAC ? "bg-primary" : "bg-muted-foreground/30"}`}
+              >
+                <div className={`w-4 h-4 bg-white rounded-full shadow mx-1 transition-transform ${form.isAC ? "translate-x-4" : "translate-x-0"}`} />
+              </button>
+              <span className="text-sm text-foreground flex-1">Air-Conditioned (AC)</span>
+              {form.isAC && <span className="text-[10px] font-bold text-primary uppercase tracking-wider">Enabled</span>}
+            </label>
+          </section>
+
+          {/* ── Route ── */}
+          <section>
+            <SectionHeader icon={MapPin} title="Route" hint="Origin and destination cities" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">From (Origin) *</label>
+                <CitySelect
+                  value={form.startPoint}
+                  onChange={(v) => set("startPoint", v)}
+                  placeholder="Search origin city"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">To (Destination) *</label>
+                <CitySelect
+                  value={form.endPoint}
+                  onChange={(v) => set("endPoint", v)}
+                  placeholder="Search destination city"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* ── Schedule & Pricing ── */}
+          <section>
+            <SectionHeader icon={Clock} title="Schedule & Pricing" hint="Departure, arrival, fare" />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Departure *</label>
+                <input
+                  type="time" required
+                  value={form.departureTime}
+                  onChange={(e) => set("departureTime", e.target.value)}
+                  className="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/60 text-foreground transition-all"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Arrival *</label>
+                <input
+                  type="time" required
+                  value={form.arrivalTime}
+                  onChange={(e) => set("arrivalTime", e.target.value)}
+                  className="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/60 text-foreground transition-all"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Price (NPR) *</label>
+                <input
+                  type="number" min="1" required
+                  value={form.price}
+                  onChange={(e) => set("price", Number(e.target.value))}
+                  className="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/60 text-foreground transition-all"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* ── Boarding/Dropping points ── */}
+          <section>
+            <SectionHeader
+              icon={MapPin}
+              title="Stops"
+              hint="Press Enter or comma to add each stop"
+            />
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Boarding Points</label>
+                <ChipInput
+                  values={form.boardingPoints}
+                  onChange={(v) => set("boardingPoints", v)}
+                  placeholder="e.g. New Bus Park, Kalanki, Balkhu"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Dropping Points</label>
+                <ChipInput
+                  values={form.droppingPoints}
+                  onChange={(v) => set("droppingPoints", v)}
+                  placeholder="e.g. Pokhara Bus Park, Lakeside, Prithvi Chowk"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* ── Amenities ── */}
+          <section>
+            <SectionHeader icon={CheckCircle2} title="Amenities" hint="Select what the bus offers" />
+            <div className="flex flex-wrap gap-1.5">
+              {AMENITIES.map((a) => {
+                const active = form.amenities.includes(a);
+                return (
+                  <button
+                    key={a}
+                    type="button"
+                    onClick={() => toggleAmenity(a)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+                      active
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background text-muted-foreground border-border hover:text-foreground hover:border-primary/40"
+                    }`}
+                  >
+                    {a}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* Error */}
+          {error && (
+            <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-xs">
+              <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+              <p>{error}</p>
+            </div>
+          )}
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-2 border-t border-border -mx-5 sm:-mx-6 px-5 sm:px-6 pt-5">
             <button
               type="button"
-              onClick={() => set("isAC", !form.isAC)}
-              className={`w-10 h-6 rounded-full transition-colors ${form.isAC ? "bg-primary" : "bg-muted"}`}
+              onClick={onCancel}
+              className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             >
-              <div className={`w-4 h-4 bg-white rounded-full shadow mx-1 transition-transform ${form.isAC ? "translate-x-4" : "translate-x-0"}`} />
-            </button>
-            <span className="text-sm text-foreground">Air-Conditioned (AC)</span>
-          </div>
-
-          {/* Route */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">From (Origin) *</label>
-              <select
-                required
-                value={form.startPoint}
-                onChange={(e) => set("startPoint", e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 text-foreground"
-              >
-                <option value="">Select city</option>
-                {CITIES.map((c) => <option key={c}>{c}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">To (Destination) *</label>
-              <select
-                required
-                value={form.endPoint}
-                onChange={(e) => set("endPoint", e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 text-foreground"
-              >
-                <option value="">Select city</option>
-                {CITIES.map((c) => <option key={c}>{c}</option>)}
-              </select>
-            </div>
-          </div>
-
-          {/* Timing & Price */}
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Departure *</label>
-              <input
-                type="time" required
-                value={form.departureTime}
-                onChange={(e) => set("departureTime", e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 text-foreground"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Arrival *</label>
-              <input
-                type="time" required
-                value={form.arrivalTime}
-                onChange={(e) => set("arrivalTime", e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 text-foreground"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Price (NPR) *</label>
-              <input
-                type="number" min="1" required
-                value={form.price}
-                onChange={(e) => set("price", Number(e.target.value))}
-                className="w-full px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 text-foreground"
-              />
-            </div>
-          </div>
-
-          {/* Boarding/Dropping points */}
-          <div className="grid grid-cols-1 gap-3">
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Boarding Points (comma-separated)</label>
-              <input
-                value={form.boardingPoints.join(", ")}
-                onChange={(e) => handleBoardingInput(e.target.value)}
-                placeholder="New Bus Park, Kalanki, Balkhu"
-                className="w-full px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 text-foreground"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Dropping Points (comma-separated)</label>
-              <input
-                value={form.droppingPoints.join(", ")}
-                onChange={(e) => handleDroppingInput(e.target.value)}
-                placeholder="Pokhara Bus Park, Lakeside, Prithvi Chowk"
-                className="w-full px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 text-foreground"
-              />
-            </div>
-          </div>
-
-          {/* Amenities */}
-          <div>
-            <label className="text-xs font-medium text-muted-foreground mb-2 block">Amenities</label>
-            <div className="flex flex-wrap gap-2">
-              {AMENITIES.map((a) => (
-                <button
-                  key={a}
-                  type="button"
-                  onClick={() => toggleAmenity(a)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-                    form.amenities.includes(a)
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {a}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onCancel} className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:bg-muted">
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-50"
+              className="flex-[1.2] py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
             >
               {loading ? "Saving…" : form.id ? "Update Bus" : "Add Bus"}
             </button>

@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from "react";
 import {
   Search, Filter, RefreshCw, CheckCircle2, XCircle,
-  Clock, Users, ChevronDown, Eye, X,
+  Clock, Users, ChevronDown, Eye, X, AlertTriangle,
 } from "lucide-react";
 import { useCounter } from "../context/counter-context";
 import { ActiveBookingsService } from "../services/active-booking.service";
@@ -43,14 +43,18 @@ interface DetailModalProps {
   booking: IActiveBooking;
   onClose: () => void;
   onAction: (id: string, status: "cancelled" | "completed") => void;
+  onRequestCancel: () => void;
   loading: boolean;
 }
 
-function DetailModal({ booking, onClose, onAction, loading }: DetailModalProps) {
+function DetailModal({ booking, onClose, onAction, onRequestCancel, loading }: DetailModalProps) {
   const seats = booking.seatNumbers?.join(", ") || booking.seatNumber || "—";
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-card border border-border rounded-2xl w-full max-w-md shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
+      <div
+        className="bg-card border border-border rounded-2xl w-full max-w-md shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between p-5 border-b border-border">
           <h2 className="font-semibold text-foreground">Booking Details</h2>
           <button onClick={onClose} className="w-7 h-7 rounded-md hover:bg-muted flex items-center justify-center text-muted-foreground">
@@ -91,13 +95,69 @@ function DetailModal({ booking, onClose, onAction, loading }: DetailModalProps) 
               </button>
               <button
                 disabled={loading}
-                onClick={() => onAction(booking.id!, "cancelled")}
+                onClick={onRequestCancel}
                 className="flex-1 py-2 rounded-lg border border-destructive text-destructive text-sm font-semibold hover:bg-destructive/10 disabled:opacity-50 transition-colors"
               >
-                Cancel
+                Cancel Booking
               </button>
             </div>
           )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface CancelConfirmDialogProps {
+  booking: IActiveBooking;
+  loading: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}
+
+function CancelConfirmDialog({ booking, loading, onClose, onConfirm }: CancelConfirmDialogProps) {
+  const seats = booking.seatNumbers?.join(", ") || booking.seatNumber || "—";
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="bg-card border border-border rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="px-5 pt-5 pb-4 text-center">
+          <div className="w-12 h-12 rounded-full bg-destructive/10 text-destructive flex items-center justify-center mx-auto mb-3">
+            <AlertTriangle className="w-6 h-6" />
+          </div>
+          <h3 className="font-semibold text-foreground text-base">Cancel this booking?</h3>
+          <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+            This will mark <span className="font-semibold text-foreground">{booking.passengerName}</span>'s
+            booking on <span className="font-semibold text-foreground">{booking.busName}</span> (seat {seats})
+            as cancelled and free those seats. <span className="font-semibold text-destructive">This action cannot be undone.</span>
+          </p>
+        </div>
+
+        <div className="px-5 py-3 bg-muted/40 border-t border-border space-y-2 text-xs">
+          <div className="flex justify-between"><span className="text-muted-foreground">Route</span><span className="font-medium text-foreground">{booking.from} → {booking.to}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">Date</span><span className="font-medium text-foreground">{fmtDate(booking.date)} · {fmt12(booking.time)}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">Refund amount</span><span className="font-bold text-foreground">NPR {booking.amount?.toLocaleString()}</span></div>
+        </div>
+
+        <div className="flex gap-2 p-4 border-t border-border">
+          <button
+            type="button"
+            disabled={loading}
+            onClick={onClose}
+            className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-50 transition-colors"
+          >
+            Keep Booking
+          </button>
+          <button
+            type="button"
+            disabled={loading}
+            onClick={onConfirm}
+            className="flex-1 py-2.5 rounded-xl bg-destructive text-destructive-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
+          >
+            {loading ? "Cancelling…" : "Yes, Cancel"}
+          </button>
         </div>
       </div>
     </div>
@@ -110,6 +170,7 @@ export function BookingsPage() {
   const [search, setSearch] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [selectedBooking, setSelectedBooking] = useState<IActiveBooking | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<IActiveBooking | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -124,6 +185,21 @@ export function BookingsPage() {
     try {
       await service.updateActiveBooking(id, { status });
       await refreshActiveBookings();
+      setSelectedBooking(null);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!cancelTarget?.id) return;
+    setActionLoading(true);
+    try {
+      await service.updateActiveBooking(cancelTarget.id, { status: "cancelled" });
+      await refreshActiveBookings();
+      setCancelTarget(null);
       setSelectedBooking(null);
     } catch (e) {
       console.error(e);
@@ -246,7 +322,11 @@ export function BookingsPage() {
                 {filtered.map((b) => {
                   const seats = b.seatNumbers?.join(", ") || b.seatNumber || "—";
                   return (
-                    <tr key={b.id} className="hover:bg-muted/30 transition-colors">
+                    <tr
+                      key={b.id}
+                      onClick={() => setSelectedBooking(b)}
+                      className="hover:bg-muted/40 cursor-pointer transition-colors"
+                    >
                       <td className="px-4 py-3">
                         <p className="font-medium text-foreground">{b.passengerName}</p>
                         <p className="text-xs text-muted-foreground">{b.passengerPhone}</p>
@@ -275,13 +355,8 @@ export function BookingsPage() {
                           {b.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
-                        <button
-                          onClick={() => setSelectedBooking(b)}
-                          className="p-1.5 hover:bg-muted rounded-md text-muted-foreground hover:text-foreground"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                        </button>
+                      <td className="px-4 py-3 text-right">
+                        <Eye className="w-3.5 h-3.5 text-muted-foreground inline-block" />
                       </td>
                     </tr>
                   );
@@ -328,7 +403,17 @@ export function BookingsPage() {
           booking={selectedBooking}
           onClose={() => setSelectedBooking(null)}
           onAction={handleAction}
+          onRequestCancel={() => setCancelTarget(selectedBooking)}
           loading={actionLoading}
+        />
+      )}
+
+      {cancelTarget && (
+        <CancelConfirmDialog
+          booking={cancelTarget}
+          loading={actionLoading}
+          onClose={() => setCancelTarget(null)}
+          onConfirm={handleConfirmCancel}
         />
       )}
     </div>

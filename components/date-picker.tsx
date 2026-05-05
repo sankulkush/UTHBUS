@@ -214,46 +214,50 @@ export default function DatePicker({ value, onChange }: DatePickerProps) {
   const isToday = value === getTodayDate()
   const isTomorrow = value === getTomorrowDate()
 
+  const ChipButtons = (
+    <div className="flex gap-1.5 shrink-0">
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onChange(getTodayDate()) }}
+        className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
+          isToday
+            ? "bg-primary text-primary-foreground border-primary"
+            : "bg-transparent text-muted-foreground border-border hover:bg-muted hover:text-foreground"
+        }`}
+      >
+        Today
+      </button>
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onChange(getTomorrowDate()) }}
+        className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
+          isTomorrow
+            ? "bg-primary text-primary-foreground border-primary"
+            : "bg-transparent text-muted-foreground border-border hover:bg-muted hover:text-foreground"
+        }`}
+      >
+        Tmrw
+      </button>
+    </div>
+  )
+
   return (
     <div ref={triggerRef}>
-      {/* Date display row */}
-      <div
-        className="flex items-center space-x-2.5 cursor-pointer"
-        onClick={() => setShowCalendar(!showCalendar)}
-      >
-        <CalendarIcon className="w-4 h-4 text-muted-foreground shrink-0" />
-        <div>
-          <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide leading-none mb-0.5">Date</div>
-          <div className="text-sm font-semibold text-foreground whitespace-nowrap">
-            {weekday}, {day} {month} {year}
+      {/* Single inline row: icon + label + chips, all in one line that wraps gracefully */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div
+          className="flex items-center space-x-2.5 cursor-pointer min-w-0"
+          onClick={() => setShowCalendar(!showCalendar)}
+        >
+          <CalendarIcon className="w-4 h-4 text-muted-foreground shrink-0" />
+          <div className="min-w-0">
+            <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide leading-none mb-0.5">Date</div>
+            <div className="text-sm font-semibold text-foreground whitespace-nowrap">
+              {weekday}, {day} {month} {year}
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* Quick chips — below date display */}
-      <div className="flex gap-1.5 mt-2">
-        <button
-          type="button"
-          onClick={() => onChange(getTodayDate())}
-          className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
-            isToday
-              ? "bg-primary text-primary-foreground border-primary"
-              : "bg-transparent text-muted-foreground border-border hover:bg-muted hover:text-foreground"
-          }`}
-        >
-          Today
-        </button>
-        <button
-          type="button"
-          onClick={() => onChange(getTomorrowDate())}
-          className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
-            isTomorrow
-              ? "bg-primary text-primary-foreground border-primary"
-              : "bg-transparent text-muted-foreground border-border hover:bg-muted hover:text-foreground"
-          }`}
-        >
-          Tmrw
-        </button>
+        {ChipButtons}
       </div>
 
       {showCalendar && typeof window !== "undefined" && createPortal(<CalendarDropdown />, document.body)}

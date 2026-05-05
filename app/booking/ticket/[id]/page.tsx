@@ -151,7 +151,7 @@ export default function TicketPage() {
       `}</style>
 
       <div className="min-h-screen bg-muted/30 pt-16 pb-12">
-        <div className="max-w-2xl mx-auto px-4 py-6 ticket-wrapper">
+        <div className="max-w-5xl mx-auto px-4 py-6 ticket-wrapper">
 
           {/* Back */}
           <button
@@ -169,6 +169,9 @@ export default function TicketPage() {
               <p className="text-xs text-muted-foreground">Show this e-ticket to the conductor at the boarding point</p>
             </div>
           </div>
+
+          {/* Two-column layout: ticket on left, actions on right (stacks on mobile) */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_240px] gap-5 items-start">
 
           {/* ── Ticket card ── */}
           <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-soft-md">
@@ -363,50 +366,62 @@ export default function TicketPage() {
             </div>
           </div>
 
-          {/* ── Action buttons ── */}
-          <div className="no-print mt-5 grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <button
-              onClick={handlePrint}
-              className="flex items-center justify-center gap-2 h-11 rounded-xl border border-border bg-card text-foreground text-sm font-medium hover:bg-muted transition-colors"
-            >
-              <Printer className="w-4 h-4 shrink-0" />
-              Print
-            </button>
-            <button
-              onClick={handlePrint}
-              className="flex items-center justify-center gap-2 h-11 rounded-xl border border-border bg-card text-foreground text-sm font-medium hover:bg-muted transition-colors"
-            >
-              <Download className="w-4 h-4 shrink-0" />
-              Save PDF
-            </button>
-            <button
-              onClick={handleWhatsApp}
-              className="flex items-center justify-center gap-2 h-11 rounded-xl bg-[#25D366] text-white text-sm font-semibold hover:opacity-90 transition-opacity"
-            >
-              <MessageCircle className="w-4 h-4 shrink-0" />
-              WhatsApp
-            </button>
-            <button
-              onClick={handleShare}
-              className="flex items-center justify-center gap-2 h-11 rounded-xl border border-border bg-card text-foreground text-sm font-medium hover:bg-muted transition-colors"
-            >
-              <Share2 className="w-4 h-4 shrink-0" />
-              Share
-            </button>
-          </div>
+          {/* ── Vertical Action Panel (right column on desktop, stacked below on mobile) ── */}
+          <aside className="no-print lg:sticky lg:top-20">
+            <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-soft">
+              <div className="px-4 py-3 border-b border-border bg-muted/30">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                  Ticket Actions
+                </p>
+              </div>
+              <div className="p-3 flex flex-col gap-2">
+                <button
+                  onClick={handlePrint}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm font-medium hover:bg-muted hover:border-foreground/20 transition-colors"
+                >
+                  <Printer className="w-4 h-4 shrink-0 text-muted-foreground" />
+                  <span className="flex-1 text-left">Print</span>
+                </button>
+                <button
+                  onClick={handlePrint}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm font-medium hover:bg-muted hover:border-foreground/20 transition-colors"
+                >
+                  <Download className="w-4 h-4 shrink-0 text-muted-foreground" />
+                  <span className="flex-1 text-left">Save PDF</span>
+                </button>
+                <button
+                  onClick={handleWhatsApp}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#25D366] text-white text-sm font-semibold hover:opacity-90 transition-opacity"
+                >
+                  <MessageCircle className="w-4 h-4 shrink-0" />
+                  <span className="flex-1 text-left">WhatsApp</span>
+                </button>
+                <button
+                  onClick={handleShare}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm font-medium hover:bg-muted hover:border-foreground/20 transition-colors"
+                >
+                  <Share2 className="w-4 h-4 shrink-0 text-muted-foreground" />
+                  <span className="flex-1 text-left">Share</span>
+                </button>
+              </div>
+              <div className="px-4 py-3 border-t border-border bg-muted/20">
+                <p className="text-[10px] text-muted-foreground leading-relaxed">
+                  "Save PDF" opens the browser print dialog — choose "Save as PDF" as the destination.
+                </p>
+              </div>
+            </div>
 
-          <p className="no-print text-center text-xs text-muted-foreground mt-3">
-            "Save PDF" opens your browser's print dialog — select "Save as PDF"
-          </p>
+            {/* View all bookings */}
+            <div className="mt-3 text-center lg:text-left">
+              <Link
+                href="/user/bookings"
+                className="text-sm text-primary hover:text-primary/80 font-medium transition-colors"
+              >
+                View all my bookings →
+              </Link>
+            </div>
+          </aside>
 
-          {/* View all bookings */}
-          <div className="no-print mt-4 text-center">
-            <Link
-              href="/user/bookings"
-              className="text-sm text-primary hover:text-primary/80 font-medium transition-colors"
-            >
-              View all my bookings →
-            </Link>
           </div>
         </div>
       </div>

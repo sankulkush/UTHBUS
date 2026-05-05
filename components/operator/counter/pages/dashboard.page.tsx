@@ -53,17 +53,19 @@ function today() {
 }
 
 export function DashboardPage({ onSectionChange }: Props) {
-  const { dashboardStats, activeBookings, buses, loading, refreshData } = useCounter();
+  const { activeBookings, buses, loading, refreshData } = useCounter();
 
   const todayStr = today();
+  const monthPrefix = todayStr.substring(0, 7); // YYYY-MM
 
   const recentBookings = useMemo(
     () => [...activeBookings].slice(0, 8),
     [activeBookings]
   );
 
+  // Today's bookings — exclude cancelled ones so the count reflects real activity
   const todayBuses = useMemo(
-    () => activeBookings.filter((b) => b.date === todayStr),
+    () => activeBookings.filter((b) => b.date === todayStr && b.status !== "cancelled"),
     [activeBookings, todayStr]
   );
 
@@ -72,10 +74,22 @@ export function DashboardPage({ onSectionChange }: Props) {
     [buses]
   );
 
-  const stats = dashboardStats ?? {
-    todayBookings: 0, pendingDepartures: 0, todayRevenue: 0,
-    monthlyRevenue: 0, totalBuses: 0, activeBuses: 0,
-  };
+  // Derive ALL stats live from activeBookings + buses. The realtime listener
+  // keeps activeBookings fresh, so the dashboard reflects new bookings the
+  // instant they're written — no manual refresh needed, no stale snapshot.
+  const stats = useMemo(() => {
+    const valid = activeBookings.filter((b) => b.status !== "cancelled");
+    const todayList = valid.filter((b) => b.date === todayStr);
+    const monthList = valid.filter((b) => b.date?.startsWith(monthPrefix));
+    return {
+      todayBookings: todayList.length,
+      pendingDepartures: todayList.filter((b) => b.status === "booked").length,
+      todayRevenue: todayList.reduce((s, b) => s + (b.amount || 0), 0),
+      monthlyRevenue: monthList.reduce((s, b) => s + (b.amount || 0), 0),
+      totalBuses: buses.length,
+      activeBuses: buses.filter((b) => b.status === "Active").length,
+    };
+  }, [activeBookings, buses, todayStr, monthPrefix]);
 
   if (loading) {
     return (

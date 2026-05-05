@@ -116,6 +116,12 @@ function BusRow({ bus, onClick }: { bus: IBus; onClick: () => void }) {
 
 // ── Success ticket ────────────────────────────────────────────────────────────
 function SuccessTicket({ ticket, onNew }: { ticket: IActiveBooking; onNew: () => void }) {
+  const seatsList = ticket.seatNumbers?.length
+    ? ticket.seatNumbers
+    : ticket.seatNumber
+    ? [ticket.seatNumber]
+    : [];
+  const seatsLabel = seatsList.join(", ") || "—";
   return (
     <div className="space-y-4">
       <div className="bg-green-500 rounded-2xl p-5 text-center text-white">
@@ -153,7 +159,7 @@ function SuccessTicket({ ticket, onNew }: { ticket: IActiveBooking; onNew: () =>
             { label: "Passenger", value: ticket.passengerName },
             { label: "Phone", value: ticket.passengerPhone },
             { label: "Date", value: ticket.date },
-            { label: "Seat", value: `#${ticket.seatNumber}`, bold: true },
+            { label: seatsList.length > 1 ? "Seats" : "Seat", value: seatsLabel, bold: true },
             { label: "Bus Type", value: ticket.busType },
             { label: "Amount", value: `NPR ${ticket.amount?.toLocaleString()}`, bold: true },
             ...(ticket.boardingPoint ? [{ label: "Boarding", value: ticket.boardingPoint }] : []),
@@ -192,7 +198,7 @@ function SuccessTicket({ ticket, onNew }: { ticket: IActiveBooking; onNew: () =>
 
 // ── Main component ────────────────────────────────────────────────────────────
 export function BookTicketPage() {
-  const { operator, buses, refreshActiveBookings } = useCounter();
+  const { operator, buses, refreshData } = useCounter();
 
   const [query, setQuery] = useState("");
   const [date, setDate] = useState(localToday());
@@ -200,13 +206,21 @@ export function BookTicketPage() {
   const [bookedSeats, setBookedSeats] = useState<string[]>([]);
   const [passengerName, setPassengerName] = useState("");
   const [passengerPhone, setPassengerPhone] = useState("");
-  const [seatNumber, setSeatNumber] = useState("");
+  const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
   const [boardingPoint, setBoardingPoint] = useState("");
   const [droppingPoint, setDroppingPoint] = useState("");
   const [seatsLoading, setSeatsLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [bookedTicket, setBookedTicket] = useState<IActiveBooking | null>(null);
+
+  const totalAmount = (selectedBus?.price ?? 0) * selectedSeats.length;
+
+  const toggleSeat = (label: string) => {
+    setSelectedSeats((prev) =>
+      prev.includes(label) ? prev.filter((s) => s !== label) : [...prev, label]
+    );
+  };
 
   const step: 1 | 2 | 3 = bookedTicket ? 3 : selectedBus ? 2 : 1;
 
@@ -237,7 +251,7 @@ export function BookTicketPage() {
 
   const handleSelectBus = (bus: IBus) => {
     setSelectedBus(bus);
-    setSeatNumber("");
+    setSelectedSeats([]);
     setBoardingPoint("");
     setDroppingPoint("");
     setSubmitError("");
@@ -250,9 +264,10 @@ export function BookTicketPage() {
       setSubmitError("Passenger name and phone are required.");
       return;
     }
-    if (!seatNumber) { setSubmitError("Please select a seat."); return; }
-    if (bookedSeats.includes(seatNumber)) {
-      setSubmitError(`Seat ${seatNumber} is already booked.`);
+    if (selectedSeats.length === 0) { setSubmitError("Please select at least one seat."); return; }
+    const conflict = selectedSeats.find((s) => bookedSeats.includes(s));
+    if (conflict) {
+      setSubmitError(`Seat ${conflict} is already booked. Please choose another.`);
       return;
     }
 
@@ -268,39 +283,47 @@ export function BookTicketPage() {
         to: selectedBus.endPoint,
         date,
         time: selectedBus.departureTime,
-        seatNumber,
-        seatNumbers: [seatNumber],
+        // seatNumber kept for legacy/back-compat (first seat)
+        seatNumber: selectedSeats[0],
+        seatNumbers: selectedSeats,
         passengerName: passengerName.trim(),
         passengerPhone: passengerPhone.trim(),
         boardingPoint: boardingPoint || "",
         droppingPoint: droppingPoint || "",
-        amount: selectedBus.price,
+        amount: selectedBus.price * selectedSeats.length,
         bookingTime: serverTimestamp(),
         status: "booked",
       };
 
       const docRef = await addDoc(collection(firestore, "activeBookings"), bookingData);
 
-      await bookingService.createBooking({
-        busId: selectedBus.id,
-        operatorId: operator.uid,
-        passengerName: passengerName.trim(),
-        passengerPhone: passengerPhone.trim(),
-        from: selectedBus.startPoint,
-        to: selectedBus.endPoint,
-        date,
-        time: selectedBus.departureTime,
-        seatNumber,
-        amount: selectedBus.price,
-        status: "Confirmed",
-        boardingPoint: boardingPoint || "",
-        droppingPoint: droppingPoint || "",
-        busName: selectedBus.name,
-        busType: selectedBus.type,
-      });
+      // Mirror to legacy `bookings` collection — one record per seat
+      await Promise.all(
+        selectedSeats.map((seat) =>
+          bookingService.createBooking({
+            busId: selectedBus.id,
+            operatorId: operator.uid,
+            passengerName: passengerName.trim(),
+            passengerPhone: passengerPhone.trim(),
+            from: selectedBus.startPoint,
+            to: selectedBus.endPoint,
+            date,
+            time: selectedBus.departureTime,
+            seatNumber: seat,
+            amount: selectedBus.price,
+            status: "Confirmed",
+            boardingPoint: boardingPoint || "",
+            droppingPoint: droppingPoint || "",
+            busName: selectedBus.name,
+            busType: selectedBus.type,
+          })
+        )
+      );
 
       setBookedTicket({ id: docRef.id, ...bookingData, bookingTime: new Date() });
-      await refreshActiveBookings();
+      // Refresh the FULL dashboard data (buses + bookings + dashboardStats)
+      // so today's count and revenue cards reflect this booking immediately.
+      await refreshData();
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Booking failed. Please try again.");
     } finally {
@@ -311,7 +334,7 @@ export function BookTicketPage() {
   const handleReset = () => {
     setQuery(""); setDate(localToday());
     setSelectedBus(null); setBookedSeats([]);
-    setPassengerName(""); setPassengerPhone(""); setSeatNumber("");
+    setPassengerName(""); setPassengerPhone(""); setSelectedSeats([]);
     setBoardingPoint(""); setDroppingPoint("");
     setSubmitError(""); setBookedTicket(null);
   };
@@ -419,7 +442,7 @@ export function BookTicketPage() {
                 <input
                   type="date"
                   value={date}
-                  onChange={(e) => { setDate(e.target.value); setSeatNumber(""); }}
+                  onChange={(e) => { setDate(e.target.value); setSelectedSeats([]); }}
                   className="pl-7 pr-2 py-1.5 text-xs bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 text-foreground"
                 />
               </div>
@@ -441,7 +464,7 @@ export function BookTicketPage() {
               <input
                 type="date"
                 value={date}
-                onChange={(e) => { setDate(e.target.value); setSeatNumber(""); }}
+                onChange={(e) => { setDate(e.target.value); setSelectedSeats([]); }}
                 className="w-full pl-9 pr-3 py-2.5 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 text-foreground"
               />
             </div>
@@ -521,12 +544,26 @@ export function BookTicketPage() {
 
           {/* Seat map */}
           <div className="bg-card border border-border rounded-xl p-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Select Seat *</p>
-              {seatNumber && (
-                <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-                  Seat {seatNumber} selected
-                </span>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Select Seat{selectedSeats.length > 1 ? "s" : ""} *
+                </p>
+                <p className="text-[10px] text-muted-foreground/70 mt-0.5">
+                  Tap a seat to add or remove. Multiple seats are allowed.
+                </p>
+              </div>
+              {selectedSeats.length > 0 && (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {selectedSeats.map((s) => (
+                    <span
+                      key={s}
+                      className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full"
+                    >
+                      {s}
+                    </span>
+                  ))}
+                </div>
               )}
             </div>
             {seatsLoading ? (
@@ -538,8 +575,8 @@ export function BookTicketPage() {
                 <SeatMapPicker
                   bus={selectedBus}
                   booked={bookedSeats}
-                  selected={seatNumber}
-                  onSelect={setSeatNumber}
+                  selected={selectedSeats}
+                  onToggle={toggleSeat}
                 />
               </div>
             )}
@@ -555,16 +592,24 @@ export function BookTicketPage() {
           {/* Fare + submit */}
           <div className="bg-card border border-border rounded-xl p-4 flex items-center justify-between gap-4">
             <div>
-              <p className="text-xs text-muted-foreground">Total fare</p>
-              <p className="text-2xl font-black text-foreground">NPR {selectedBus.price.toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">
+                Total fare {selectedSeats.length > 0 && (
+                  <span className="text-muted-foreground/70">
+                    · NPR {selectedBus.price.toLocaleString()} × {selectedSeats.length}
+                  </span>
+                )}
+              </p>
+              <p className="text-2xl font-black text-foreground">
+                NPR {totalAmount.toLocaleString()}
+              </p>
             </div>
             <button
               type="submit"
-              disabled={submitLoading || !seatNumber}
+              disabled={submitLoading || selectedSeats.length === 0}
               className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground font-bold text-sm hover:opacity-90 disabled:opacity-50 transition-all"
             >
               {submitLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Ticket className="w-4 h-4" />}
-              {submitLoading ? "Booking…" : "Confirm Booking"}
+              {submitLoading ? "Booking…" : `Confirm ${selectedSeats.length || ""} Booking${selectedSeats.length > 1 ? "s" : ""}`.trim()}
             </button>
           </div>
         </form>

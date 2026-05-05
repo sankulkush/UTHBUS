@@ -24,6 +24,8 @@ export const nepalCities: City[] = [
   { id: 12, name: "Hetauda", district: "Makwanpur", province: "Bagmati", popular: false },
   { id: 13, name: "Dhangadhi", district: "Kailali", province: "Sudurpashchim", popular: false },
   { id: 14, name: "Itahari", district: "Sunsari", province: "Koshi", popular: false },
+  { id: 26, name: "Damak", district: "Jhapa", province: "Koshi", popular: false },
+  { id: 27, name: "Kakarvitta", district: "Jhapa", province: "Koshi", popular: false },
   { id: 15, name: "Gorkha", district: "Gorkha", province: "Gandaki", popular: false },
   { id: 16, name: "Lumbini", district: "Rupandehi", province: "Lumbini", popular: false },
   { id: 17, name: "Baglung", district: "Baglung", province: "Gandaki", popular: false },
