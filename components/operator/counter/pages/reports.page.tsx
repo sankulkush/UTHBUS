@@ -51,10 +51,15 @@ export function ReportsPage() {
       .slice(0, 5);
 
     // Bus breakdown
-    const busMap = new Map<string, { name: string; count: number; revenue: number }>();
+    const busMap = new Map<string, { busId: string; name: string; count: number; revenue: number }>();
     activeBookings.filter((b) => b.status !== "cancelled").forEach((b) => {
-      const existing = busMap.get(b.busId) ?? { name: b.busName, count: 0, revenue: 0 };
-      busMap.set(b.busId, { name: b.busName, count: existing.count + 1, revenue: existing.revenue + (b.amount ?? 0) });
+      const existing = busMap.get(b.busId) ?? { busId: b.busId, name: b.busName, count: 0, revenue: 0 };
+      busMap.set(b.busId, {
+        busId: b.busId,
+        name: b.busName,
+        count: existing.count + 1,
+        revenue: existing.revenue + (b.amount ?? 0),
+      });
     });
     const topBuses = Array.from(busMap.values())
       .sort((a, b) => b.count - a.count)
@@ -128,8 +133,8 @@ export function ReportsPage() {
           <div className="p-4 space-y-3">
             {stats.topBuses.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-4">No data yet</p>
-            ) : stats.topBuses.map(({ name, count, revenue }) => (
-              <div key={name}>
+            ) : stats.topBuses.map(({ busId, name, count, revenue }) => (
+              <div key={busId}>
                 <div className="flex items-center justify-between text-xs mb-1">
                   <span className="font-medium text-foreground truncate">{name}</span>
                   <span className="text-muted-foreground shrink-0 ml-2">{count} · NPR {revenue.toLocaleString()}</span>
