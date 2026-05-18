@@ -65,7 +65,7 @@ export function Sidebar({
   const handleLogout = async () => {
     try {
       await logout();
-      router.push("/operator/login");
+      router.push("/");
     } catch {}
   };
 

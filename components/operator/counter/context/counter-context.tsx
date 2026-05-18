@@ -24,6 +24,9 @@ import { firestore } from "@/lib/firebase";
 
 export interface IActiveBooking {
   id?: string;
+  /** Passenger-facing reference (12 chars, e.g. "KAPO26051801"). Optional on read for
+   *  backward-compat with bookings created before PNR was introduced. */
+  pnr?: string;
   operatorId: string;
   userId?: string;
   busId: string;

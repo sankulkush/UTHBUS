@@ -32,10 +32,14 @@ export default function OperatorLogin() {
     <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mb-2 text-2xl font-extrabold tracking-tight">
+          <Link
+            href="/"
+            className="mb-2 inline-block text-2xl font-extrabold tracking-tight hover:opacity-80 transition-opacity"
+            aria-label="Go to UthBus homepage"
+          >
             <span className="text-blue-600 dark:text-blue-400">uth</span>
             <span className="text-primary">bus</span>
-          </div>
+          </Link>
           <CardTitle className="text-xl font-bold">Operator Login</CardTitle>
           <CardDescription>Sign in to your operator account</CardDescription>
         </CardHeader>

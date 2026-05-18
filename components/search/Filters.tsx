@@ -28,11 +28,11 @@ const BUS_TYPES = [
 
 const AMENITIES = [
   { id: 'Sofa Seat',      label: 'Sofa Seat',      icon: Armchair },
-  { id: 'wifi',           label: 'Wi-Fi',           icon: Wifi },
-  { id: 'charging Point', label: 'Charging Point',  icon: Zap },
+  { id: 'Wi-Fi',          label: 'Wi-Fi',           icon: Wifi },
+  { id: 'Charging Point', label: 'Charging Point',  icon: Zap },
   { id: 'TV',             label: 'TV',              icon: Tv },
-  { id: 'water',          label: 'Water Bottle',    icon: Droplet },
-  { id: 'cctv',           label: 'CCTV',            icon: Video },
+  { id: 'Water Bottle',   label: 'Water Bottle',    icon: Droplet },
+  { id: 'CCTV',           label: 'CCTV',            icon: Video },
 ];
 
 const DEPARTURE_TIMES = [

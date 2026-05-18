@@ -62,6 +62,18 @@ function DetailModal({ booking, onClose, onAction, onRequestCancel, loading }: D
           </button>
         </div>
         <div className="p-5 space-y-4">
+          {/* PNR pill */}
+          <div className="flex items-center justify-between gap-3 bg-primary/10 border border-primary/30 rounded-xl px-4 py-3">
+            <div>
+              <p className="text-[10px] font-bold text-primary uppercase tracking-widest">PNR</p>
+              <p className="font-mono font-extrabold text-base text-foreground tracking-wider mt-0.5">{booking.pnr || "—"}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Booking ID</p>
+              <p className="font-mono text-[11px] text-muted-foreground mt-0.5">{booking.id?.slice(0, 8) || "—"}</p>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-3 text-sm">
             {[
               { label: "Passenger", value: booking.passengerName },
@@ -216,6 +228,7 @@ export function BookingsPage() {
       const s = search.toLowerCase();
       list = list.filter(
         (b) =>
+          b.pnr?.toLowerCase().includes(s) ||
           b.passengerName.toLowerCase().includes(s) ||
           b.passengerPhone?.includes(s) ||
           b.id?.toLowerCase().includes(s) ||
@@ -274,7 +287,7 @@ export function BookingsPage() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, phone, bus..."
+            placeholder="Search by PNR, name, phone, bus..."
             className="w-full pl-9 pr-3 py-2 text-sm bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 text-foreground placeholder:text-muted-foreground"
           />
         </div>
@@ -313,7 +326,7 @@ export function BookingsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/50">
-                  {["Passenger", "Bus / Route", "Date", "Seats", "Amount", "Type", "Status", ""].map((h) => (
+                  {["PNR", "Passenger", "Bus / Route", "Date", "Seats", "Amount", "Type", "Status", ""].map((h) => (
                     <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">{h}</th>
                   ))}
                 </tr>
@@ -327,6 +340,11 @@ export function BookingsPage() {
                       onClick={() => setSelectedBooking(b)}
                       className="hover:bg-muted/40 cursor-pointer transition-colors"
                     >
+                      <td className="px-4 py-3">
+                        <span className="font-mono font-bold text-foreground tracking-wider text-xs">
+                          {b.pnr || "—"}
+                        </span>
+                      </td>
                       <td className="px-4 py-3">
                         <p className="font-medium text-foreground">{b.passengerName}</p>
                         <p className="text-xs text-muted-foreground">{b.passengerPhone}</p>
@@ -376,9 +394,12 @@ export function BookingsPage() {
                   className="bg-card border border-border rounded-xl p-4 cursor-pointer hover:bg-muted/20 transition-colors"
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="font-semibold text-foreground text-sm">{b.passengerName}</p>
-                      <p className="text-xs text-muted-foreground">{b.busName} · {b.from} → {b.to}</p>
+                    <div className="min-w-0">
+                      <span className="inline-block font-mono font-bold text-foreground text-xs tracking-wider bg-muted px-2 py-0.5 rounded mb-1">
+                        {b.pnr || "—"}
+                      </span>
+                      <p className="font-semibold text-foreground text-sm truncate">{b.passengerName}</p>
+                      <p className="text-xs text-muted-foreground truncate">{b.busName} · {b.from} → {b.to}</p>
                     </div>
                     <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold capitalize ${statusBadge(b.status)}`}>
                       {b.status}

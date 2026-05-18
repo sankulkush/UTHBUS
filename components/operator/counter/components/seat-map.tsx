@@ -5,7 +5,7 @@ import type { IBus } from "../types/counter.types";
 interface SeatCell { label: string; booked: boolean; selected: boolean }
 type SeatRow = (SeatCell | null)[];
 
-function buildBusLayout(busType: string, booked: string[], selected: string[]): SeatRow[] {
+export function buildBusLayout(busType: string, booked: string[], selected: string[]): SeatRow[] {
   const cell = (label: string): SeatCell => ({
     label, booked: booked.includes(label), selected: selected.includes(label),
   });
@@ -85,11 +85,11 @@ export function SeatMapView({ bus, booked }: { bus: IBus; booked: string[] }) {
       legend={
         <>
           <span className="flex items-center gap-1 text-[9px] text-muted-foreground">
-            <span className="w-3.5 h-3.5 rounded bg-background border border-border shadow-sm inline-block" />
+            <span className="w-3.5 h-3.5 rounded bg-green-500 border border-green-600 inline-block" />
             Available
           </span>
           <span className="flex items-center gap-1 text-[9px] text-muted-foreground">
-            <span className="w-3.5 h-3.5 rounded bg-muted/60 border border-border/40 inline-block" />
+            <span className="w-3.5 h-3.5 rounded bg-red-500 border border-red-600 inline-block" />
             Booked
           </span>
         </>
@@ -106,8 +106,8 @@ export function SeatMapView({ bus, booked }: { bus: IBus; booked: string[] }) {
                 title={cell.label}
                 className={`w-[34px] h-[34px] rounded-lg text-[10px] font-semibold flex items-center justify-center border select-none shadow-sm ${
                   cell.booked
-                    ? "bg-muted/60 border-border/50 text-muted-foreground/35 line-through"
-                    : "bg-background border-border/80 text-foreground"
+                    ? "bg-red-500 border-red-600 text-white"
+                    : "bg-green-500 border-green-600 text-white"
                 }`}
               >
                 {cell.label}

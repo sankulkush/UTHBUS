@@ -1,5 +1,6 @@
 "use client"
 import { createContext, useContext, useState, useEffect, ReactNode } from "react"
+import { useRouter } from "next/navigation"
 import { User, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail } from "firebase/auth"
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore"
 import { auth, firestore as db } from "@/firebaseConfig"
@@ -57,6 +58,7 @@ export const UserAuthProvider = ({ children }: UserAuthProviderProps) => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [token, setToken] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const router = useRouter()
 
   // Load user profile from Firestore
   const loadUserProfile = async (user: User) => {
@@ -221,10 +223,11 @@ export const UserAuthProvider = ({ children }: UserAuthProviderProps) => {
   const logout = async () => {
     try {
       await signOut(auth)
-      
+
       setUser(null)
       setUserProfile(null)
       setToken(null)
+      router.push("/")
     } catch (error: any) {
       throw new Error(error.message || "Logout failed")
     }

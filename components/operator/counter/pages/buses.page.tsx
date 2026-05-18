@@ -567,13 +567,16 @@ export function BusesPage() {
             <div key={bus.id} className="bg-card border border-border rounded-xl p-4 space-y-3">
               {/* Bus header */}
               <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 min-w-0">
                   <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center shrink-0">
                     <Bus className="w-5 h-5 text-muted-foreground" />
                   </div>
-                  <div>
-                    <p className="font-semibold text-foreground text-sm">{bus.name}</p>
-                    <div className="flex items-center gap-1.5 mt-0.5">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-foreground text-sm truncate">
+                      {bus.startPoint} → {bus.endPoint}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate mt-0.5">{bus.name}</p>
+                    <div className="flex items-center gap-1.5 mt-1">
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusBadge(bus.status)}`}>
                         {statusIcon(bus.status)} {bus.status}
                       </span>
@@ -606,15 +609,15 @@ export function BusesPage() {
                 </div>
               </div>
 
-              {/* Route & timing */}
+              {/* Timing & pricing */}
               <div className="grid grid-cols-3 gap-2 text-xs">
-                <div className="bg-muted/50 rounded-lg p-2">
-                  <p className="text-muted-foreground">Route</p>
-                  <p className="font-medium text-foreground mt-0.5 truncate">{bus.startPoint} → {bus.endPoint}</p>
-                </div>
                 <div className="bg-muted/50 rounded-lg p-2">
                   <p className="text-muted-foreground">Timing</p>
                   <p className="font-medium text-foreground mt-0.5">{bus.departureTime} – {bus.arrivalTime}</p>
+                </div>
+                <div className="bg-muted/50 rounded-lg p-2">
+                  <p className="text-muted-foreground">Duration</p>
+                  <p className="font-medium text-foreground mt-0.5 truncate">{bus.duration || "—"}</p>
                 </div>
                 <div className="bg-muted/50 rounded-lg p-2">
                   <p className="text-muted-foreground">Price / Seats</p>

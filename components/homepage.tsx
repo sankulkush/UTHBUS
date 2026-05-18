@@ -721,11 +721,11 @@ export default function Homepage() {
               <div className="space-y-2 text-slate-400 text-sm">
                 <div className="flex items-center gap-2">
                   <Phone className="w-4 h-4 shrink-0" />
-                  <span>+977 9815355501</span>
+                  <span>+977 9810511415</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Mail className="w-4 h-4 shrink-0" />
-                  <span>info@uthbus.com</span>
+                  <span>uthbus@yahoo.com</span>
                 </div>
               </div>
             </div>

@@ -10,8 +10,6 @@ import { useCounter } from "../context/counter-context";
 import { BookingService } from "../services/booking.service";
 import { ActiveBookingsService } from "../services/active-booking.service";
 import { SeatMapPicker } from "../components/seat-map";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { firestore } from "@/lib/firebase";
 import type { IBus } from "../types/counter.types";
 import type { IActiveBooking } from "../context/counter-context";
 
@@ -131,12 +129,20 @@ function SuccessTicket({ ticket, onNew }: { ticket: IActiveBooking; onNew: () =>
       </div>
 
       <div className="bg-card border border-border rounded-2xl overflow-hidden">
-        <div className="bg-primary/10 border-b border-border px-5 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Ticket className="w-4 h-4 text-primary" />
-            <span className="text-xs font-bold text-primary uppercase tracking-wider">Booking ID</span>
+        <div className="bg-primary/10 border-b border-border px-5 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <Ticket className="w-4 h-4 text-primary shrink-0" />
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold text-primary uppercase tracking-widest leading-none">PNR</p>
+              <p className="font-mono font-extrabold text-base text-foreground tracking-wider mt-0.5 leading-none">
+                {ticket.pnr || "—"}
+              </p>
+            </div>
           </div>
-          <span className="font-mono text-xs text-muted-foreground">{ticket.id?.slice(-8)}</span>
+          <div className="text-right shrink-0">
+            <p className="text-[9px] text-muted-foreground uppercase tracking-wider leading-none">Booking ID</p>
+            <p className="font-mono text-[11px] text-muted-foreground mt-0.5 leading-none">{ticket.id?.slice(-8)}</p>
+          </div>
         </div>
 
         <div className="px-5 py-4 flex items-center justify-between border-b border-border">
@@ -274,7 +280,8 @@ export function BookTicketPage() {
     setSubmitError("");
     setSubmitLoading(true);
     try {
-      const bookingData: Omit<IActiveBooking, "id"> = {
+      // Go through the service so a PNR is generated + uniqueness-checked.
+      const created = await seatService.createActiveBooking({
         operatorId: operator.uid,
         busId: selectedBus.id,
         busName: selectedBus.name,
@@ -291,11 +298,9 @@ export function BookTicketPage() {
         boardingPoint: boardingPoint || "",
         droppingPoint: droppingPoint || "",
         amount: selectedBus.price * selectedSeats.length,
-        bookingTime: serverTimestamp(),
+        bookingTime: null,
         status: "booked",
-      };
-
-      const docRef = await addDoc(collection(firestore, "activeBookings"), bookingData);
+      });
 
       // Mirror to legacy `bookings` collection — one record per seat
       await Promise.all(
@@ -320,7 +325,7 @@ export function BookTicketPage() {
         )
       );
 
-      setBookedTicket({ id: docRef.id, ...bookingData, bookingTime: new Date() });
+      setBookedTicket({ ...created, bookingTime: new Date() });
       // Refresh the FULL dashboard data (buses + bookings + dashboardStats)
       // so today's count and revenue cards reflect this booking immediately.
       await refreshData();

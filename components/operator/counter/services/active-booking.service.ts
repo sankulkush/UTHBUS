@@ -17,6 +17,12 @@ import { firestore } from "@/lib/firebase";
 
 export interface IActiveBooking {
   id?: string;
+  /** Passenger-facing reference (e.g. "KAPO26051801"). 12 chars:
+   *  2-letter origin code + 2-letter destination code + 2-digit year (YY) +
+   *  2-digit month (MM) + 2-digit day (DD) + 2-digit per-operator sequence (SS).
+   *  Optional on the interface for backward-compatibility with legacy bookings,
+   *  but every booking created through createActiveBooking() will have one. */
+  pnr?: string;
   operatorId: string;
   userId?: string;
   busId: string;
@@ -40,23 +46,106 @@ export interface IActiveBooking {
   updatedAt?: any;
 }
 
+// ── PNR helpers ────────────────────────────────────────────────────────────────
+
+/** Strip everything non-alphabetic, uppercase, then take the first N chars
+ *  padded with 'X' so we always get a fixed-width chunk. */
+function locationCode(s: string, n = 2): string {
+  const cleaned = (s || "").replace(/[^A-Za-z]/g, "").toUpperCase();
+  return (cleaned.slice(0, n) || "X".repeat(n)).padEnd(n, "X");
+}
+
+/** Build a candidate PNR from its parts. Always 12 chars: AABB + YYMMDD + SS.
+ *  Encoding the full date (year + month + day) prevents same-route same-day
+ *  collisions across months/years — e.g. May 18 and April 18 produce
+ *  different PNRs without relying on the uniqueness-retry fallback. */
+function buildPNR(from: string, to: string, date: string, sequence: number): string {
+  const fromCode = locationCode(from, 2);
+  const toCode   = locationCode(to, 2);
+  const [yStr = "", mStr = "", dStr = ""] = (date || "").split("-");
+  const yearPart  = (yStr || "0000").slice(-2).padStart(2, "0");
+  const monthPart = String(parseInt(mStr || "1", 10) || 1).padStart(2, "0");
+  const dayPart   = String(parseInt(dStr || "1", 10) || 1).padStart(2, "0");
+  const seqPart   = String(((sequence % 100) + 100) % 100).padStart(2, "0");
+  return `${fromCode}${toCode}${yearPart}${monthPart}${dayPart}${seqPart}`;
+}
+
 export class ActiveBookingsService {
   private col() {
     return collection(firestore, "activeBookings");
   }
 
-  /** Create a new booking (supports multiple seats) */
+  /** Count this operator's bookings on a given travel date — used to seed PNR sequence. */
+  private async countOperatorBookingsOnDate(operatorId: string, date: string): Promise<number> {
+    const q = query(
+      this.col(),
+      where("operatorId", "==", operatorId),
+      where("date", "==", date)
+    );
+    const snap = await getDocs(q);
+    return snap.size;
+  }
+
+  /** Check whether a PNR is already taken. */
+  async pnrExists(pnr: string): Promise<boolean> {
+    const q = query(this.col(), where("pnr", "==", pnr));
+    const snap = await getDocs(q);
+    return !snap.empty;
+  }
+
+  /** Look up a booking by its PNR. Returns null if not found. */
+  async getByPNR(pnr: string): Promise<IActiveBooking | null> {
+    const normalized = (pnr || "").trim().toUpperCase();
+    if (!normalized) return null;
+    const q = query(this.col(), where("pnr", "==", normalized));
+    const snap = await getDocs(q);
+    if (snap.empty) return null;
+    const d = snap.docs[0];
+    return { ...(d.data() as Omit<IActiveBooking, "id">), id: d.id };
+  }
+
+  /** Generate a unique PNR for a booking.
+   *  Sequence starts from this operator's booking count for the same travel date,
+   *  so it encodes "how many bookings the operator has had that day".
+   *  Falls back to random sequence (then fully random) on collision. */
+  async generatePNR(operatorId: string, from: string, to: string, date: string): Promise<string> {
+    const baseSequence = (await this.countOperatorBookingsOnDate(operatorId, date)) + 1;
+
+    // First pass: deterministic sequence, then random sequence on collision.
+    for (let attempt = 0; attempt < 20; attempt++) {
+      const seq = attempt === 0 ? baseSequence : Math.floor(Math.random() * 100);
+      const pnr = buildPNR(from, to, date, seq);
+      if (!(await this.pnrExists(pnr))) return pnr;
+    }
+
+    // Last resort — fully random PNR (still 12 chars: 4 letters + 8 digits)
+    // so length is consistent across deterministic and fallback paths. Hardly
+    // ever expected to hit — would require 20+ collisions on this route/date.
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const rand = (len: number, alphabet: string) =>
+        Array.from({ length: len }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join("");
+      const pnr = rand(4, "ABCDEFGHJKLMNPQRSTUVWXYZ") + rand(8, "0123456789");
+      if (!(await this.pnrExists(pnr))) return pnr;
+    }
+    throw new Error("Could not generate a unique PNR — please retry.");
+  }
+
+  /** Create a new booking (supports multiple seats). Generates a unique PNR. */
   async createActiveBooking(
-    booking: Omit<IActiveBooking, "id" | "createdAt" | "updatedAt">
+    booking: Omit<IActiveBooking, "id" | "createdAt" | "updatedAt" | "pnr"> & { pnr?: string }
   ): Promise<IActiveBooking> {
+    const pnr = booking.pnr
+      || await this.generatePNR(booking.operatorId, booking.from, booking.to, booking.date);
+
     const bookingData = {
       ...booking,
+      pnr,
       bookingTime: serverTimestamp(),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
     const ref = await addDoc(this.col(), bookingData);
-    return { ...booking, id: ref.id };
+    return { ...booking, pnr, id: ref.id };
   }
 
   /** Get all booked seat labels for a bus on a specific date.

@@ -61,7 +61,7 @@ export default function TicketPage() {
   // ── Actions ────────────────────────────────────────────────────────────────
 
   const handleCopyId = () => {
-    navigator.clipboard.writeText(booking?.id || "");
+    navigator.clipboard.writeText(booking?.pnr || booking?.id || "");
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
@@ -72,6 +72,7 @@ export default function TicketPage() {
     const seats = b.seatNumbers?.length ? b.seatNumbers : [b.seatNumber].filter(Boolean) as string[];
     return [
       "🚌 UthBus E-Ticket",
+      `PNR: ${b.pnr || "—"}`,
       `Bus: ${b.busName} (${b.busType})`,
       `Route: ${b.from} → ${b.to}`,
       `Date: ${formatDate(b.date)}`,
@@ -177,21 +178,22 @@ export default function TicketPage() {
           <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-soft-md">
 
             {/* Ticket header bar */}
-            <div className="bg-primary px-5 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Bus className="w-5 h-5 text-primary-foreground/70" />
+            <div className="bg-primary px-5 py-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <Bus className="w-5 h-5 text-primary-foreground/70 shrink-0" />
                 <span className="text-primary-foreground font-extrabold text-lg tracking-tight">
                   <span className="opacity-75">uth</span>bus
                 </span>
                 <span className="text-primary-foreground/50 text-xs font-medium hidden sm:inline">· E-Ticket</span>
               </div>
-              <div className="text-right">
-                <p className="text-primary-foreground/60 text-[10px] uppercase tracking-widest font-medium">Booking ID</p>
+              <div className="text-right shrink-0">
+                <p className="text-primary-foreground/60 text-[10px] uppercase tracking-widest font-medium">PNR</p>
                 <button
                   onClick={handleCopyId}
-                  className="text-primary-foreground font-mono font-bold text-base flex items-center gap-1.5 hover:opacity-80 transition-opacity"
+                  title="Copy PNR"
+                  className="text-primary-foreground font-mono font-extrabold text-lg tracking-wider flex items-center gap-1.5 hover:opacity-80 transition-opacity"
                 >
-                  {shortId}
+                  {booking.pnr || shortId}
                   {copied
                     ? <Check className="w-3.5 h-3.5 shrink-0" />
                     : <Copy className="w-3.5 h-3.5 shrink-0 opacity-70" />}
@@ -313,7 +315,8 @@ export default function TicketPage() {
                 </p>
                 <dl className="space-y-2 text-sm">
                   {[
-                    ["Transaction ID", shortId],
+                    ["PNR", booking.pnr || "—"],
+                    ["Booking ID", shortId],
                     ["Ticket Type", "E-Ticket"],
                     ["Booked On", formatBookedAt(booking.bookingTime)],
                     ["Date of Journey", formatDate(booking.date)],
@@ -322,7 +325,9 @@ export default function TicketPage() {
                   ].map(([label, value]) => (
                     <div key={label} className="flex items-start justify-between gap-2">
                       <dt className="text-muted-foreground shrink-0">{label}</dt>
-                      <dd className="font-medium text-foreground text-right">{value}</dd>
+                      <dd className={`text-right ${label === "PNR" ? "font-mono font-bold text-foreground tracking-wider" : "font-medium text-foreground"}`}>
+                        {value}
+                      </dd>
                     </div>
                   ))}
                 </dl>

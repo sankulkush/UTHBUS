@@ -184,7 +184,7 @@ export const OperatorAuthProvider = ({ children }: OperatorAuthProviderProps) =>
     setUser(null)
     setOperator(null)
     setToken(null)
-    router.push("/operator/login")
+    router.push("/")
   }
 
   const updateProfile = async (profileData: Partial<OperatorProfile>) => {

@@ -80,25 +80,26 @@ export default function BookingsPage() {
   const [filteredBookings, setFilteredBookings] = useState<IActiveBooking[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('upcoming')
+  const [searchQuery, setSearchQuery] = useState("")
   const [counts, setCounts] = useState({
     upcoming: 0,
     past: 0,
     cancelled: 0
   })
-  
+
   const activeBookingsService = new ActiveBookingsService()
-  
+
   // Fetch user bookings on component mount
   useEffect(() => {
     if (userProfile) {
       fetchUserBookings()
     }
   }, [userProfile])
-  
-  // Filter bookings based on active tab
+
+  // Filter bookings based on active tab and search query
   useEffect(() => {
     let filtered = bookings
-    
+
     // Apply tab filter based on status
     switch (activeTab) {
       case 'upcoming':
@@ -111,9 +112,23 @@ export default function BookingsPage() {
         filtered = filtered.filter(booking => booking.status === 'cancelled')
         break
     }
-    
+
+    // Search: PNR (most prominent), then bus name / route / passenger / phone / id
+    const q = searchQuery.trim().toLowerCase()
+    if (q) {
+      filtered = filtered.filter((b) =>
+        (b.pnr || "").toLowerCase().includes(q) ||
+        (b.busName || "").toLowerCase().includes(q) ||
+        (b.from || "").toLowerCase().includes(q) ||
+        (b.to || "").toLowerCase().includes(q) ||
+        (b.passengerName || "").toLowerCase().includes(q) ||
+        (b.passengerPhone || "").includes(q) ||
+        (b.id || "").toLowerCase().includes(q)
+      )
+    }
+
     setFilteredBookings(filtered)
-  }, [bookings, activeTab])
+  }, [bookings, activeTab, searchQuery])
   
   // Calculate counts for each tab
   useEffect(() => {
@@ -231,7 +246,8 @@ export default function BookingsPage() {
                 <h2>UTHBUS</h2>
                 <p>Bus Ticket</p>
               </div>
-              <div class="row"><span class="label">Booking ID:</span> <span>${booking.id}</span></div>
+              <div class="row"><span class="label">PNR:</span> <span style="font-family:monospace;font-size:18px;font-weight:bold;letter-spacing:2px;">${booking.pnr || '—'}</span></div>
+              <div class="row"><span class="label">Booking ID:</span> <span style="font-family:monospace;font-size:11px;color:#666;">${booking.id}</span></div>
               <div class="row"><span class="label">Bus:</span> <span>${booking.busName}</span></div>
               <div class="row"><span class="label">From:</span> <span>${booking.from}</span></div>
               <div class="row"><span class="label">To:</span> <span>${booking.to}</span></div>
@@ -270,14 +286,25 @@ export default function BookingsPage() {
         onTabChange={setActiveTab}
         counts={counts}
       />
-      
+
+      {/* PNR / search input */}
+      <div className="mb-4 relative">
+        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+        <Input
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search by PNR, bus, route, or passenger…"
+          className="pl-9"
+        />
+      </div>
+
       {/* Results Summary */}
       <div className="mb-4 flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
           Showing {filteredBookings.length} of {bookings.length} bookings
         </p>
-        <Button 
-          onClick={fetchUserBookings} 
+        <Button
+          onClick={fetchUserBookings}
           disabled={isLoading}
           className=""
         >
@@ -329,9 +356,14 @@ export default function BookingsPage() {
                       <p className="text-sm text-muted-foreground mb-1">
                         {booking.from} → {booking.to}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        Booking ID: {booking.id}
-                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary font-mono font-bold text-sm tracking-wider">
+                          PNR · {booking.pnr || "—"}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground font-mono">
+                          ID {booking.id?.slice(0, 8)}
+                        </span>
+                      </div>
                     </div>
                   </div>
                   <div className="text-right">
