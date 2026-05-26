@@ -1,5 +1,5 @@
 # UTHBUS
-**Production:** https://uthbus.vercel.app
+**Production:** https://uthbus.com
 
 Online bus ticket booking web app built with Next.js 16, Firebase, and Tailwind CSS.
 This website is fully made my using AI tools.
