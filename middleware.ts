@@ -1,37 +1,40 @@
-// middleware.ts (in the root of your project)
+// middleware.ts
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-  
-  // Check if the route is protected (operator counter routes)
+  const token = request.cookies.get('auth-token')?.value
+
+  // ── Operator counter portal ───────────────────────────────────────────────
   if (pathname.startsWith('/operator/counter')) {
-    const token = request.cookies.get('auth-token')?.value
-    
     if (!token) {
-      // Redirect to login if no token
       const loginUrl = new URL('/operator/login', request.url)
       loginUrl.searchParams.set('redirect', pathname)
       return NextResponse.redirect(loginUrl)
     }
-    
-    // Token exists, allow the request to proceed
     return NextResponse.next()
   }
-  
-  // For login and register pages, redirect to counter if already authenticated
+
+  // Redirect already-authenticated operators away from login/register
   if (pathname === '/operator/login' || pathname === '/operator/register') {
-    const token = request.cookies.get('auth-token')?.value
-    
     if (token) {
-      // Check if there's a redirect parameter
       const redirect = request.nextUrl.searchParams.get('redirect')
-      const redirectUrl = redirect ? new URL(redirect, request.url) : new URL('/operator/counter', request.url)
-      return NextResponse.redirect(redirectUrl)
+      const dest = redirect ? new URL(redirect, request.url) : new URL('/operator/counter', request.url)
+      return NextResponse.redirect(dest)
     }
   }
-  
+
+  // ── Admin portal ──────────────────────────────────────────────────────────
+  // Admin routes are client-side guarded by AdminAuthProvider.
+  // Middleware just ensures the /admin root redirects to /admin/login when
+  // there is no token, avoiding a flash of the spinner page.
+  if (pathname === '/admin' || pathname.startsWith('/admin/buses')) {
+    if (!token) {
+      return NextResponse.redirect(new URL('/admin/login', request.url))
+    }
+  }
+
   return NextResponse.next()
 }
 
@@ -39,6 +42,8 @@ export const config = {
   matcher: [
     '/operator/counter/:path*',
     '/operator/login',
-    '/operator/register'
+    '/operator/register',
+    '/admin',
+    '/admin/buses/:path*',
   ]
 }

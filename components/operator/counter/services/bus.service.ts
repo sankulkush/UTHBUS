@@ -27,12 +27,16 @@ export class BusService implements IBusService {
   }
 
   async createBus(bus: Omit<IBus, "id">): Promise<IBus> {
-    const ref = await addDoc(this.col(), {
+    // New buses require UthBus admin approval before going live.
+    const busData = {
       ...bus,
+      status: "Inactive" as const,
+      verificationStatus: "pending_verification" as const,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-    });
-    return { ...bus, id: ref.id };
+    };
+    const ref = await addDoc(this.col(), busData);
+    return { ...busData, id: ref.id };
   }
 
   async updateBus(id: string, updates: Partial<IBus>): Promise<IBus> {
@@ -68,8 +72,11 @@ export class BusService implements IBusService {
     );
     const snap = await getDocs(q);
     const buses = snap.docs.map((d) => ({ ...d.data() as Omit<IBus, "id">, id: d.id }));
-    // Filter out buses marked unavailable on this date
-    return buses.filter((b) => !b.unavailableDates?.includes(date));
+    return buses.filter((b) => {
+      // Only show admin-approved buses (or legacy buses without the field)
+      if (b.verificationStatus && b.verificationStatus !== "approved") return false;
+      return !b.unavailableDates?.includes(date);
+    });
   }
 
   async getBusById(id: string): Promise<IBus | null> {
@@ -83,5 +90,34 @@ export class BusService implements IBusService {
     const q = query(this.col(), where("status", "==", "Active"));
     const snap = await getDocs(q);
     return snap.docs.map((d) => ({ ...d.data() as Omit<IBus, "id">, id: d.id }));
+  }
+
+  /** Admin use: fetch all buses regardless of status/verification */
+  async getAllBusesForAdmin(): Promise<IBus[]> {
+    const snap = await getDocs(this.col());
+    return snap.docs.map((d) => ({ ...d.data() as Omit<IBus, "id">, id: d.id }));
+  }
+
+  async verifyBus(id: string, status: "approved" | "rejected"): Promise<void> {
+    const ref = docRef(firestore, "buses", id);
+    await updateDoc(ref, {
+      verificationStatus: status,
+      ...(status === "approved" ? { status: "Active" } : {}),
+      updatedAt: serverTimestamp(),
+    });
+  }
+
+  async holdBus(id: string): Promise<void> {
+    const ref = docRef(firestore, "buses", id);
+    await updateDoc(ref, { verificationStatus: "suspended", status: "Inactive", updatedAt: serverTimestamp() });
+  }
+
+  async unholdBus(id: string): Promise<void> {
+    const ref = docRef(firestore, "buses", id);
+    await updateDoc(ref, { verificationStatus: "approved", status: "Active", updatedAt: serverTimestamp() });
+  }
+
+  async adminDeleteBus(id: string): Promise<void> {
+    await deleteDoc(docRef(firestore, "buses", id));
   }
 }

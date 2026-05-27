@@ -1,7 +1,7 @@
 // components/Navbar.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { userProfile } = useUserAuth();
+  const { user, userProfile } = useUserAuth();
   const { operator } = useOperatorAuth();
   const { theme, setTheme } = useTheme();
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -26,6 +26,7 @@ export default function Navbar() {
   const [showWelcomePromo, setShowWelcomePromo] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const prevUidRef = useRef<string | null>(null);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -35,13 +36,32 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  if (pathname?.startsWith("/operator")) return null;
+  // Show welcome promo only on first-ever sign-up, never on repeat logins
+  useEffect(() => {
+    if (!user) { prevUidRef.current = null; return; }
+    if (prevUidRef.current === user.uid) return; // same session, already checked
+    prevUidRef.current = user.uid;
+
+    const storageKey = `uthbus_promo_${user.uid}`;
+    if (localStorage.getItem(storageKey)) return; // already shown before
+
+    try {
+      const created = new Date(user.metadata.creationTime!).getTime();
+      const lastSignIn = new Date(user.metadata.lastSignInTime!).getTime();
+      const isNewSignup = Math.abs(lastSignIn - created) < 120_000; // within 2 min
+      if (isNewSignup) setShowWelcomePromo(true);
+    } catch {
+      // metadata unavailable — skip promo
+    }
+  }, [user]);
+
+  if (pathname?.startsWith("/operator") || pathname?.startsWith("/admin")) return null;
 
   const isUserLoggedIn = !!userProfile;
   const isOperatorLoggedIn = !!operator;
   const isDark = theme === "dark";
 
-  const handleLoginSuccess = () => setShowWelcomePromo(true);
+  const handleLoginSuccess = () => {};
 
   return (
     <>
@@ -144,7 +164,10 @@ export default function Navbar() {
       />
       <WelcomePromoModal
         isOpen={showWelcomePromo}
-        onClose={() => setShowWelcomePromo(false)}
+        onClose={() => {
+          if (user) localStorage.setItem(`uthbus_promo_${user.uid}`, "1");
+          setShowWelcomePromo(false);
+        }}
         userName={userProfile?.fullName}
       />
     </>

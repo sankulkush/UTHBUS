@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { PasswordInput } from "@/components/ui/password-input"
 
 interface UserSignupModalProps {
   isOpen: boolean
@@ -96,12 +97,12 @@ export default function UserSignupModal({ isOpen, onClose, onSwitchToLogin, onLo
 
           <div className="space-y-1.5">
             <Label htmlFor="su-password">Password *</Label>
-            <Input id="su-password" type="password" required value={formData.password} onChange={set("password")} placeholder="At least 6 characters" />
+            <PasswordInput id="su-password" required value={formData.password} onChange={set("password")} placeholder="At least 6 characters" />
           </div>
 
           <div className="space-y-1.5">
             <Label htmlFor="confirmPassword">Confirm Password *</Label>
-            <Input id="confirmPassword" type="password" required value={formData.confirmPassword} onChange={set("confirmPassword")} placeholder="Confirm your password" />
+            <PasswordInput id="confirmPassword" required value={formData.confirmPassword} onChange={set("confirmPassword")} placeholder="Confirm your password" />
           </div>
 
           <div className="space-y-2.5">
