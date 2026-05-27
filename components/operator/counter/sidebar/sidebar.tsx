@@ -80,9 +80,12 @@ export function Sidebar({
       <div className="flex items-center justify-between px-4 py-4 border-b border-border shrink-0">
         {!collapsed && (
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
-              <Bus className="w-4 h-4 text-primary-foreground" />
-            </div>
+            {/* Drop the final brand logo at /public/placeholder-logo.png */}
+            <img
+              src="/placeholder-logo.png"
+              alt="UthBus"
+              className="w-8 h-8 rounded-lg object-contain shrink-0"
+            />
             <div className="min-w-0">
               <p className="text-sm font-bold leading-tight truncate">
                 <span className="text-blue-600 dark:text-blue-400">uth</span>
@@ -93,9 +96,11 @@ export function Sidebar({
           </div>
         )}
         {collapsed && (
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center mx-auto">
-            <Bus className="w-4 h-4 text-primary-foreground" />
-          </div>
+          <img
+            src="/placeholder-logo.png"
+            alt="UthBus"
+            className="w-8 h-8 rounded-lg object-contain mx-auto"
+          />
         )}
         <button
           onClick={collapsed ? onToggleCollapse : onToggleCollapse}

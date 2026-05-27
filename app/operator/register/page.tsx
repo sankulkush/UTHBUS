@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { BusIcon, ArrowLeft, AlertCircle, CheckCircle } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { PasswordInput } from "@/components/ui/password-input"
 
 export default function OperatorRegister() {
   const { register } = useOperatorAuth()
@@ -173,10 +174,9 @@ export default function OperatorRegister() {
 
               <div className="space-y-2">
                 <Label htmlFor="password">Password *</Label>
-                <Input
+                <PasswordInput
                   id="password"
                   name="password"
-                  type="password"
                   value={formData.password}
                   onChange={handleChange}
                   required
@@ -188,10 +188,9 @@ export default function OperatorRegister() {
 
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirm Password *</Label>
-                <Input
+                <PasswordInput
                   id="confirmPassword"
                   name="confirmPassword"
-                  type="password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   required

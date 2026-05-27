@@ -4,14 +4,17 @@ import { useState } from "react";
 import {
   Plus, Pencil, Trash2, X,
   Bus, CheckCircle2, AlertCircle, Wrench, Calendar,
-  MapPin, Clock, Tag, Settings2, Hash,
+  MapPin, Clock, Tag, Settings2, Hash, Ban,
 } from "lucide-react";
 import { useCounter } from "../context/counter-context";
 import { BusService } from "../services/bus.service";
+import { ActiveBookingsService } from "../services/active-booking.service";
+import { SeatMapNAEditor } from "../components/seat-map";
 import type { IBus, BusType, BusStatus } from "../types/counter.types";
 import CitySelect from "@/components/city-select";
 
 const busService = new BusService();
+const bookingsService = new ActiveBookingsService();
 
 const AMENITIES = ["Wi-Fi", "Charging Point", "Sofa Seat", "TV", "Water Bottle", "CCTV", "Blanket", "Snacks"];
 
@@ -30,7 +33,7 @@ const DEFAULT_BUS: Omit<IBus, "id"> = {
   boardingPoints: [],
   droppingPoints: [],
   photos: [],
-  status: "Active",
+  status: "Inactive", // createBus() will set pending_verification; operator cannot self-activate new buses
   departureTime: "06:00",
   arrivalTime: "12:00",
   duration: "6h",
@@ -247,16 +250,24 @@ function BusForm({ initial, operatorId, onSave, onCancel, loading }: BusFormProp
                   className="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/60 text-foreground transition-all"
                 />
               </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Status *</label>
-                <select
-                  value={form.status}
-                  onChange={(e) => set("status", e.target.value as BusStatus)}
-                  className="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/60 text-foreground transition-all"
-                >
-                  {["Active", "Maintenance", "Inactive"].map((s) => <option key={s}>{s}</option>)}
-                </select>
-              </div>
+              {/* Status only editable on existing buses — new buses start pending_verification */}
+              {form.id && (
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Status *</label>
+                  <select
+                    value={form.status}
+                    onChange={(e) => set("status", e.target.value as BusStatus)}
+                    className="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/60 text-foreground transition-all"
+                  >
+                    {["Active", "Maintenance", "Inactive"].map((s) => <option key={s}>{s}</option>)}
+                  </select>
+                </div>
+              )}
+              {!form.id && (
+                <div className="flex items-center px-3 py-2.5 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 rounded-lg text-xs text-orange-700 dark:text-orange-400">
+                  New buses require UthBus admin approval before going live.
+                </div>
+              )}
             </div>
             <label className="flex items-center gap-3 mt-3 px-3 py-2.5 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted transition-colors">
               <button
@@ -410,6 +421,156 @@ function BusForm({ initial, operatorId, onSave, onCancel, loading }: BusFormProp
   );
 }
 
+// Confirmation dialog shown before deactivating a bus that has active bookings
+function DeactivateConfirmDialog({
+  bus,
+  activeBookingCount,
+  onConfirm,
+  onCancel,
+  loading,
+}: {
+  bus: IBus;
+  activeBookingCount: number;
+  onConfirm: () => void;
+  onCancel: () => void;
+  loading: boolean;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="bg-card border border-border rounded-2xl w-full max-w-sm shadow-2xl">
+        <div className="flex items-start gap-3 p-5 border-b border-border">
+          <div className="w-9 h-9 rounded-xl bg-destructive/10 text-destructive flex items-center justify-center shrink-0 mt-0.5">
+            <AlertCircle className="w-4 h-4" />
+          </div>
+          <div>
+            <h2 className="font-semibold text-foreground text-sm leading-tight">Deactivate Bus?</h2>
+            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+              {activeBookingCount > 0 ? (
+                <>
+                  <span className="font-semibold text-destructive">{activeBookingCount} active booking{activeBookingCount > 1 ? "s" : ""}</span>{" "}
+                  will be cancelled and affected passengers will need to rebook.
+                </>
+              ) : (
+                "This bus will be hidden from passenger search immediately."
+              )}
+            </p>
+          </div>
+        </div>
+        <div className="p-5 space-y-3">
+          <div className="bg-muted/50 rounded-lg px-3 py-2 text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">{bus.startPoint} → {bus.endPoint}</span>
+            {" · "}{bus.name}
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={onCancel}
+              className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onConfirm}
+              disabled={loading}
+              className="flex-[1.2] py-2.5 rounded-xl bg-destructive text-destructive-foreground text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity"
+            >
+              {loading ? "Deactivating…" : "Yes, Deactivate"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// N/A seat manager — lets operators block individual seats on a bus
+function NASeatModal({
+  bus,
+  onClose,
+  onSave,
+}: {
+  bus: IBus;
+  onClose: () => void;
+  onSave: (naSeats: string[]) => void;
+}) {
+  const [naSeats, setNaSeats] = useState<string[]>(bus.naSeats ?? []);
+  const [bookedSeats] = useState<string[]>([]); // bookings loaded async below
+  const [bookedWarning, setBookedWarning] = useState<string | null>(null);
+
+  const handleToggleNA = (seat: string, isCurrentlyBooked: boolean) => {
+    if (isCurrentlyBooked && !naSeats.includes(seat)) {
+      setBookedWarning(
+        `Seat ${seat} has an active booking. Marking it N/A won't cancel that booking — the passenger will still travel. Are you sure?`
+      );
+      // We store the seat to mark after user acknowledges
+      return;
+    }
+    setBookedWarning(null);
+    setNaSeats((prev) =>
+      prev.includes(seat) ? prev.filter((s) => s !== seat) : [...prev, seat]
+    );
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+      <div className="bg-card border border-border rounded-2xl w-full max-w-md my-4 shadow-2xl">
+        <div className="flex items-center justify-between p-5 border-b border-border">
+          <div>
+            <h2 className="font-semibold text-foreground text-sm">Manage N/A Seats</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {bus.startPoint} → {bus.endPoint} · {bus.name}
+            </p>
+          </div>
+          <button onClick={onClose} className="w-7 h-7 rounded-md hover:bg-muted flex items-center justify-center text-muted-foreground">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="p-5 space-y-4">
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Click any seat to toggle it as <strong className="text-foreground">N/A</strong> (blocked). N/A seats cannot be booked by passengers. Yellow seats have active bookings.
+          </p>
+
+          {bookedWarning && (
+            <div className="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-300 dark:border-yellow-700 rounded-lg p-3 text-xs text-yellow-800 dark:text-yellow-300">
+              {bookedWarning}
+            </div>
+          )}
+
+          <div className="flex justify-center overflow-x-auto">
+            <SeatMapNAEditor
+              bus={bus}
+              booked={bookedSeats}
+              naSeats={naSeats}
+              onToggleNA={handleToggleNA}
+            />
+          </div>
+
+          {naSeats.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {naSeats.map((s) => (
+                <span key={s} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-medium border border-dashed border-slate-400 dark:border-slate-600">
+                  {s}
+                  <button type="button" onClick={() => setNaSeats((prev) => prev.filter((x) => x !== s))} className="hover:text-destructive">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <button onClick={onClose} className="flex-1 py-2 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:bg-muted">
+              Cancel
+            </button>
+            <button onClick={() => onSave(naSeats)} className="flex-1 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90">
+              Save N/A Seats
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Availability date manager
 function AvailabilityModal({ bus, onClose, onSave }: { bus: IBus; onClose: () => void; onSave: (dates: string[]) => void }) {
   const [dates, setDates] = useState<string[]>(bus.unavailableDates || []);
@@ -485,6 +646,14 @@ export function BusesPage() {
   const [formLoading, setFormLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  // Deactivation confirmation state
+  const [deactivateBus, setDeactivateBus] = useState<IBus | null>(null);
+  const [deactivateBookingCount, setDeactivateBookingCount] = useState(0);
+  const [deactivateLoading, setDeactivateLoading] = useState(false);
+
+  // N/A seat management state
+  const [naSeatBus, setNaSeatBus] = useState<IBus | null>(null);
+
   const handleSave = async (data: Omit<IBus, "id"> & { id?: string }) => {
     if (!operator) return;
     setFormLoading(true);
@@ -519,12 +688,41 @@ export function BusesPage() {
   };
 
   const handleToggleStatus = async (bus: IBus) => {
-    const next: BusStatus = bus.status === "Active" ? "Inactive" : "Active";
+    if (bus.status === "Active") {
+      // Going Active → Inactive: check for active bookings and show confirmation
+      try {
+        const active = await bookingsService.getBookingsForBus(bus.id);
+        setDeactivateBookingCount(active.length);
+        setDeactivateBus(bus);
+      } catch (e) {
+        console.error(e);
+      }
+    } else {
+      // Going Inactive/Maintenance → Active: no confirmation needed
+      try {
+        await busService.updateBus(bus.id, { status: "Active" });
+        await refreshData();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
+
+  const handleConfirmDeactivate = async () => {
+    if (!deactivateBus) return;
+    setDeactivateLoading(true);
     try {
-      await busService.updateBus(bus.id, { status: next });
+      // Cancel all active bookings for this bus
+      const active = await bookingsService.getBookingsForBus(deactivateBus.id);
+      await Promise.all(active.map((b) => bookingsService.cancelActiveBooking(b.id!)));
+      // Mark bus inactive
+      await busService.updateBus(deactivateBus.id, { status: "Inactive" });
       await refreshData();
+      setDeactivateBus(null);
     } catch (e) {
       console.error(e);
+    } finally {
+      setDeactivateLoading(false);
     }
   };
 
@@ -534,6 +732,17 @@ export function BusesPage() {
       await busService.updateBus(availabilityBus.id, { unavailableDates: dates });
       await refreshData();
       setAvailabilityBus(null);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleSaveNASeats = async (naSeats: string[]) => {
+    if (!naSeatBus) return;
+    try {
+      await busService.updateBus(naSeatBus.id, { naSeats });
+      await refreshData();
+      setNaSeatBus(null);
     } catch (e) {
       console.error(e);
     }
@@ -569,19 +778,27 @@ export function BusesPage() {
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center shrink-0">
-                    <Bus className="w-5 h-5 text-muted-foreground" />
+                    <MapPin className="w-5 h-5 text-muted-foreground" />
                   </div>
                   <div className="min-w-0">
-                    <p className="font-semibold text-foreground text-sm truncate">
-                      {bus.startPoint} → {bus.endPoint}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate mt-0.5">{bus.name}</p>
-                    <div className="flex items-center gap-1.5 mt-1">
+                    <p className="font-semibold text-foreground text-sm truncate">{bus.startPoint} → {bus.endPoint}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 truncate">{bus.name}</p>
+                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusBadge(bus.status)}`}>
                         {statusIcon(bus.status)} {bus.status}
                       </span>
                       {bus.isAC && <span className="px-1.5 py-0.5 bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 rounded text-[10px] font-semibold">AC</span>}
                       <span className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded text-[10px]">{bus.type}</span>
+                      {bus.verificationStatus === "pending_verification" && (
+                        <span className="px-1.5 py-0.5 bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400 rounded text-[10px] font-semibold border border-orange-200 dark:border-orange-800">
+                          Awaiting Approval
+                        </span>
+                      )}
+                      {bus.verificationStatus === "rejected" && (
+                        <span className="px-1.5 py-0.5 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 rounded text-[10px] font-semibold border border-red-200 dark:border-red-800">
+                          Rejected
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -589,13 +806,21 @@ export function BusesPage() {
                   <button
                     onClick={() => setAvailabilityBus(bus)}
                     className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"
-                    title="Manage availability"
+                    title="Manage availability dates"
                   >
                     <Calendar className="w-3.5 h-3.5" />
                   </button>
                   <button
+                    onClick={() => setNaSeatBus(bus)}
+                    className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"
+                    title="Manage N/A seats"
+                  >
+                    <Ban className="w-3.5 h-3.5" />
+                  </button>
+                  <button
                     onClick={() => { setEditingBus(bus); setShowForm(true); }}
                     className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"
+                    title="Edit bus"
                   >
                     <Pencil className="w-3.5 h-3.5" />
                   </button>
@@ -603,6 +828,7 @@ export function BusesPage() {
                     onClick={() => handleDelete(bus.id)}
                     disabled={deletingId === bus.id}
                     className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive disabled:opacity-50"
+                    title="Delete bus"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -651,13 +877,21 @@ export function BusesPage() {
                 </div>
               )}
 
-              {/* Unavailable dates warning */}
-              {(bus.unavailableDates?.length ?? 0) > 0 && (
-                <div className="flex items-center gap-1.5 text-xs text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg px-2.5 py-1.5">
-                  <Calendar className="w-3 h-3 shrink-0" />
-                  <span>{bus.unavailableDates!.length} unavailable date{bus.unavailableDates!.length > 1 ? "s" : ""}</span>
-                </div>
-              )}
+              {/* Unavailable dates & N/A seat indicators */}
+              <div className="flex flex-wrap gap-1.5">
+                {(bus.unavailableDates?.length ?? 0) > 0 && (
+                  <div className="flex items-center gap-1.5 text-xs text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg px-2.5 py-1.5">
+                    <Calendar className="w-3 h-3 shrink-0" />
+                    <span>{bus.unavailableDates!.length} unavailable date{bus.unavailableDates!.length > 1 ? "s" : ""}</span>
+                  </div>
+                )}
+                {(bus.naSeats?.length ?? 0) > 0 && (
+                  <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 rounded-lg px-2.5 py-1.5">
+                    <Ban className="w-3 h-3 shrink-0" />
+                    <span>{bus.naSeats!.length} seat{bus.naSeats!.length > 1 ? "s" : ""} N/A</span>
+                  </div>
+                )}
+              </div>
 
               {/* Status toggle */}
               <div className="flex items-center justify-between pt-1 border-t border-border">
@@ -689,6 +923,24 @@ export function BusesPage() {
           bus={availabilityBus}
           onClose={() => setAvailabilityBus(null)}
           onSave={handleSaveAvailability}
+        />
+      )}
+
+      {deactivateBus && (
+        <DeactivateConfirmDialog
+          bus={deactivateBus}
+          activeBookingCount={deactivateBookingCount}
+          onConfirm={handleConfirmDeactivate}
+          onCancel={() => setDeactivateBus(null)}
+          loading={deactivateLoading}
+        />
+      )}
+
+      {naSeatBus && (
+        <NASeatModal
+          bus={naSeatBus}
+          onClose={() => setNaSeatBus(null)}
+          onSave={handleSaveNASeats}
         />
       )}
     </div>

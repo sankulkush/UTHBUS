@@ -71,24 +71,8 @@ export default function ResultsList({
     return () => { mounted = false; };
   }, [buses, travelDate, activeBookingsService]);
 
-  // Today in local time — used to decide whether to hide already-departed buses
-  const todayStr = useMemo(() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  }, []);
-
   const filteredBuses = useMemo(() => {
-    const isToday = travelDate === todayStr;
-    // Minutes since midnight right now, used to hide past departures on today's search
-    const now = new Date();
-    const nowMinutes = isToday ? now.getHours() * 60 + now.getMinutes() : -1;
-
     return buses.filter((bus) => {
-      // Hide buses that have already departed when the search date is today
-      if (isToday) {
-        const [h, m] = bus.departureTime.split(':').map(Number);
-        if (h * 60 + m < nowMinutes) return false;
-      }
       if (filters.busType.length > 0 && !filters.busType.includes(bus.type)) return false;
       if (filters.isAC !== null && bus.isAC !== filters.isAC) return false;
       if (bus.price < filters.priceRange[0] || bus.price > filters.priceRange[1]) return false;
@@ -102,7 +86,7 @@ export default function ResultsList({
       }
       return true;
     });
-  }, [buses, filters, travelDate, todayStr]);
+  }, [buses, filters]);
 
   const sortedBuses = useMemo(() => {
     return [...filteredBuses].sort((a, b) => {

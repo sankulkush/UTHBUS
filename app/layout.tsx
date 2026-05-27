@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { UserAuthProvider } from "@/contexts/user-auth-context";
 import { OperatorAuthProvider } from "@/contexts/operator-auth-context";
+import { AdminAuthProvider } from "@/contexts/admin-auth-context";
 import { ThemeProvider } from "@/components/theme-provider";
 import { BookingProvider } from "@/contexts/booking-context";
 
@@ -37,14 +39,17 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
-          <UserAuthProvider>
-            <OperatorAuthProvider>
-              <BookingProvider>
-                <Navbar />
-                {children}
-              </BookingProvider>
-            </OperatorAuthProvider>
-          </UserAuthProvider>
+          <AdminAuthProvider>
+            <UserAuthProvider>
+              <OperatorAuthProvider>
+                <BookingProvider>
+                  <Navbar />
+                  {children}
+                  <Footer />
+                </BookingProvider>
+              </OperatorAuthProvider>
+            </UserAuthProvider>
+          </AdminAuthProvider>
         </ThemeProvider>
       </body>
     </html>

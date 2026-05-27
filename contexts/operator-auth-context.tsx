@@ -1,6 +1,6 @@
 "use client"
 import { createContext, useContext, useState, useEffect, ReactNode } from "react"
-import { User, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth"
+import { User, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth"
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore"
 import { auth, firestore as db } from "@/firebaseConfig"
 import { useRouter } from "next/navigation"
@@ -38,6 +38,7 @@ interface OperatorAuthContextType {
   logout: () => Promise<void>
   updateProfile: (profileData: Partial<OperatorProfile>) => Promise<void>
   refreshToken: () => Promise<void>
+  resetPassword: (email: string) => Promise<void>
 }
 
 const OperatorAuthContext = createContext<OperatorAuthContextType | undefined>(undefined)
@@ -200,6 +201,11 @@ export const OperatorAuthProvider = ({ children }: OperatorAuthProviderProps) =>
     setOperator((prev) => (prev ? { ...prev, ...updatedData } : null))
   }
 
+  const resetPassword = async (email: string) => {
+    // Firebase rate-limits password reset emails natively; no extra guard needed.
+    await sendPasswordResetEmail(auth, email)
+  }
+
   const refreshToken = async () => {
     if (!user) return
     try {
@@ -220,7 +226,7 @@ export const OperatorAuthProvider = ({ children }: OperatorAuthProviderProps) =>
   return (
     <OperatorAuthContext.Provider value={{
       user, operator, token, loading,
-      login, register, logout, updateProfile, refreshToken,
+      login, register, logout, updateProfile, refreshToken, resetPassword,
     }}>
       {children}
     </OperatorAuthContext.Provider>

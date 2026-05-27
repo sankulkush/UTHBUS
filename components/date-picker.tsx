@@ -243,20 +243,20 @@ export default function DatePicker({ value, onChange }: DatePickerProps) {
 
   return (
     <div ref={triggerRef}>
-      {/* Single inline row: icon + label + chips, all in one line that wraps gracefully */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <div
-          className="flex items-center space-x-2.5 cursor-pointer min-w-0"
-          onClick={() => setShowCalendar(!showCalendar)}
-        >
-          <CalendarIcon className="w-4 h-4 text-muted-foreground shrink-0" />
-          <div className="min-w-0">
-            <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide leading-none mb-0.5">Date</div>
-            <div className="text-sm font-semibold text-foreground whitespace-nowrap">
-              {weekday}, {day} {month} {year}
-            </div>
-          </div>
-        </div>
+      {/* Stacked layout matching From/To fields: label → date text → chips */}
+      <div
+        className="cursor-pointer"
+        onClick={() => setShowCalendar(!showCalendar)}
+      >
+        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-1">
+          <CalendarIcon className="w-3 h-3" />
+          Date
+        </p>
+        <p className="text-sm font-semibold text-foreground whitespace-nowrap mb-2">
+          {weekday}, {day} {month} {year}
+        </p>
+      </div>
+      <div onClick={(e) => e.stopPropagation()}>
         {ChipButtons}
       </div>
 

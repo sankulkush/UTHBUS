@@ -295,6 +295,13 @@ export class ActiveBookingsService {
     );
   }
 
+  /** Admin use: fetch every booking across all operators, newest first */
+  async getAllBookingsForAdmin(): Promise<IActiveBooking[]> {
+    const q = query(this.col(), orderBy("bookingTime", "desc"));
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => ({ ...(d.data() as Omit<IActiveBooking, "id">), id: d.id }));
+  }
+
   /** All bookings for an operator (all statuses) */
   async getOperatorBookings(operatorId: string): Promise<IActiveBooking[]> {
     const q = query(
