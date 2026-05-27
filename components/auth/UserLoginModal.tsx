@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { PasswordInput } from "@/components/ui/password-input"
 
 interface UserLoginModalProps {
   isOpen: boolean
@@ -82,8 +83,8 @@ export default function UserLoginModal({ isOpen, onClose, onSwitchToSignup, onLo
 
           <div className="space-y-1.5">
             <Label htmlFor="password">Password</Label>
-            <Input
-              id="password" name="password" type="password" required
+            <PasswordInput
+              id="password" name="password" required
               value={formData.password}
               onChange={(e) => setFormData((p) => ({ ...p, password: e.target.value }))}
               placeholder="Your password"

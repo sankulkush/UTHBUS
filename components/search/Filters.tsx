@@ -22,10 +22,13 @@ interface FiltersProps {
 }
 
 const BUS_TYPES = [
-  { id: 'Micro',  label: 'Micro',  icon: Bus },
-  { id: 'Deluxe', label: 'Deluxe', icon: BusFront },
+  { id: 'Micro',     label: 'Micro',     icon: Bus },
+  { id: 'Hiace',     label: 'Hiace',     icon: Bus },
+  { id: 'Deluxe',    label: 'Deluxe',    icon: BusFront },
+  { id: 'AC Deluxe', label: 'AC Deluxe', icon: BusFront },
 ];
 
+// IDs must exactly match the strings stored in bus.amenities[] in Firestore
 const AMENITIES = [
   { id: 'Sofa Seat',      label: 'Sofa Seat',      icon: Armchair },
   { id: 'Wi-Fi',          label: 'Wi-Fi',           icon: Wifi },

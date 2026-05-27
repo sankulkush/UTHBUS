@@ -6,6 +6,10 @@ import { useUserAuth } from "@/contexts/user-auth-context"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 
+async function clearAuthCookie() {
+  try { await fetch("/api/auth/clear-token", { method: "POST" }) } catch { /* optional */ }
+}
+
 export default function CounterLayout({ children }: { children: React.ReactNode }) {
   const { operator, loading: operatorLoading } = useOperatorAuth()
   const { userProfile, loading: userLoading } = useUserAuth()
@@ -22,9 +26,10 @@ export default function CounterLayout({ children }: { children: React.ReactNode 
       router.replace("/")
       return
     }
-    // Block anyone who is not a verified operator account.
+    // Not a verified operator: clear the stale cookie before redirecting to login so
+    // the middleware doesn't immediately bounce them back here (redirect loop).
     if (!isOperatorLoggedIn) {
-      router.replace("/operator/login")
+      clearAuthCookie().then(() => router.replace("/operator/login"))
     }
   }, [loading, isUserLoggedIn, isOperatorLoggedIn, router])
 

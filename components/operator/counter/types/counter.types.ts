@@ -47,6 +47,10 @@ export interface IBus {
   seatCapacity: number
   // Date-based availability: bus won't appear in search on these dates
   unavailableDates?: string[] // YYYY-MM-DD
+  // Seats permanently blocked by the operator (cannot be booked by passengers)
+  naSeats?: string[]
+  // Admin verification gate — new buses start as pending_verification
+  verificationStatus?: BusVerificationStatus
 }
 
 export interface IBooking {
@@ -96,6 +100,7 @@ export interface INotification {
 
 export type BusType = "Micro" | "Hiace" | "Deluxe" | "AC Deluxe"
 export type BusStatus = "Active" | "Maintenance" | "Inactive"
+export type BusVerificationStatus = "pending_verification" | "approved" | "rejected" | "suspended"
 export type BookingStatus = "Confirmed" | "Pending" | "Cancelled" | "Completed"
 
 export interface IBookingService {
