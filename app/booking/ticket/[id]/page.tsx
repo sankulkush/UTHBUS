@@ -341,7 +341,9 @@ export default function TicketPage() {
                 <dl className="space-y-2 text-sm">
                   <div className="flex items-start justify-between gap-2">
                     <dt className="text-muted-foreground">Payment Mode</dt>
-                    <dd className="font-medium text-foreground">Online (UPI)</dd>
+                    <dd className="font-medium text-foreground">
+                      {(booking as any).paymentMode || "Reserved — pay at counter"}
+                    </dd>
                   </div>
                   <div className="flex items-start justify-between gap-2">
                     <dt className="text-muted-foreground">Ticket Fare</dt>
