@@ -1,0 +1,2448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>UTHBUS — BA Handover & Sprint Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --blue: #2563eb;
+    --red: #ef3225;
+    --ink: #14181f;
+    --navy: #0d1424;
+    --muted: #65758b;
+    --line: #e1e7ef;
+    --bg: #f7f9fc;
+    --surface: #f1f5f9;
+    --card: #ffffff;
+    --ok: #16a34a;
+    --amber: #d97706;
+    --violet: #7c3aed;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased; line-height: 1.62;
+  }
+  code, .mono { font-family: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace; font-size: 0.88em; }
+  code { background: var(--surface); padding: 1px 6px; border-radius: 4px; color: var(--navy); }
+
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 40px; }
+
+  .logo { font-weight: 800; letter-spacing: -0.025em; line-height: 1; }
+  .logo .uth { color: var(--blue); } .logo .bus { color: var(--red); }
+
+  /* cover */
+  .cover { position: relative; overflow: hidden; background: var(--navy); color: #fff; padding: 76px 0 64px; }
+  .cover::after {
+    content: ""; position: absolute; top: -30%; right: -6%; width: 42%; height: 200%;
+    background: linear-gradient(180deg, var(--blue) 0 49%, var(--red) 51% 100%);
+    transform: skewX(-18deg); opacity: 0.18;
+  }
+  .cover .logo { font-size: 30px; }
+  .cover .logo .uth { color:#6ea0ff;} .cover .logo .bus{color:#ff6b5e;}
+  .cover h1 { position: relative; z-index: 1; font-size: 48px; font-weight: 900; letter-spacing: -0.035em; margin: 24px 0 12px; line-height: 1.02; }
+  .cover .sub { position: relative; z-index: 1; color: #c9d6ea; font-size: 16px; max-width: 640px; margin: 0; }
+  .cover .meta { position: relative; z-index: 1; margin-top: 30px; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #9fb3d1; display:flex; gap:24px; flex-wrap:wrap; }
+  .cover .meta span b { color: #fff; }
+
+  section { padding: 56px 0; border-bottom: 1px solid var(--line); }
+  .kicker { font-size: 12px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--red); margin: 0 0 10px; }
+  h2 { font-size: 30px; font-weight: 900; letter-spacing: -0.03em; margin: 0 0 14px; color: var(--navy); line-height: 1.08; }
+  h3 { font-size: 18px; font-weight: 800; margin: 28px 0 12px; color: var(--navy); letter-spacing: -0.01em; }
+  h4 { font-size: 14px; font-weight: 800; margin: 18px 0 8px; color: var(--navy); }
+  .lead { font-size: 16px; color: var(--ink); max-width: 720px; margin: 0 0 26px; }
+  p { margin: 0 0 14px; }
+  ul, ol { margin: 0 0 14px; padding-left: 22px; }
+  li { margin-bottom: 6px; }
+
+  /* TOC */
+  .toc { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px 26px; }
+  .toc h3 { margin: 0 0 12px; font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 800; }
+  .toc .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 36px; }
+  .toc ul { list-style: none; padding: 0; margin: 0; }
+  .toc li { margin-bottom: 6px; font-size: 14px; }
+  .toc li a { color: var(--navy); text-decoration: none; border-bottom: 1px dotted var(--line); padding-bottom: 1px; }
+  .toc li a:hover { color: var(--blue); border-bottom-color: var(--blue); }
+  .toc .head { font-weight: 800; color: var(--red); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; margin: 0 0 8px; }
+
+  /* callout */
+  .callout { border-left: 4px solid var(--red); background: #fdeceb; border-radius: 0 12px 12px 0; padding: 16px 20px; margin: 22px 0; font-size: 15px; }
+  .callout.blue { border-left-color: var(--blue); background: #ebf2ff; }
+  .callout.ok { border-left-color: var(--ok); background: #e7f6ec; }
+  .callout.amber { border-left-color: var(--amber); background: #fdf0dc; }
+  .callout b { color: var(--navy); }
+
+  /* status pills */
+  .pill { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 800; letter-spacing: 0.03em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+  .pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; }
+  .s-ok { background: #e7f6ec; color: var(--ok); } .s-ok::before { background: var(--ok); }
+  .s-part { background: #fdf0dc; color: var(--amber); } .s-part::before { background: var(--amber); }
+  .s-bad { background: #fdeceb; color: var(--red); } .s-bad::before { background: var(--red); }
+  .s-stub { background: var(--surface); color: var(--muted); } .s-stub::before { background: var(--muted); }
+  .s-new { background: #ede9fe; color: var(--violet); } .s-new::before { background: var(--violet); }
+
+  /* priority tags */
+  .prio { font-size: 10.5px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; padding: 2px 7px; border-radius: 4px; }
+  .p0 { background: var(--red); color: #fff; }
+  .p1 { background: var(--blue); color: #fff; }
+  .p2 { background: var(--navy); color: #fff; }
+  .p3 { background: var(--muted); color: #fff; }
+
+  /* role chips */
+  .role { font-size: 11px; font-weight: 800; letter-spacing: 0.03em; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+  .r-be { background: #ebf2ff; color: var(--blue); }
+  .r-fe { background: #fdeceb; color: var(--red); }
+  .r-qa { background: #e7f6ec; color: var(--ok); }
+  .r-do { background: #ede9fe; color: var(--violet); }
+  .r-pm { background: var(--surface); color: var(--navy); }
+
+  /* feature doc card */
+  .doc { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 26px 30px; margin-bottom: 22px; }
+  .doc .docHead { display: flex; justify-content: space-between; gap: 14px; flex-wrap: wrap; align-items: baseline; border-bottom: 1px solid var(--line); padding-bottom: 14px; margin-bottom: 18px; }
+  .doc .docHead .id { font-size: 11px; font-weight: 800; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; }
+  .doc .docHead .ti { font-size: 22px; font-weight: 900; color: var(--navy); margin: 4px 0 0; letter-spacing: -0.02em; }
+  .doc .docHead .right { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .doc .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 22px; font-size: 13px; margin-bottom: 14px; }
+  .doc .meta b { color: var(--muted); font-weight: 600; font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase; display: block; margin-top: 8px; }
+  .doc h4 { margin: 22px 0 8px; font-size: 12.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--red); font-weight: 800; }
+  .doc h4:first-of-type { margin-top: 4px; }
+  .doc .story { background: var(--surface); border-radius: 8px; padding: 10px 14px; font-size: 14px; margin-bottom: 8px; }
+  .doc .story b { color: var(--blue); }
+  .doc .reqList { padding-left: 0; list-style: none; }
+  .doc .reqList li { padding: 8px 0; border-bottom: 1px dashed var(--line); display: flex; gap: 12px; font-size: 14.5px; }
+  .doc .reqList li:last-child { border-bottom: none; }
+  .doc .reqList .rid { flex: none; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: var(--muted); padding-top: 2px; width: 60px; }
+  .doc .pendList { padding-left: 0; list-style: none; }
+  .doc .pendList li { padding: 8px 0; border-bottom: 1px dashed var(--line); display: flex; gap: 10px; font-size: 14.5px; align-items: flex-start; }
+  .doc .pendList li:last-child { border-bottom: none; }
+  .doc .pendList .pTag { flex: none; padding-top: 2px; }
+  .doc .ac { background: #f7fbff; border: 1px solid #d4e3ff; border-radius: 8px; padding: 12px 16px; font-size: 14px; }
+  .doc .ac ul { margin: 0; padding-left: 20px; }
+  .doc .builtBox { background: #f4fbf6; border: 1px solid #cfe9d7; border-radius: 8px; padding: 12px 16px; font-size: 14px; }
+  .doc .builtBox ul { margin: 0; padding-left: 20px; }
+  .doc .builtBox code { background: #fff; }
+
+  /* portal header */
+  .portal { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px 26px; margin-bottom: 18px; border-top: 5px solid var(--blue); }
+  .portal.admin { border-top-color: var(--red); }
+  .portal.op { border-top-color: var(--violet); }
+  .portal h3 { margin: 0 0 4px; font-size: 22px; font-weight: 900; letter-spacing: -0.02em; }
+  .portal p { margin: 0; color: var(--muted); font-size: 14px; }
+
+  /* phase tile */
+  .phaseRow { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .phase { border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 22px; background: var(--card); border-left: 5px solid var(--red); }
+  .phase.p1 { border-left-color: var(--blue); }
+  .phase.p2 { border-left-color: var(--navy); }
+  .phase.p3 { border-left-color: var(--violet); }
+  .phase h4 { margin: 0 0 4px; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .phase .pt { font-size: 17px; font-weight: 800; color: var(--navy); margin: 0 0 6px; letter-spacing: -0.01em; }
+  .phase .pw { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+  .phase ul { margin: 0; padding-left: 18px; font-size: 13.5px; }
+
+  /* sprint table */
+  .sprint { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; margin-bottom: 20px; }
+  .sprint .sh { padding: 16px 22px; background: var(--surface); display: flex; align-items: baseline; flex-wrap: wrap; gap: 14px; border-bottom: 1px solid var(--line); }
+  .sprint .sh .tag { font-size: 11px; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 10px; border-radius: 6px; background: var(--navy); color: #fff; }
+  .sprint .sh.p0 .tag { background: var(--red); }
+  .sprint .sh.p1 .tag { background: var(--blue); }
+  .sprint .sh.p2 .tag { background: var(--navy); }
+  .sprint .sh.p3 .tag { background: var(--violet); }
+  .sprint .sh .ti { font-size: 17px; font-weight: 800; color: var(--navy); }
+  .sprint .sh .go { font-size: 13px; color: var(--muted); margin-left: auto; }
+  .sprint .body { padding: 0; }
+  .sprint .lane { padding: 14px 22px; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 120px 1fr; gap: 18px; font-size: 14px; }
+  .sprint .lane:last-child { border-bottom: none; }
+  .sprint .lane .who { padding-top: 2px; }
+  .sprint .lane .who .role { display: inline-block; margin-bottom: 4px; }
+  .sprint .lane ul { margin: 0; padding-left: 18px; }
+  .sprint .lane li { margin-bottom: 5px; }
+  .sprint .lane li code { font-size: 11.5px; }
+  .sprint .sf { padding: 12px 22px; background: #f7fbff; font-size: 13px; color: var(--navy); border-top: 1px solid var(--line); }
+  .sprint .sf b { color: var(--blue); }
+
+  /* role grid */
+  .roleGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .roleCard { border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 22px; background: var(--card); border-top: 4px solid var(--blue); }
+  .roleCard.fe { border-top-color: var(--red); }
+  .roleCard.qa { border-top-color: var(--ok); }
+  .roleCard.do { border-top-color: var(--violet); }
+  .roleCard h5 { margin: 0 0 4px; font-size: 15px; font-weight: 800; color: var(--navy); }
+  .roleCard .who { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+  .roleCard ul { margin: 0; padding-left: 18px; font-size: 13.5px; }
+
+  /* phase navigator */
+  .phaseStrip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; margin-bottom: 22px; }
+  .phaseStrip .pn { padding: 14px 18px; background: var(--card); border-right: 1px solid var(--line); }
+  .phaseStrip .pn:last-child { border-right: none; }
+  .phaseStrip .pn .lab { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 800; }
+  .phaseStrip .pn .ti { font-size: 14px; font-weight: 800; color: var(--navy); margin-top: 4px; line-height: 1.3; }
+  .phaseStrip .pn .wk { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .phaseStrip .pn:nth-child(1) { border-top: 3px solid var(--red); }
+  .phaseStrip .pn:nth-child(2) { border-top: 3px solid var(--blue); }
+  .phaseStrip .pn:nth-child(3) { border-top: 3px solid var(--navy); }
+  .phaseStrip .pn:nth-child(4) { border-top: 3px solid var(--violet); }
+
+  /* legend */
+  .legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 18px; }
+
+  /* risks */
+  .risk { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14.5px; }
+  .risk:last-child { border-bottom: none; }
+  .risk .n { flex: none; width: 22px; height: 22px; border-radius: 6px; background: var(--red); color:#fff; font-size: 12px; font-weight: 800; display:flex; align-items:center; justify-content:center; }
+
+  footer { background: var(--navy); color: #9fb3d1; padding: 38px 0; font-size: 12px; }
+  footer .logo { font-size: 22px; } footer .logo .uth{color:#6ea0ff;} footer .logo .bus{color:#ff6b5e;}
+
+  @media (max-width: 820px) {
+    .wrap { padding: 0 20px; }
+    .cover h1 { font-size: 34px; }
+    .toc .grid, .phaseRow, .roleGrid { grid-template-columns: 1fr; }
+    .phaseStrip { grid-template-columns: 1fr 1fr; }
+    .doc .meta { grid-template-columns: 1fr; }
+    .sprint .lane { grid-template-columns: 1fr; }
+  }
+  @media print {
+    @page { margin: 12mm; }
+    body { background: #fff; }
+    section, .doc, .sprint, .phase, .roleCard { page-break-inside: avoid; }
+    .cover, .sprint .sh, .callout, footer, .portal { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ COVER ============ -->
+<div class="cover">
+  <div class="wrap">
+    <div class="logo"><span class="uth">uth</span><span class="bus">bus</span></div>
+    <h1>BA Handover &amp;<br/>Engineering Sprint Plan</h1>
+    <p class="sub">A feature-by-feature specification of the platform as it stands today, what is still pending, and a phased sprint plan to take UTHBUS from "looks finished" to actually shippable as a trustworthy marketplace.</p>
+    <div class="meta">
+      <span>Owner: <b>CTO &middot; Solo Builder</b></span>
+      <span>Audience: <b>Future self (and the team I will hire)</b></span>
+      <span>Branch: <b>main</b></span>
+      <span>Doc Version: <b>1.1 (solo) &middot; 2026-06-05</b></span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- ============ HOW TO READ ============ -->
+  <section>
+    <p class="kicker">Read me first</p>
+    <h2>How this document is organised</h2>
+    <p class="lead">This document has three parts. Read in order.</p>
+
+    <ol>
+      <li><b>Context &amp; correction.</b> A short note clarifying the current state of the codebase, because the CEO's roadmap document understates what is already built.</li>
+      <li><b>Feature specifications (BA Docs).</b> One spec per feature across the three portals. Each spec is self-contained so the BA can pick up any single feature and write tickets without reading the rest. Every spec has the same shape: purpose &rarr; actors &rarr; user stories &rarr; functional requirements &rarr; what is built &rarr; what is pending &rarr; acceptance criteria &rarr; dependencies &rarr; risks.</li>
+      <li><b>MVP definition &amp; sprint plan.</b> What the smallest shippable version of UTHBUS actually is, then concrete two-week sprints for solo execution &mdash; you, doing everything. Six sprints to MVP, then a sketched post-MVP roadmap because anything planned past month four will be wrong.</li>
+    </ol>
+
+    <h3>Legend</h3>
+    <div class="legend">
+      <span class="pill s-ok">working</span>
+      <span class="pill s-part">partial</span>
+      <span class="pill s-bad">broken</span>
+      <span class="pill s-stub">stub</span>
+      <span class="pill s-new">not built</span>
+      <span class="prio p0">P0</span>
+      <span class="prio p1">P1</span>
+      <span class="prio p2">P2</span>
+      <span class="prio p3">P3</span>
+      <span class="role r-be">Backend</span>
+      <span class="role r-fe">Frontend</span>
+      <span class="role r-qa">QA</span>
+      <span class="role r-do">DevOps</span>
+    </div>
+
+    <div class="callout blue">
+      <b>Naming convention for BA tickets.</b> Each feature spec carries an ID like <code>USR-HOME</code>, <code>ADM-KYC</code>, <code>OPR-EARN</code>. Requirements inside a spec are <code>USR-HOME-R1</code>, <code>R2</code>, ... Use these IDs verbatim when filing Jira/Linear tickets so engineering, QA, and the BA stay in one taxonomy.
+    </div>
+  </section>
+
+  <!-- ============ CONTEXT & CORRECTION ============ -->
+  <section>
+    <p class="kicker">Correction to the CEO inventory</p>
+    <h2>What is actually in <code>main</code> today</h2>
+    <p class="lead">The CEO's inventory dated June 2026 calls out an "absent admin control tower." That is no longer true. Several things have shipped since that document was written. This section is the canonical starting point for the BA.</p>
+
+    <div class="callout ok">
+      <b>Admin portal exists.</b> Routes live under <code>app/admin/</code> with login, bus verification, and bookings oversight. <code>contexts/admin-auth-context.tsx</code> gates access. The portal is functional — what it is missing is <i>commerce</i> (commission, settlement, disputes) and <i>operator KYC documents</i>, not the portal itself.
+    </div>
+
+    <div class="callout">
+      <b>The CEO is right on three counts.</b> (1) The e-ticket at <code>app/booking/ticket/[id]/page.tsx:344</code> hard-codes <code>"Online (UPI)"</code> regardless of whether anything was paid — confirmed by direct file inspection. (2) Operators self-onboard and become Active immediately, without document verification. (3) No payment gateway, no money ledger.
+    </div>
+
+    <h3>What exists in code (verified)</h3>
+    <ul>
+      <li><b>User portal:</b> Homepage, search, booking flow (passenger details &rarr; review/pay &rarr; ticket), e-ticket with print/PDF/WhatsApp share, My Bookings, Profile, Google sign-in, six SEO route landing pages, stubs for Billing/Credits/Notifications/Refer-a-Friend.</li>
+      <li><b>Admin portal:</b> Login, bus verification queue (Pending / Approved / Rejected / Suspended) with Approve / Reject / Hold / Reactivate / Delete actions, platform-wide bookings list with search + status filter + cancel action.</li>
+      <li><b>Operator portal:</b> Registration + login, counter dashboard, walk-in counter booking, fleet management (add/edit/delete buses), bookings, trips, routes, seat layouts, reports, notifications, profile, settings.</li>
+      <li><b>Services:</b> <code>BusService</code>, <code>ActiveBookingsService</code>, three auth contexts (user / operator / admin), three API routes for token handling.</li>
+      <li><b>Data model:</b> <code>IBus</code>, <code>IActiveBooking</code>, <code>BusVerificationStatus</code> (<code>pending_verification</code> / <code>approved</code> / <code>rejected</code> / <code>suspended</code>), <code>BookingStatus</code>, plus user/operator/admin profile types.</li>
+    </ul>
+
+    <h3>What does not exist in code (the real gaps)</h3>
+    <ul>
+      <li><b>Payments.</b> No gateway integration. The "Confirm &amp; Pay" button writes the booking and lies on the ticket.</li>
+      <li><b>Operator KYC.</b> No document upload, no admin-side review of operator credentials. License field is collected but never validated.</li>
+      <li><b>Commission &amp; settlement.</b> No ledger, no commission capture, no settlement run, no statements.</li>
+      <li><b>Refunds &amp; cancellation policy.</b> Cancelling flips status only; no money flow, no time-based rules.</li>
+      <li><b>Photos.</b> Bus photos are a field, but there is no working upload pipeline.</li>
+      <li><b>Notifications.</b> Real notifications (email, SMS, WhatsApp, push) are not wired. The user-side notifications page is a stub.</li>
+      <li><b>Ratings &amp; reviews.</b> Not present.</li>
+      <li><b>Programmatic SEO.</b> Six hand-built route pages exist; no generator for more.</li>
+    </ul>
+
+    <p>Everything in the sprint plan rolls forward from this list, not from the CEO's "nothing exists" framing.</p>
+  </section>
+
+  <!-- ============ PHASE STRIP ============ -->
+  <section>
+    <p class="kicker">Plan at a glance</p>
+    <h2>Solo execution &middot; MVP in ~14 weeks, V1.0 in ~9 months</h2>
+    <p class="lead">Sprints are two weeks. Solo means no parallelism &mdash; the work that a team would split happens serially. The plan is detailed through MVP (Sprint 5) and sketched beyond it, because anything planned past four months for a one-person team is a fiction.</p>
+
+    <div class="phaseStrip">
+      <div class="pn">
+        <div class="lab">Phase 1 &middot; Sprints 0-2</div>
+        <div class="ti">MVP Foundations</div>
+        <div class="wk">Weeks 1-7</div>
+      </div>
+      <div class="pn">
+        <div class="lab">Phase 2 &middot; Sprints 3-5</div>
+        <div class="ti">MVP Commerce &rarr; SHIP</div>
+        <div class="wk">Weeks 8-15</div>
+      </div>
+      <div class="pn">
+        <div class="lab">Phase 3 &middot; Sprints 6-9</div>
+        <div class="ti">Post-MVP Trust &amp; Reach</div>
+        <div class="wk">Weeks 16-28</div>
+      </div>
+      <div class="pn">
+        <div class="lab">Phase 4 &middot; Sprints 10+</div>
+        <div class="ti">Scale (sketched)</div>
+        <div class="wk">Weeks 29+</div>
+      </div>
+    </div>
+
+    <div class="phaseRow">
+      <div class="phase">
+        <h4>Phase 1</h4>
+        <div class="pt">MVP Foundations</div>
+        <div class="pw">Sprints 0, 1, 2 &middot; 7 weeks</div>
+        <ul>
+          <li>Foundations: staging env, Sentry, security rules</li>
+          <li>Kill the "paid" lie on the e-ticket (1-hour win)</li>
+          <li>Hide stub pages and broken alerts</li>
+          <li>Operator KYC schema &amp; admin review</li>
+          <li>Verified badge on user surfaces</li>
+        </ul>
+      </div>
+      <div class="phase p1">
+        <h4>Phase 2 &mdash; MVP ships here</h4>
+        <div class="pt">MVP Commerce</div>
+        <div class="pw">Sprints 3, 4, 5 &middot; 8 weeks</div>
+        <ul>
+          <li>eSewa integration (one gateway only for MVP)</li>
+          <li>Cancellation policy + admin-triggered manual refund</li>
+          <li>Commission ledger (read-only is enough for MVP)</li>
+          <li>Operator earnings page</li>
+          <li><b>End of Sprint 5: MVP is live. Take first real bookings.</b></li>
+        </ul>
+      </div>
+      <div class="phase p2">
+        <h4>Phase 3 &middot; Post-MVP</h4>
+        <div class="pt">Trust &amp; Reach</div>
+        <div class="pw">Sprints 6, 7, 8, 9 &middot; 13 weeks</div>
+        <ul>
+          <li>Khalti + automated refund &amp; settlement run</li>
+          <li>Bus photo upload pipeline</li>
+          <li>Email + WhatsApp notifications</li>
+          <li>Ratings &amp; reviews after trip completion</li>
+        </ul>
+      </div>
+      <div class="phase p3">
+        <h4>Phase 4 &middot; Sketched only</h4>
+        <div class="pt">Scale</div>
+        <div class="pw">Sprints 10+ &middot; replan when you get there</div>
+        <ul>
+          <li>Programmatic SEO route pages</li>
+          <li>Card payments for tourists</li>
+          <li>Disputes module</li>
+          <li>PWA + Core Web Vitals</li>
+          <li><b>By here, hire someone. Solo doesn't scale past MVP+a bit.</b></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TOC ============ -->
+  <section>
+    <p class="kicker">Index</p>
+    <h2>Feature specifications</h2>
+    <p class="lead">Twenty-six feature specs across three portals. Click to jump to any one.</p>
+
+    <div class="toc">
+      <div class="grid">
+        <div>
+          <p class="head">User Portal</p>
+          <ul>
+            <li><a href="#USR-HOME">USR-HOME &middot; Homepage &amp; Search Widget</a></li>
+            <li><a href="#USR-SEARCH">USR-SEARCH &middot; Search Results &amp; Filters</a></li>
+            <li><a href="#USR-SEAT">USR-SEAT &middot; Seat Selection</a></li>
+            <li><a href="#USR-PAX">USR-PAX &middot; Passenger Details</a></li>
+            <li><a href="#USR-PAY">USR-PAY &middot; Review &amp; Pay</a></li>
+            <li><a href="#USR-TICKET">USR-TICKET &middot; E-Ticket</a></li>
+            <li><a href="#USR-MY">USR-MY &middot; My Bookings</a></li>
+            <li><a href="#USR-AUTH">USR-AUTH &middot; Auth &amp; Profile</a></li>
+          </ul>
+          <p class="head" style="margin-top:18px;">Operator Portal</p>
+          <ul>
+            <li><a href="#OPR-AUTH">OPR-AUTH &middot; Registration, Login, KYC</a></li>
+            <li><a href="#OPR-DASH">OPR-DASH &middot; Counter Dashboard</a></li>
+            <li><a href="#OPR-FLEET">OPR-FLEET &middot; Fleet Management</a></li>
+            <li><a href="#OPR-COUNTER">OPR-COUNTER &middot; Walk-in Counter Booking</a></li>
+            <li><a href="#OPR-BOOK">OPR-BOOK &middot; Bookings &amp; History</a></li>
+            <li><a href="#OPR-TRIP">OPR-TRIP &middot; Trips &amp; Routes</a></li>
+            <li><a href="#OPR-SEAT">OPR-SEAT &middot; Seat Layouts</a></li>
+            <li><a href="#OPR-REPORT">OPR-REPORT &middot; Reports</a></li>
+            <li><a href="#OPR-EARN">OPR-EARN &middot; Earnings &amp; Settlement</a></li>
+            <li><a href="#OPR-NOTIF">OPR-NOTIF &middot; Notifications</a></li>
+            <li><a href="#OPR-PROFILE">OPR-PROFILE &middot; Profile &amp; Settings</a></li>
+          </ul>
+        </div>
+        <div>
+          <p class="head">Admin Portal</p>
+          <ul>
+            <li><a href="#ADM-AUTH">ADM-AUTH &middot; Admin Login</a></li>
+            <li><a href="#ADM-KYC">ADM-KYC &middot; Operator KYC Review</a></li>
+            <li><a href="#ADM-BUS">ADM-BUS &middot; Bus Verification</a></li>
+            <li><a href="#ADM-BOOK">ADM-BOOK &middot; Bookings Oversight</a></li>
+            <li><a href="#ADM-COMM">ADM-COMM &middot; Commission &amp; Settlement</a></li>
+            <li><a href="#ADM-DISP">ADM-DISP &middot; Disputes &amp; Refunds</a></li>
+            <li><a href="#ADM-PROMO">ADM-PROMO &middot; Promotions &amp; Pricing</a></li>
+          </ul>
+          <p class="head" style="margin-top:18px;">Sprint Plan</p>
+          <ul>
+            <li><a href="#MVP">What is the MVP?</a></li>
+            <li><a href="#SP-REALITY">Solo reality &amp; capacity</a></li>
+            <li><a href="#SP-0">Sprint 0 &middot; Foundations (1 wk)</a></li>
+            <li><a href="#SP-1">Sprint 1 &middot; Truthful Tickets</a></li>
+            <li><a href="#SP-2">Sprint 2 &middot; Operator KYC</a></li>
+            <li><a href="#SP-3">Sprint 3 &middot; eSewa Payment</a></li>
+            <li><a href="#SP-4">Sprint 4 &middot; Cancellation &amp; Refund</a></li>
+            <li><a href="#SP-5">Sprint 5 &middot; Commission Ledger &rarr; MVP</a></li>
+            <li><a href="#SP-POST">Post-MVP roadmap (sketched)</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ USER PORTAL ============ -->
+  <section>
+    <p class="kicker">Side one</p>
+    <h2>User Portal &mdash; feature specifications</h2>
+
+    <div class="portal">
+      <h3>User Portal</h3>
+      <p>Traveler-facing surface. The customer arrives via search, books a seat, and receives an e-ticket. Mobile-first. The booking funnel is the single most important conversion path in the entire product.</p>
+    </div>
+
+    <!-- USR-HOME -->
+    <div class="doc" id="USR-HOME">
+      <div class="docHead">
+        <div>
+          <div class="id">USR-HOME</div>
+          <h3 class="ti">Homepage &amp; Search Widget</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-ok">working</span>
+          <span class="prio p1">P1</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>User Portal &middot; Discovery</div>
+        <div><b>Primary file</b><code>app/page.tsx</code>, <code>components/homepage.tsx</code></div>
+        <div><b>Primary actor</b>Anonymous visitor</div>
+        <div><b>Depends on</b>USR-SEARCH</div>
+      </div>
+
+      <h4>Purpose</h4>
+      <p>Capture origin / destination / date from a visitor in the fewest possible clicks and route them into search results. Communicate the brand promise (safety, choice, verified operators) above the fold.</p>
+
+      <h4>Actors</h4>
+      <ul>
+        <li><b>Anonymous visitor</b> &mdash; arrives from organic search, paid, or direct.</li>
+        <li><b>Returning user</b> &mdash; already authenticated, sees personalised entry.</li>
+      </ul>
+
+      <h4>User stories</h4>
+      <div class="story"><b>As a</b> traveler <b>I want</b> to enter From, To, and Date on the homepage <b>so that</b> I land directly on a list of buses for my route.</div>
+      <div class="story"><b>As a</b> traveler <b>I want</b> to see popular routes <b>so that</b> I can browse without typing if I don't have a destination locked in.</div>
+      <div class="story"><b>As a</b> first-time visitor <b>I want</b> to immediately understand what UTHBUS is <b>so that</b> I trust it enough to start a booking.</div>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span>City pickers must be searchable dropdowns sourced from the canonical city list (not free text) to prevent typos that break search.</span></li>
+        <li><span class="rid">R2</span><span>Date picker must default to tomorrow, prevent past dates, and allow up to 60 days ahead.</span></li>
+        <li><span class="rid">R3</span><span>Swap button must atomically swap From and To values.</span></li>
+        <li><span class="rid">R4</span><span>Submitting the form must navigate to <code>/search?from=&amp;to=&amp;date=</code> with all three params present and URL-encoded.</span></li>
+        <li><span class="rid">R5</span><span>Featured route cards must be clickable and deep-link into search with the corresponding params pre-filled and date defaulted to tomorrow.</span></li>
+        <li><span class="rid">R6</span><span>Page must render under 2.5s LCP on a mid-range mobile on 4G (Core Web Vitals threshold).</span></li>
+      </ul>
+
+      <h4>Currently built</h4>
+      <div class="builtBox">
+        <ul>
+          <li>Homepage with search widget, hero, featured route cards, "Why UthBus?" section &mdash; <code>components/homepage.tsx</code>.</li>
+          <li>View All routes modal listing seven destinations.</li>
+          <li>Route insight modals with buses/day, fares, peak times, boarding points (static content).</li>
+          <li>Welcome promo modal for new users.</li>
+        </ul>
+      </div>
+
+      <h4>Pending</h4>
+      <ul class="pendList">
+        <li><span class="pTag"><span class="prio p2">P2</span></span><span>Replace static "buses/day" copy in route modals with a live count once we have real inventory; otherwise it ages poorly.</span></li>
+        <li><span class="pTag"><span class="prio p2">P2</span></span><span>Add JSON-LD <code>WebSite</code> + <code>SearchAction</code> schema for sitelinks search box in Google.</span></li>
+        <li><span class="pTag"><span class="prio p3">P3</span></span><span>Personalised "Recently searched" row for returning authenticated users.</span></li>
+      </ul>
+
+      <h4>Acceptance criteria</h4>
+      <div class="ac">
+        <ul>
+          <li>Submitting valid From/To/Date lands the user on <code>/search</code> with results rendered within 3s on staging.</li>
+          <li>Past dates cannot be selected; date 61+ days out is rejected with a tooltip.</li>
+          <li>Lighthouse mobile score &ge; 85 on Performance, SEO, and Accessibility.</li>
+        </ul>
+      </div>
+
+      <h4>Edge cases &amp; risks</h4>
+      <ul>
+        <li>Same From and To submission must be blocked with inline validation.</li>
+        <li>City names with Devanagari fallback must not break URL encoding.</li>
+        <li>Hydration mismatch on date picker when SSR-rendered &mdash; verify with timezone Asia/Kathmandu.</li>
+      </ul>
+    </div>
+
+    <!-- USR-SEARCH -->
+    <div class="doc" id="USR-SEARCH">
+      <div class="docHead">
+        <div>
+          <div class="id">USR-SEARCH</div>
+          <h3 class="ti">Search Results &amp; Filters</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-ok">working</span>
+          <span class="prio p1">P1</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>User Portal &middot; Discovery</div>
+        <div><b>Primary file</b><code>app/search/page.tsx</code></div>
+        <div><b>Primary actor</b>Anonymous or authenticated traveler</div>
+        <div><b>Depends on</b><code>BusService.searchAllBuses()</code></div>
+      </div>
+
+      <h4>Purpose</h4>
+      <p>Given a From / To / Date triple, return a ranked, filterable list of bus options that match. Push the user toward a single bus to open in seat-selection.</p>
+
+      <h4>User stories</h4>
+      <div class="story"><b>As a</b> traveler <b>I want</b> to filter buses by AC, type, price, departure time, and amenities <b>so that</b> I can find a bus that fits my preferences and budget.</div>
+      <div class="story"><b>As a</b> traveler <b>I want</b> to see how many seats remain on each bus <b>so that</b> I don't waste time clicking into sold-out options.</div>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span>Only buses with <code>verificationStatus = "approved"</code> AND <code>status = "Active"</code> may appear in results.</span></li>
+        <li><span class="rid">R2</span><span>Each result card must show: operator name, bus name, type, AC/non-AC, amenity icons, departure &amp; arrival time, journey duration, fare, seats remaining, and verified badge once KYC is shipped (see ADM-KYC).</span></li>
+        <li><span class="rid">R3</span><span>Default sort: departure time ascending. Secondary sort options: fare low-high, fare high-low, rating high-low (post-rating launch).</span></li>
+        <li><span class="rid">R4</span><span>Filters must update results without full page reload (client-side state).</span></li>
+        <li><span class="rid">R5</span><span>"No buses found" empty state must offer adjacent-date suggestions (&plusmn;1, &plusmn;2 days).</span></li>
+        <li><span class="rid">R6</span><span>Buses unavailable on the requested date (via <code>unavailableDates</code>) must be filtered out at query time, not at render time.</span></li>
+      </ul>
+
+      <h4>Currently built</h4>
+      <div class="builtBox">
+        <ul>
+          <li>Search page rendering results from <code>BusService.searchAllBuses()</code>.</li>
+          <li>Filter sidebar: bus type, AC, price range, amenities, departure time window.</li>
+          <li>Result card with details and "View Seats" CTA into seat selection.</li>
+        </ul>
+      </div>
+
+      <h4>Pending</h4>
+      <ul class="pendList">
+        <li><span class="pTag"><span class="prio p0">P0</span></span><span>Verify that the query filters out non-approved buses. Today the search may surface unverified operators &mdash; check <code>BusService.searchAllBuses()</code> and add a Firestore composite index on <code>(verificationStatus, status, fromCity, toCity)</code>.</span></li>
+        <li><span class="pTag"><span class="prio p1">P1</span></span><span>"Seats remaining" should compute from <code>capacity - bookedSeats(date)</code>, not from a static field. Today this number may be wrong on busy buses.</span></li>
+        <li><span class="pTag"><span class="prio p2">P2</span></span><span>Adjacent-date "no results" suggestions (R5).</span></li>
+        <li><span class="pTag"><span class="prio p2">P2</span></span><span>Surface verified badge once KYC ships.</span></li>
+        <li><span class="pTag"><span class="prio p2">P2</span></span><span>Surface rating + review count once ratings ship.</span></li>
+      </ul>
+
+      <h4>Acceptance criteria</h4>
+      <div class="ac">
+        <ul>
+          <li>Search results return in &lt; 800ms p95 for a city pair with up to 100 buses.</li>
+          <li>An unverified or suspended bus does not appear in any result set, verified by QA with a controlled test operator.</li>
+          <li>Filters compose: e.g. AC + price &lt; 1500 + departing 18:00-22:00 returns exactly the matching set.</li>
+        </ul>
+      </div>
+
+      <h4>Edge cases &amp; risks</h4>
+      <ul>
+        <li>Buses with <code>blockedSeats</code> for the requested date must show reduced availability.</li>
+        <li>Inventory thinness today means most filters return zero. Plan empty-state copy carefully.</li>
+      </ul>
+    </div>
+
+    <!-- USR-SEAT -->
+    <div class="doc" id="USR-SEAT">
+      <div class="docHead">
+        <div>
+          <div class="id">USR-SEAT</div>
+          <h3 class="ti">Seat Selection</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-ok">working</span>
+          <span class="prio p1">P1</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>User Portal &middot; Booking Flow (step 1)</div>
+        <div><b>Primary file</b>Bus detail / seat selection screen, <code>contexts/booking-context.tsx</code></div>
+        <div><b>Primary actor</b>Authenticated traveler</div>
+        <div><b>Depends on</b><code>ActiveBookingsService</code> for live seat state</div>
+      </div>
+
+      <h4>Purpose</h4>
+      <p>Show the bus layout. Let the user pick available seats. Hold them while the user moves through passenger details and payment. Prevent double-booking under concurrency.</p>
+
+      <h4>User stories</h4>
+      <div class="story"><b>As a</b> traveler <b>I want</b> to see the live seat map <b>so that</b> I can pick exactly the seat I want.</div>
+      <div class="story"><b>As a</b> traveler <b>I want</b> the seat I picked to be reserved while I finish booking <b>so that</b> someone else doesn't snatch it from me mid-flow.</div>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span>Seat map must reflect: available, blocked (operator-blocked), booked (already sold), selected (current user), and held (someone else mid-flow).</span></li>
+        <li><span class="rid">R2</span><span>Anonymous users must be prompted to log in before seat selection persists.</span></li>
+        <li><span class="rid">R3</span><span>Selected seats must be held for the user for up to 10 minutes; expired hold returns the seat to the pool.</span></li>
+        <li><span class="rid">R4</span><span>A final re-check at booking confirmation must validate the seat is still held by the same user before writing the booking.</span></li>
+        <li><span class="rid">R5</span><span>Max seats per booking: 6 (configurable per operator, see OPR-FLEET).</span></li>
+      </ul>
+
+      <h4>Currently built</h4>
+      <div class="builtBox">
+        <ul>
+          <li>Live availability check &mdash; taken seats are blocked.</li>
+          <li>Final re-check before confirmation prevents double booking under normal load.</li>
+          <li>Booking context stores bus + selected seats across the funnel.</li>
+        </ul>
+      </div>
+
+      <h4>Pending</h4>
+      <ul class="pendList">
+        <li><span class="pTag"><span class="prio p1">P1</span></span><span>Explicit seat-hold record with TTL. Today the re-check protects against duplicates but seats are not visibly "held" to other concurrent users, which causes UX confusion ("why does it say my seat is gone after I clicked it?").</span></li>
+        <li><span class="pTag"><span class="prio p2">P2</span></span><span>Gender preference where applicable (Nepal market expectation for some routes).</span></li>
+        <li><span class="pTag"><span class="prio p2">P2</span></span><span>Visual differentiation between upper and lower deck for Sleeper buses (depends on expanded bus type taxonomy &mdash; see OPR-FLEET).</span></li>
+      </ul>
+
+      <h4>Acceptance criteria</h4>
+      <div class="ac">
+        <ul>
+          <li>Two users selecting the same seat within 100ms: one wins, the other receives a clear "seat just taken" message and is returned to the map.</li>
+          <li>A held seat that times out returns to "available" within 30s of TTL expiry.</li>
+        </ul>
+      </div>
+
+      <h4>Edge cases &amp; risks</h4>
+      <ul>
+        <li>Multi-tab booking by the same user &mdash; second tab should not be allowed to confirm.</li>
+        <li>Hold TTL must survive user navigating away and returning.</li>
+      </ul>
+    </div>
+
+    <!-- USR-PAX -->
+    <div class="doc" id="USR-PAX">
+      <div class="docHead">
+        <div>
+          <div class="id">USR-PAX</div>
+          <h3 class="ti">Passenger Details</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-ok">working</span>
+          <span class="prio p2">P2</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>User Portal &middot; Booking Flow (step 2)</div>
+        <div><b>Primary file</b><code>app/booking/passenger-details/page.tsx</code></div>
+        <div><b>Primary actor</b>Authenticated traveler</div>
+        <div><b>Depends on</b>USR-SEAT</div>
+      </div>
+
+      <h4>Purpose</h4>
+      <p>Collect one passenger record per selected seat plus boarding and dropping points.</p>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span>Each selected seat must have: passenger full name (min 2 chars), phone (Nepal +977 format validated), and optionally age + gender.</span></li>
+        <li><span class="rid">R2</span><span>Boarding and dropping points must be picked from the operator's configured points (see OPR-TRIP), not free text.</span></li>
+        <li><span class="rid">R3</span><span>"Use my profile" shortcut prefills the lead passenger from the logged-in user.</span></li>
+        <li><span class="rid">R4</span><span>Form must persist on back navigation &mdash; user should not retype on revisit.</span></li>
+        <li><span class="rid">R5</span><span>Save passengers under the user's profile for future bookings (autocomplete suggestion).</span></li>
+      </ul>
+
+      <h4>Currently built</h4>
+      <div class="builtBox">
+        <ul>
+          <li>Form for passenger name + phone, boarding and dropping points.</li>
+        </ul>
+      </div>
+
+      <h4>Pending</h4>
+      <ul class="pendList">
+        <li><span class="pTag"><span class="prio p2">P2</span></span><span>Phone validation for Nepal numbers (+977, 10-digit mobile prefixes).</span></li>
+        <li><span class="pTag"><span class="prio p2">P2</span></span><span>Boarding/dropping must be a dropdown sourced from the operator's points, not a text field.</span></li>
+        <li><span class="pTag"><span class="prio p2">P2</span></span><span>"Use my profile" prefill.</span></li>
+        <li><span class="pTag"><span class="prio p3">P3</span></span><span>Save passenger profiles for future booking autocomplete.</span></li>
+      </ul>
+
+      <h4>Acceptance criteria</h4>
+      <div class="ac">
+        <ul>
+          <li>Form blocks submission with clear inline errors on invalid phone/empty name.</li>
+          <li>Back navigation preserves entered data.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- USR-PAY -->
+    <div class="doc" id="USR-PAY">
+      <div class="docHead">
+        <div>
+          <div class="id">USR-PAY</div>
+          <h3 class="ti">Review &amp; Pay</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-bad">broken</span>
+          <span class="prio p0">P0</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>User Portal &middot; Booking Flow (step 3)</div>
+        <div><b>Primary file</b><code>app/booking/review-pay/page.tsx</code></div>
+        <div><b>Primary actor</b>Authenticated traveler</div>
+        <div><b>Depends on</b>Payment gateway integration (new), Promotions service (ADM-PROMO)</div>
+      </div>
+
+      <h4>Purpose</h4>
+      <p>Final confirmation step. Summarise the booking, apply promos, take payment, write the booking only on payment success. This is the most broken screen in the product today: it skips payment entirely.</p>
+
+      <div class="callout">
+        <b>Critical defect:</b> The "Confirm &amp; Pay" button writes a confirmed booking without any payment being captured. The next screen then claims the booking was paid by UPI. This must be fixed before any real users are routed in.
+      </div>
+
+      <h4>User stories</h4>
+      <div class="story"><b>As a</b> traveler <b>I want</b> to see the full fare breakdown, apply a promo, and pay with eSewa, Khalti, or card <b>so that</b> I have a real, trustworthy transaction.</div>
+      <div class="story"><b>As a</b> traveler whose payment fails <b>I want</b> a clear retry path and my seats still held <b>so that</b> I don't lose my place.</div>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span>Fare breakdown line items: base fare &times; seats, service fee (if any), discount (promo), total.</span></li>
+        <li><span class="rid">R2</span><span>Promo code field validates against the promotions service (see ADM-PROMO). Today only <code>WELCOME50</code> is hard-coded &mdash; remove the hard-code and check against backend.</span></li>
+        <li><span class="rid">R3</span><span>Payment method selector: eSewa, Khalti, Card (Stripe or equivalent), Pay at Counter (operator-allowed only).</span></li>
+        <li><span class="rid">R4</span><span>"Confirm &amp; Pay" initiates a payment intent and redirects to the gateway. Booking is written with <code>status = "Pending"</code> at intent creation, flipped to <code>Confirmed</code> only on webhook success.</span></li>
+        <li><span class="rid">R5</span><span>Failed payments: booking remains <code>Pending</code> for a TTL (e.g. 15 min) with retry. After TTL it auto-cancels and releases seats.</span></li>
+        <li><span class="rid">R6</span><span>Webhook handler must be idempotent &mdash; the same gateway event arriving twice must not double-book or double-charge.</span></li>
+        <li><span class="rid">R7</span><span>"Pay at Counter" path (where allowed by the operator) writes the booking with <code>paymentStatus = "unpaid_pending_counter"</code> and renders a clearly different ticket (see USR-TICKET).</span></li>
+      </ul>
+
+      <h4>Currently built</h4>
+      <div class="builtBox">
+        <ul>
+          <li>Review screen with fare summary.</li>
+          <li>Single hard-coded promo <code>WELCOME50</code> (flat NPR 50 off).</li>
+          <li>"Confirm &amp; Pay" writes the booking as <code>Confirmed</code> immediately. No money flow.</li>
+        </ul>
+      </div>
+
+      <h4>Pending</h4>
+      <ul class="pendList">
+        <li><span class="pTag"><span class="prio p0">P0</span></span><span>Stop writing <code>Confirmed</code> without payment. Introduce <code>paymentStatus</code> on the booking model: <code>unpaid_pending_counter | pending_gateway | paid | failed | refunded</code>.</span></li>
+        <li><span class="pTag"><span class="prio p0">P0</span></span><span>Integrate eSewa.</span></li>
+        <li><span class="pTag"><span class="prio p0">P0</span></span><span>Integrate Khalti.</span></li>
+        <li><span class="pTag"><span class="prio p1">P1</span></span><span>Integrate card payments for tourists (Stripe or local card gateway).</span></li>
+        <li><span class="pTag"><span class="prio p1">P1</span></span><span>Payment intent model + webhook handlers (idempotent).</span></li>
+        <li><span class="pTag"><span class="prio p1">P1</span></span><span>Replace hard-coded promo with promotions service driven by ADM-PROMO.</span></li>
+        <li><span class="pTag"><span class="prio p2">P2</span></span><span>"Pay at Counter" path with operator opt-in.</span></li>
+      </ul>
+
+      <h4>Acceptance criteria</h4>
+      <div class="ac">
+        <ul>
+          <li>A booking only becomes <code>Confirmed</code> after a successful payment webhook OR after a counter operator marks it paid.</li>
+          <li>A failed payment leaves the seat held for the user to retry within the TTL.</li>
+          <li>Replaying the same payment webhook is a no-op (idempotency tested by QA).</li>
+          <li>No code path produces a "paid" ticket without a corresponding payment record.</li>
+        </ul>
+      </div>
+
+      <h4>Dependencies</h4>
+      <ul>
+        <li>Merchant accounts: eSewa, Khalti, card gateway. <b>Procurement is a CTO-side blocker, not engineering &mdash; start now.</b></li>
+        <li>Settlement ledger (ADM-COMM) for downstream reconciliation.</li>
+      </ul>
+
+      <h4>Edge cases &amp; risks</h4>
+      <ul>
+        <li>Webhook delivery delays &mdash; the user may have returned to the app before the webhook arrives. UI must poll or use a websocket fallback.</li>
+        <li>Refunds initiated before settlement vs. after &mdash; different ledger entries.</li>
+      </ul>
+    </div>
+
+    <!-- USR-TICKET -->
+    <div class="doc" id="USR-TICKET">
+      <div class="docHead">
+        <div>
+          <div class="id">USR-TICKET</div>
+          <h3 class="ti">E-Ticket</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-bad">broken</span>
+          <span class="prio p0">P0</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>User Portal &middot; Booking Flow (step 4)</div>
+        <div><b>Primary file</b><code>app/booking/ticket/[id]/page.tsx</code> &middot; line 344 hard-codes "Online (UPI)"</div>
+        <div><b>Primary actor</b>Authenticated traveler &amp; boarding-point staff</div>
+      </div>
+
+      <h4>Purpose</h4>
+      <p>Render the booking as a printable, shareable ticket with a PNR. This is the artifact the traveler shows at boarding. It must be <i>true</i>.</p>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span>Payment Mode displayed on the ticket must reflect the actual <code>paymentStatus</code> from the booking, not a hard-coded string.</span></li>
+        <li><span class="rid">R2</span><span>If <code>paymentStatus = "paid"</code>: show "Paid via &lt;method&gt;" and the gateway txn id.</span></li>
+        <li><span class="rid">R3</span><span>If <code>paymentStatus = "unpaid_pending_counter"</code>: show "Reserved &mdash; pay at counter, NPR &lt;amount&gt; due" prominently, with no "Amount Paid" line.</span></li>
+        <li><span class="rid">R4</span><span>If <code>paymentStatus = "pending_gateway"</code>: show "Payment pending &mdash; complete within 15 min" and a retry CTA.</span></li>
+        <li><span class="rid">R5</span><span>Ticket must include: PNR, bus name, operator name, route, date, seat(s), passenger names, boarding point + time, dropping point + time, fare summary, support contact, QR code.</span></li>
+        <li><span class="rid">R6</span><span>Print, Save-as-PDF, WhatsApp share, Copy PNR actions must work.</span></li>
+        <li><span class="rid">R7</span><span>QR code encodes the PNR for boarding-staff scan.</span></li>
+      </ul>
+
+      <h4>Currently built</h4>
+      <div class="builtBox">
+        <ul>
+          <li>Ticket page with PNR, route, journey summary, print, save-as-PDF, WhatsApp share, copy.</li>
+          <li><b>Hard-coded "Online (UPI)" payment mode and "Amount Paid"</b> &mdash; this is the critical bug to fix.</li>
+        </ul>
+      </div>
+
+      <h4>Pending</h4>
+      <ul class="pendList">
+        <li><span class="pTag"><span class="prio p0">P0</span></span><span>Remove the "Online (UPI)" hard-code at <code>app/booking/ticket/[id]/page.tsx:344</code> and render Payment Mode conditionally.</span></li>
+        <li><span class="pTag"><span class="prio p1">P1</span></span><span>Add QR code rendering for boarding scan.</span></li>
+        <li><span class="pTag"><span class="prio p2">P2</span></span><span>Add a "Trip status" line that auto-updates as the trip approaches.</span></li>
+      </ul>
+
+      <h4>Acceptance criteria</h4>
+      <div class="ac">
+        <ul>
+          <li>Three test bookings (paid / counter-due / pending) each produce a ticket that accurately reflects payment status.</li>
+          <li>Saved PDF matches on-screen content exactly.</li>
+          <li>QR scan by a test reader returns the PNR.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- USR-MY -->
+    <div class="doc" id="USR-MY">
+      <div class="docHead">
+        <div>
+          <div class="id">USR-MY</div>
+          <h3 class="ti">My Bookings</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-part">partial</span>
+          <span class="prio p1">P1</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>User Portal &middot; Account</div>
+        <div><b>Primary file</b><code>app/user/bookings/page.tsx</code></div>
+        <div><b>Primary actor</b>Authenticated traveler</div>
+      </div>
+
+      <h4>Purpose</h4>
+      <p>Single place where a user finds every trip they've ever booked, their current state, and the actions available on each.</p>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span>Tabs: Upcoming (status=Confirmed, date &ge; today), Past (status=Completed OR date &lt; today), Cancelled.</span></li>
+        <li><span class="rid">R2</span><span>Auto-completion: a Confirmed booking whose date is in the past flips to Completed nightly.</span></li>
+        <li><span class="rid">R3</span><span>Search by PNR, route, or passenger name.</span></li>
+        <li><span class="rid">R4</span><span>Per-booking actions: View Ticket, Print, Cancel (if eligible per policy), Download Invoice (post-payment ship).</span></li>
+        <li><span class="rid">R5</span><span>Cancel must show the refund amount per policy, get confirmation, then initiate refund.</span></li>
+        <li><span class="rid">R6</span><span>"Need Help?" must open a real support channel (WhatsApp deep-link with PNR prefilled, or a ticketing modal), not an alert.</span></li>
+      </ul>
+
+      <h4>Currently built</h4>
+      <div class="builtBox">
+        <ul>
+          <li>Tabs, search, auto-completion of past trips.</li>
+          <li>Cancel flips the status to Cancelled (no refund logic).</li>
+          <li>"Need Help?" pops an <code>alert()</code> &mdash; dead end.</li>
+        </ul>
+      </div>
+
+      <h4>Pending</h4>
+      <ul class="pendList">
+        <li><span class="pTag"><span class="prio p1">P1</span></span><span>Cancellation policy engine (time-to-departure tiers, e.g. &gt;24h = 90% refund, 6-24h = 50%, &lt;6h = no refund). Configurable per operator.</span></li>
+        <li><span class="pTag"><span class="prio p1">P1</span></span><span>Refund initiation tied to payment gateway (chain to USR-PAY).</span></li>
+        <li><span class="pTag"><span class="prio p1">P1</span></span><span>Replace "Need Help?" alert with a WhatsApp deep-link + a "Raise dispute" CTA that opens a ticket (see ADM-DISP).</span></li>
+        <li><span class="pTag"><span class="prio p2">P2</span></span><span>Invoice / receipt download once payments ship.</span></li>
+      </ul>
+
+      <h4>Acceptance criteria</h4>
+      <div class="ac">
+        <ul>
+          <li>Cancelling a booking 48h before departure refunds 90% to the source method within the gateway SLA.</li>
+          <li>"Need Help?" opens WhatsApp with the PNR pre-filled in the message.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- USR-AUTH -->
+    <div class="doc" id="USR-AUTH">
+      <div class="docHead">
+        <div>
+          <div class="id">USR-AUTH</div>
+          <h3 class="ti">Auth &amp; Profile</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-ok">working</span>
+          <span class="prio p2">P2</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>User Portal &middot; Account</div>
+        <div><b>Primary file</b><code>app/user/login/page.tsx</code>, <code>app/user/profile/page.tsx</code>, <code>contexts/user-auth-context.tsx</code></div>
+      </div>
+
+      <h4>Purpose</h4>
+      <p>Authenticate a traveler and let them manage their profile. Strict role separation: a user cannot access operator or admin surfaces.</p>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span>Google sign-in (current) plus optional email + OTP fallback (for users without Google).</span></li>
+        <li><span class="rid">R2</span><span>Phone number captured at first booking (Nepal validation).</span></li>
+        <li><span class="rid">R3</span><span>Profile fields: name, email, phone, DOB, gender, address.</span></li>
+        <li><span class="rid">R4</span><span>A user account must be blocked from <code>/operator/*</code> and <code>/admin/*</code> by middleware.</span></li>
+        <li><span class="rid">R5</span><span>Account deletion on request (GDPR-style soft delete).</span></li>
+      </ul>
+
+      <h4>Currently built</h4>
+      <div class="builtBox">
+        <ul>
+          <li>Google sign-in via Firebase.</li>
+          <li>Profile management screen.</li>
+          <li>Role guard prevents cross-portal access.</li>
+        </ul>
+      </div>
+
+      <h4>Pending</h4>
+      <ul class="pendList">
+        <li><span class="pTag"><span class="prio p1">P1</span></span><span>Phone OTP login as an alternate to Google (Nepali users without Google adoption).</span></li>
+        <li><span class="pTag"><span class="prio p2">P2</span></span><span>Hide the four stub pages (Billing, Credits, Notifications, Refer-a-Friend) until they ship.</span></li>
+        <li><span class="pTag"><span class="prio p3">P3</span></span><span>Account deletion flow.</span></li>
+      </ul>
+
+      <h4>Acceptance criteria</h4>
+      <div class="ac">
+        <ul>
+          <li>Logging in with a user account and visiting <code>/operator/counter</code> redirects to login or 403.</li>
+          <li>Phone OTP delivers in under 30s; rate-limited per number to prevent abuse.</li>
+        </ul>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ============ OPERATOR PORTAL ============ -->
+  <section>
+    <p class="kicker">Side two</p>
+    <h2>Operator Portal &mdash; feature specifications</h2>
+
+    <div class="portal op">
+      <h3>Operator (Counter) Portal</h3>
+      <p>Used by bus operators &mdash; the supply side of the marketplace. Manages fleet, takes walk-in bookings at the counter, tracks daily operations, and (once shipped) reconciles money. Strongest part of the codebase today, but missing the commerce layer that makes operators stay.</p>
+    </div>
+
+    <!-- OPR-AUTH -->
+    <div class="doc" id="OPR-AUTH">
+      <div class="docHead">
+        <div>
+          <div class="id">OPR-AUTH</div>
+          <h3 class="ti">Registration, Login, KYC</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-part">partial</span>
+          <span class="prio p0">P0</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>Operator Portal &middot; Account</div>
+        <div><b>Primary file</b><code>app/operator/register/page.tsx</code>, <code>app/operator/login/page.tsx</code>, <code>contexts/operator-auth-context.tsx</code></div>
+        <div><b>Related</b>ADM-KYC</div>
+      </div>
+
+      <h4>Purpose</h4>
+      <p>Onboard a new bus operator. Today this is broken: anyone with an email becomes an Active operator immediately. We need a verification gate before any of their buses can appear in user search.</p>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span>Registration captures: company name, contact name, email, password, phone, address, operator license number, PAN/VAT number, company registration certificate (file), license certificate (file).</span></li>
+        <li><span class="rid">R2</span><span>On registration, the operator account is created with <code>kycStatus = "pending_verification"</code>.</span></li>
+        <li><span class="rid">R3</span><span>A <code>pending_verification</code> operator can log in and see their dashboard but cannot list buses for user-facing search. Counter booking for their own walk-ins may be enabled.</span></li>
+        <li><span class="rid">R4</span><span>Admin reviews documents (ADM-KYC) and sets <code>kycStatus = "approved"</code> or <code>"rejected"</code> with a reason.</span></li>
+        <li><span class="rid">R5</span><span>Approved operators receive a verified badge surfaced on USR-SEARCH and USR-TICKET.</span></li>
+        <li><span class="rid">R6</span><span>Rejected operators see the rejection reason on login and can re-submit corrected documents.</span></li>
+      </ul>
+
+      <h4>Currently built</h4>
+      <div class="builtBox">
+        <ul>
+          <li>Registration + login pages with company name, license (free-text, optional), address.</li>
+          <li>No document upload. No KYC state. Operator becomes Active instantly.</li>
+        </ul>
+      </div>
+
+      <h4>Pending</h4>
+      <ul class="pendList">
+        <li><span class="pTag"><span class="prio p0">P0</span></span><span>Add <code>kycStatus</code> field to operator model with states above.</span></li>
+        <li><span class="pTag"><span class="prio p0">P0</span></span><span>Document upload (Firebase Storage with rules) for company cert, license, PAN.</span></li>
+        <li><span class="pTag"><span class="prio p0">P0</span></span><span>Gate user-facing listing on <code>kycStatus = "approved"</code> (already gated on bus-level <code>verificationStatus</code> &mdash; combine both checks).</span></li>
+        <li><span class="pTag"><span class="prio p1">P1</span></span><span>Show KYC status banner on operator dashboard until approved.</span></li>
+      </ul>
+
+      <h4>Acceptance criteria</h4>
+      <div class="ac">
+        <ul>
+          <li>A freshly-registered operator can log in, see "Verification pending" banner, and cannot have their buses surfaced on the user search.</li>
+          <li>Once admin approves, their approved buses appear in search within 60s.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- OPR-DASH -->
+    <div class="doc" id="OPR-DASH">
+      <div class="docHead">
+        <div>
+          <div class="id">OPR-DASH</div>
+          <h3 class="ti">Counter Dashboard</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-ok">working</span>
+          <span class="prio p2">P2</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>Operator Portal &middot; Counter</div>
+        <div><b>Primary file</b><code>components/operator/counter/pages/dashboard.page.tsx</code></div>
+      </div>
+
+      <h4>Purpose</h4>
+      <p>At-a-glance status of the operator's day: bookings, revenue, departures, fleet status.</p>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span>KPIs: today's bookings, today's revenue, month-to-date revenue, active bus count.</span></li>
+        <li><span class="rid">R2</span><span>Recent bookings stream (live).</span></li>
+        <li><span class="rid">R3</span><span>Today's trips list with seat fill ratio.</span></li>
+        <li><span class="rid">R4</span><span>Quick actions: New Counter Booking, Add Bus, View Reports.</span></li>
+      </ul>
+
+      <h4>Currently built</h4>
+      <div class="builtBox">
+        <ul>
+          <li>All four KPIs.</li>
+          <li>Recent bookings updating in real time.</li>
+          <li>Today's trips with seat fill.</li>
+          <li>Quick actions.</li>
+        </ul>
+      </div>
+
+      <h4>Pending</h4>
+      <ul class="pendList">
+        <li><span class="pTag"><span class="prio p2">P2</span></span><span>Add "Pending operator confirmations" widget once OPR-NOTIF confirmation loop ships.</span></li>
+        <li><span class="pTag"><span class="prio p3">P3</span></span><span>"Earnings owed" widget after settlement ledger ships.</span></li>
+      </ul>
+    </div>
+
+    <!-- OPR-FLEET -->
+    <div class="doc" id="OPR-FLEET">
+      <div class="docHead">
+        <div>
+          <div class="id">OPR-FLEET</div>
+          <h3 class="ti">Fleet Management</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-part">partial</span>
+          <span class="prio p1">P1</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>Operator Portal &middot; Counter</div>
+        <div><b>Primary file</b><code>components/operator/counter/pages/buses.page.tsx</code>, <code>my-buses.page.tsx</code></div>
+      </div>
+
+      <h4>Purpose</h4>
+      <p>CRUD over the operator's bus inventory. Each bus has identity, capacity, layout, amenities, schedule, and pricing.</p>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span>Add / edit / delete a bus with: name, registration number, type, AC flag, capacity, model, photos (min 1), amenities, routes, boarding &amp; dropping points, base fare, departure / arrival times, status (Active / Maintenance / Inactive).</span></li>
+        <li><span class="rid">R2</span><span>Each new bus enters <code>verificationStatus = "pending_verification"</code>. Admin approves before it appears in user search.</span></li>
+        <li><span class="rid">R3</span><span>Photo upload: minimum 1, recommend 3+, max 8. Image optimisation pipeline (resize, compress, WebP).</span></li>
+        <li><span class="rid">R4</span><span>Bus type taxonomy must include: Micro, Hiace, Deluxe, AC Deluxe, Sleeper (2x1), Sleeper AC, Tourist AC.</span></li>
+        <li><span class="rid">R5</span><span>Mark dates unavailable (maintenance, blocked).</span></li>
+        <li><span class="rid">R6</span><span>Block specific seats permanently (e.g. mechanic's seat, driver-adjacent reserved seat).</span></li>
+      </ul>
+
+      <h4>Currently built</h4>
+      <div class="builtBox">
+        <ul>
+          <li>Add / edit / view buses with type, AC, capacity, price, timings, route, boarding and dropping points, amenities.</li>
+          <li>Photo field exists but upload pipeline does not work.</li>
+          <li>Bus type limited to <code>Micro | Hiace | Deluxe | AC Deluxe</code>.</li>
+        </ul>
+      </div>
+
+      <h4>Pending</h4>
+      <ul class="pendList">
+        <li><span class="pTag"><span class="prio p1">P1</span></span><span>Working photo upload &mdash; Firebase Storage + signed URLs + client-side resize + WebP conversion.</span></li>
+        <li><span class="pTag"><span class="prio p1">P1</span></span><span>Expand bus type enum to include Sleeper variants and Tourist AC.</span></li>
+        <li><span class="pTag"><span class="prio p2">P2</span></span><span>Per-bus configurable max seats per booking (USR-SEAT R5).</span></li>
+      </ul>
+
+      <h4>Acceptance criteria</h4>
+      <div class="ac">
+        <ul>
+          <li>Uploading three photos to a new bus stores them, optimises, and renders the gallery on the user-facing bus card.</li>
+          <li>A Sleeper bus shows a two-deck seat layout to the traveler.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- OPR-COUNTER -->
+    <div class="doc" id="OPR-COUNTER">
+      <div class="docHead">
+        <div>
+          <div class="id">OPR-COUNTER</div>
+          <h3 class="ti">Walk-in Counter Booking</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-ok">working</span>
+          <span class="prio p2">P2</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>Operator Portal &middot; Counter</div>
+        <div><b>Primary file</b><code>components/operator/counter/pages/book-ticket.page.tsx</code></div>
+      </div>
+
+      <h4>Purpose</h4>
+      <p>Let counter staff create a booking for a walk-in passenger. This is the offline-to-online bridge: every counter booking writes to the same store, so the seat is immediately unavailable to online users.</p>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span>Counter staff select bus, date, seats, passenger details, and confirm.</span></li>
+        <li><span class="rid">R2</span><span>Payment mode selectable: Cash, eSewa (operator's), Khalti (operator's), Card.</span></li>
+        <li><span class="rid">R3</span><span>Counter bookings carry <code>source = "counter"</code> on the booking record, so commission and reporting can distinguish from online.</span></li>
+        <li><span class="rid">R4</span><span>Generated PNR is unique and printable on a receipt.</span></li>
+      </ul>
+
+      <h4>Currently built</h4>
+      <div class="builtBox">
+        <ul>
+          <li>Full counter booking flow with PNR generation.</li>
+        </ul>
+      </div>
+
+      <h4>Pending</h4>
+      <ul class="pendList">
+        <li><span class="pTag"><span class="prio p2">P2</span></span><span>Payment mode capture (today not tracked) &mdash; needed for commission accounting.</span></li>
+        <li><span class="pTag"><span class="prio p2">P2</span></span><span>Receipt print formatted for thermal printer (58mm/80mm).</span></li>
+      </ul>
+    </div>
+
+    <!-- OPR-BOOK -->
+    <div class="doc" id="OPR-BOOK">
+      <div class="docHead">
+        <div>
+          <div class="id">OPR-BOOK</div>
+          <h3 class="ti">Bookings &amp; History</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-ok">working</span>
+          <span class="prio p2">P2</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>Operator Portal &middot; Counter</div>
+        <div><b>Primary file</b><code>bookings.page.tsx</code>, <code>booking-history.page.tsx</code>, <code>booked-transactions.page.tsx</code></div>
+      </div>
+
+      <h4>Purpose</h4>
+      <p>Operator's view of every booking against their fleet, today and historic, with the ability to manage individual bookings.</p>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span>List bookings by date with filters: status, source (online / counter), bus, route.</span></li>
+        <li><span class="rid">R2</span><span>Per booking: view, mark passenger boarded, mark no-show, initiate refund (subject to policy).</span></li>
+        <li><span class="rid">R3</span><span>Historical search by PNR / passenger name / phone.</span></li>
+      </ul>
+
+      <h4>Currently built</h4>
+      <div class="builtBox">
+        <ul>
+          <li>Bookings, booking history, and today's transactions pages.</li>
+        </ul>
+      </div>
+
+      <h4>Pending</h4>
+      <ul class="pendList">
+        <li><span class="pTag"><span class="prio p2">P2</span></span><span>Boarded / No-show statuses (today only Confirmed / Cancelled / Completed).</span></li>
+        <li><span class="pTag"><span class="prio p2">P2</span></span><span>Operator-initiated refund flow tied to ADM-DISP / payment gateway.</span></li>
+      </ul>
+    </div>
+
+    <!-- OPR-TRIP -->
+    <div class="doc" id="OPR-TRIP">
+      <div class="docHead">
+        <div>
+          <div class="id">OPR-TRIP</div>
+          <h3 class="ti">Trips &amp; Routes</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-part">partial</span>
+          <span class="prio p1">P1</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>Operator Portal &middot; Counter</div>
+        <div><b>Primary file</b><code>trips.page.tsx</code>, <code>routes.page.tsx</code></div>
+      </div>
+
+      <h4>Purpose</h4>
+      <p>Define <i>which</i> route the bus runs, when, with what stops, and at what price. A bus alone is not bookable &mdash; it needs trips.</p>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span>A route is From-City &rarr; To-City with named boarding and dropping points.</span></li>
+        <li><span class="rid">R2</span><span>A trip is a (bus, route, date, departure-time) tuple with a fare.</span></li>
+        <li><span class="rid">R3</span><span>Operator can set recurring trips (e.g. daily, M-F) which generate concrete dated trips ahead.</span></li>
+        <li><span class="rid">R4</span><span>A trip can be cancelled with a reason; all affected bookings are automatically refunded.</span></li>
+        <li><span class="rid">R5</span><span>Dynamic pricing per date (festival surge, off-season discount).</span></li>
+      </ul>
+
+      <h4>Currently built</h4>
+      <div class="builtBox">
+        <ul>
+          <li>Trips and routes pages with basic schedule setup.</li>
+        </ul>
+      </div>
+
+      <h4>Pending</h4>
+      <ul class="pendList">
+        <li><span class="pTag"><span class="prio p1">P1</span></span><span>Confirm the model distinguishes <i>schedule</i> (recurring) from <i>trip</i> (concrete dated instance). Today the boundary is blurry.</span></li>
+        <li><span class="pTag"><span class="prio p1">P1</span></span><span>Trip cancellation with cascade refund.</span></li>
+        <li><span class="pTag"><span class="prio p2">P2</span></span><span>Per-date pricing override.</span></li>
+      </ul>
+    </div>
+
+    <!-- OPR-SEAT -->
+    <div class="doc" id="OPR-SEAT">
+      <div class="docHead">
+        <div>
+          <div class="id">OPR-SEAT</div>
+          <h3 class="ti">Seat Layouts</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-ok">working</span>
+          <span class="prio p2">P2</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>Operator Portal &middot; Counter</div>
+        <div><b>Primary file</b><code>seats.page.tsx</code></div>
+      </div>
+
+      <h4>Purpose</h4>
+      <p>Define the visual seat map for each bus so the traveler-side seat picker can render accurately.</p>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span>Layout templates per bus type: rows + columns + aisle + driver position.</span></li>
+        <li><span class="rid">R2</span><span>Sleeper layouts must support upper and lower decks.</span></li>
+        <li><span class="rid">R3</span><span>Operator can permanently mark a seat as blocked (mechanic's seat, broken).</span></li>
+      </ul>
+
+      <h4>Currently built</h4>
+      <div class="builtBox">
+        <ul>
+          <li>Seat layout management with templates for current bus types.</li>
+        </ul>
+      </div>
+
+      <h4>Pending</h4>
+      <ul class="pendList">
+        <li><span class="pTag"><span class="prio p1">P1</span></span><span>Sleeper deck templates (depends on OPR-FLEET bus-type expansion).</span></li>
+      </ul>
+    </div>
+
+    <!-- OPR-REPORT -->
+    <div class="doc" id="OPR-REPORT">
+      <div class="docHead">
+        <div>
+          <div class="id">OPR-REPORT</div>
+          <h3 class="ti">Reports</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-ok">working</span>
+          <span class="prio p3">P3</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>Operator Portal &middot; Counter</div>
+        <div><b>Primary file</b><code>reports.page.tsx</code></div>
+      </div>
+
+      <h4>Purpose</h4>
+      <p>Daily / monthly / all-time analytics on the operator's business.</p>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span>Bookings &amp; revenue by day, month, all-time.</span></li>
+        <li><span class="rid">R2</span><span>Online vs counter split.</span></li>
+        <li><span class="rid">R3</span><span>Cancellation rate.</span></li>
+        <li><span class="rid">R4</span><span>Top routes.</span></li>
+        <li><span class="rid">R5</span><span>Per-bus occupancy and revenue.</span></li>
+        <li><span class="rid">R6</span><span>CSV export.</span></li>
+      </ul>
+
+      <h4>Currently built</h4>
+      <div class="builtBox">
+        <ul>
+          <li>All five report types listed.</li>
+        </ul>
+      </div>
+
+      <h4>Pending</h4>
+      <ul class="pendList">
+        <li><span class="pTag"><span class="prio p3">P3</span></span><span>CSV export.</span></li>
+        <li><span class="pTag"><span class="prio p3">P3</span></span><span>Pause polishing until real data exists. Today this is dashboards over an empty tank.</span></li>
+      </ul>
+    </div>
+
+    <!-- OPR-EARN -->
+    <div class="doc" id="OPR-EARN">
+      <div class="docHead">
+        <div>
+          <div class="id">OPR-EARN</div>
+          <h3 class="ti">Earnings &amp; Settlement</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-new">not built</span>
+          <span class="prio p0">P0</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>Operator Portal &middot; Money</div>
+        <div><b>Related</b>ADM-COMM, USR-PAY</div>
+      </div>
+
+      <h4>Purpose</h4>
+      <p>Show the operator exactly what they have earned, what UTHBUS owes them, what has been settled, and when the next payout lands. This is the feature that keeps operators on the platform.</p>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span>Earnings summary: this week, this month, all-time gross, commission deducted, net payable.</span></li>
+        <li><span class="rid">R2</span><span>Statement view: per-booking ledger entries with date, PNR, gross, commission, net.</span></li>
+        <li><span class="rid">R3</span><span>Settlement history: each settlement event with amount, method, date, txn reference.</span></li>
+        <li><span class="rid">R4</span><span>Bank account &amp; eSewa/Khalti account configured under Profile; updates require email re-verification.</span></li>
+        <li><span class="rid">R5</span><span>Downloadable statement as PDF / CSV.</span></li>
+      </ul>
+
+      <h4>Currently built</h4>
+      <div class="builtBox">
+        <ul>
+          <li>Nothing. This module does not exist.</li>
+        </ul>
+      </div>
+
+      <h4>Pending</h4>
+      <ul class="pendList">
+        <li><span class="pTag"><span class="prio p0">P0</span></span><span>All of R1-R5. Built in Sprint 5 alongside ADM-COMM.</span></li>
+      </ul>
+
+      <h4>Acceptance criteria</h4>
+      <div class="ac">
+        <ul>
+          <li>Twenty test bookings produce an earnings page where gross, commission, and net reconcile to the penny against the ledger in ADM-COMM.</li>
+          <li>A settlement event marked paid on the admin side appears on the operator's settlement history within 30s.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- OPR-NOTIF -->
+    <div class="doc" id="OPR-NOTIF">
+      <div class="docHead">
+        <div>
+          <div class="id">OPR-NOTIF</div>
+          <h3 class="ti">Notifications &amp; Confirmation Loop</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-part">partial</span>
+          <span class="prio p1">P1</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>Operator Portal &middot; Counter</div>
+        <div><b>Primary file</b><code>notifications.page.tsx</code></div>
+      </div>
+
+      <h4>Purpose</h4>
+      <p>Tell the operator when something needs them: a new online booking, a trip departing soon, a refund request, a KYC update. Includes the critical "confirm online booking" loop.</p>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span>In-app notification center with unread badge.</span></li>
+        <li><span class="rid">R2</span><span>Email + WhatsApp delivery for high-priority events (new online booking, trip cancellation, dispute opened).</span></li>
+        <li><span class="rid">R3</span><span>"Confirm online booking" action on each incoming online booking notification, which marks the seat as honoured by the operator. Unconfirmed within a TTL (e.g. 2h) triggers a fallback.</span></li>
+        <li><span class="rid">R4</span><span>Per-event preference toggle (in-app, email, WhatsApp).</span></li>
+      </ul>
+
+      <h4>Currently built</h4>
+      <div class="builtBox">
+        <ul>
+          <li>Notifications page exists. No real delivery channels wired (no email, no WhatsApp).</li>
+        </ul>
+      </div>
+
+      <h4>Pending</h4>
+      <ul class="pendList">
+        <li><span class="pTag"><span class="prio p1">P1</span></span><span>Real notification service (sendgrid/SES + Twilio/Wati for WhatsApp).</span></li>
+        <li><span class="pTag"><span class="prio p1">P1</span></span><span>Confirmation loop with TTL fallback.</span></li>
+        <li><span class="pTag"><span class="prio p2">P2</span></span><span>Per-event preferences UI.</span></li>
+      </ul>
+    </div>
+
+    <!-- OPR-PROFILE -->
+    <div class="doc" id="OPR-PROFILE">
+      <div class="docHead">
+        <div>
+          <div class="id">OPR-PROFILE</div>
+          <h3 class="ti">Profile &amp; Settings</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-ok">working</span>
+          <span class="prio p3">P3</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>Operator Portal &middot; Account</div>
+        <div><b>Primary file</b><code>profile.page.tsx</code>, <code>settings.page.tsx</code></div>
+      </div>
+
+      <h4>Purpose</h4>
+      <p>Operator company profile and account settings. Adds bank/wallet payout details once OPR-EARN ships.</p>
+
+      <h4>Pending</h4>
+      <ul class="pendList">
+        <li><span class="pTag"><span class="prio p1">P1</span></span><span>Bank account &amp; eSewa/Khalti payout account fields (for OPR-EARN).</span></li>
+        <li><span class="pTag"><span class="prio p2">P2</span></span><span>Re-upload KYC docs after rejection.</span></li>
+      </ul>
+    </div>
+
+  </section>
+
+  <!-- ============ ADMIN PORTAL ============ -->
+  <section>
+    <p class="kicker">Side three</p>
+    <h2>Admin Portal &mdash; feature specifications</h2>
+
+    <div class="portal admin">
+      <h3>Admin Control Tower</h3>
+      <p>Internal staff portal. Used by UTHBUS to verify operators, oversee every booking on the platform, manage money flow, resolve disputes, and run promotions. Today the bus and bookings parts exist; the money and dispute parts do not.</p>
+    </div>
+
+    <!-- ADM-AUTH -->
+    <div class="doc" id="ADM-AUTH">
+      <div class="docHead">
+        <div>
+          <div class="id">ADM-AUTH</div>
+          <h3 class="ti">Admin Login</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-ok">working</span>
+          <span class="prio p2">P2</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>Admin Portal &middot; Account</div>
+        <div><b>Primary file</b><code>app/admin/login/page.tsx</code>, <code>contexts/admin-auth-context.tsx</code></div>
+      </div>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span>Email + password login; admin accounts are provisioned manually (no public registration).</span></li>
+        <li><span class="rid">R2</span><span>Forgot password reset.</span></li>
+        <li><span class="rid">R3</span><span>Strict role guard: a non-admin Firebase user accessing <code>/admin/*</code> is redirected to login or denied.</span></li>
+        <li><span class="rid">R4</span><span>Multi-admin roles (later): SuperAdmin, OperatorOps, FinanceOps, SupportOps.</span></li>
+      </ul>
+
+      <h4>Currently built</h4>
+      <div class="builtBox">
+        <ul>
+          <li>Email/password login with reset.</li>
+          <li>Role guard via <code>AdminAuthContext</code>.</li>
+        </ul>
+      </div>
+
+      <h4>Pending</h4>
+      <ul class="pendList">
+        <li><span class="pTag"><span class="prio p1">P1</span></span><span>2FA for admin accounts (TOTP).</span></li>
+        <li><span class="pTag"><span class="prio p2">P2</span></span><span>Multi-role permissions model.</span></li>
+        <li><span class="pTag"><span class="prio p1">P1</span></span><span>Admin action audit log (every approve / reject / cancel / refund logged immutably).</span></li>
+      </ul>
+    </div>
+
+    <!-- ADM-KYC -->
+    <div class="doc" id="ADM-KYC">
+      <div class="docHead">
+        <div>
+          <div class="id">ADM-KYC</div>
+          <h3 class="ti">Operator KYC Review</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-new">not built</span>
+          <span class="prio p0">P0</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>Admin Portal &middot; Operators</div>
+        <div><b>Related</b>OPR-AUTH</div>
+      </div>
+
+      <h4>Purpose</h4>
+      <p>Admin reviews operator-submitted documents (company registration certificate, operator license, PAN/VAT) and decides whether to approve them. Until approved, the operator cannot list buses on the user-facing search.</p>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span>Queue view: operators with <code>kycStatus = "pending_verification"</code>, oldest first.</span></li>
+        <li><span class="rid">R2</span><span>Operator detail: company info, contact, submitted documents (view + download).</span></li>
+        <li><span class="rid">R3</span><span>Actions: Approve, Reject with reason, Request more info.</span></li>
+        <li><span class="rid">R4</span><span>On Approve, send email + WhatsApp to operator. Surface verified badge on user portal.</span></li>
+        <li><span class="rid">R5</span><span>Every action recorded in admin audit log with admin id, timestamp, reason.</span></li>
+      </ul>
+
+      <h4>Currently built</h4>
+      <div class="builtBox">
+        <ul>
+          <li>Nothing. There is no operator-level KYC queue today. <b>Note:</b> bus-level verification (ADM-BUS) does exist, but that is per-vehicle, not per-company.</li>
+        </ul>
+      </div>
+
+      <h4>Pending</h4>
+      <ul class="pendList">
+        <li><span class="pTag"><span class="prio p0">P0</span></span><span>Whole module.</span></li>
+      </ul>
+
+      <h4>Acceptance criteria</h4>
+      <div class="ac">
+        <ul>
+          <li>A pending operator approved by admin sees their buses surface in user search within 60s.</li>
+          <li>A rejected operator sees the rejection reason on their dashboard and can resubmit.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ADM-BUS -->
+    <div class="doc" id="ADM-BUS">
+      <div class="docHead">
+        <div>
+          <div class="id">ADM-BUS</div>
+          <h3 class="ti">Bus Verification</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-ok">working</span>
+          <span class="prio p2">P2</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>Admin Portal &middot; Operators</div>
+        <div><b>Primary file</b><code>app/admin/buses/page.tsx</code></div>
+      </div>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span>Tabs: Pending verification, Approved, Suspended, Rejected, All.</span></li>
+        <li><span class="rid">R2</span><span>Per bus row: operator name, bus name, type, capacity, routes, verification status.</span></li>
+        <li><span class="rid">R3</span><span>Actions: Approve (Pending &rarr; Approved), Reject (Pending &rarr; Rejected), Hold (Approved &rarr; Suspended), Reactivate (Suspended &rarr; Approved), Delete (two-step confirm).</span></li>
+        <li><span class="rid">R4</span><span>Each action writes an audit log entry.</span></li>
+      </ul>
+
+      <h4>Currently built</h4>
+      <div class="builtBox">
+        <ul>
+          <li>Full feature working: <code>BusService.getAllBusesForAdmin()</code>, <code>verifyBus()</code>, <code>holdBus()</code>, <code>unholdBus()</code>, <code>adminDeleteBus()</code>.</li>
+        </ul>
+      </div>
+
+      <h4>Pending</h4>
+      <ul class="pendList">
+        <li><span class="pTag"><span class="prio p2">P2</span></span><span>Reason field on Reject / Hold actions (today the operator does not know <i>why</i>).</span></li>
+        <li><span class="pTag"><span class="prio p2">P2</span></span><span>Audit log surface to ADM-AUTH R3.</span></li>
+        <li><span class="pTag"><span class="prio p2">P2</span></span><span>Bulk approve / reject for new operators with many vehicles.</span></li>
+      </ul>
+    </div>
+
+    <!-- ADM-BOOK -->
+    <div class="doc" id="ADM-BOOK">
+      <div class="docHead">
+        <div>
+          <div class="id">ADM-BOOK</div>
+          <h3 class="ti">Bookings Oversight</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-ok">working</span>
+          <span class="prio p2">P2</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>Admin Portal &middot; Operations</div>
+        <div><b>Primary file</b><code>app/admin/bookings/page.tsx</code></div>
+      </div>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span>List every booking on the platform across all operators.</span></li>
+        <li><span class="rid">R2</span><span>Search by booking id, passenger name, phone, bus name, route.</span></li>
+        <li><span class="rid">R3</span><span>Filter by status, source (online / counter), date range, operator, payment status.</span></li>
+        <li><span class="rid">R4</span><span>Per booking: expand to view detail, cancel (with reason), trigger refund (post-payments), open dispute.</span></li>
+        <li><span class="rid">R5</span><span>CSV export of filtered results.</span></li>
+      </ul>
+
+      <h4>Currently built</h4>
+      <div class="builtBox">
+        <ul>
+          <li><code>ActiveBookingsService.getAllBookingsForAdmin()</code> (all bookings, newest first), <code>cancelActiveBooking()</code>.</li>
+          <li>Search by name / phone / bus / route, status filter, expand detail, cancel booking.</li>
+        </ul>
+      </div>
+
+      <h4>Pending</h4>
+      <ul class="pendList">
+        <li><span class="pTag"><span class="prio p1">P1</span></span><span>Payment status filter (depends on USR-PAY shipping <code>paymentStatus</code>).</span></li>
+        <li><span class="pTag"><span class="prio p2">P2</span></span><span>Date range and operator filters.</span></li>
+        <li><span class="pTag"><span class="prio p2">P2</span></span><span>CSV export.</span></li>
+        <li><span class="pTag"><span class="prio p2">P2</span></span><span>Refund and "open dispute" CTAs (depend on ADM-DISP and payments).</span></li>
+      </ul>
+    </div>
+
+    <!-- ADM-COMM -->
+    <div class="doc" id="ADM-COMM">
+      <div class="docHead">
+        <div>
+          <div class="id">ADM-COMM</div>
+          <h3 class="ti">Commission &amp; Settlement</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-new">not built</span>
+          <span class="prio p0">P0</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>Admin Portal &middot; Finance</div>
+        <div><b>Related</b>OPR-EARN, USR-PAY</div>
+      </div>
+
+      <h4>Purpose</h4>
+      <p>The financial spine of the marketplace. Capture commission on every paid online booking, track what is owed to each operator, generate weekly settlement runs, and reconcile against gateway payouts.</p>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span>Commission rate model: default platform rate; override per operator; override per route (later).</span></li>
+        <li><span class="rid">R2</span><span>For every <code>paid</code> booking, create a ledger entry: gross fare, commission, net payable to operator. For counter bookings, commission = 0 (operator collected cash directly) unless they're routed through us &mdash; clarify with business.</span></li>
+        <li><span class="rid">R3</span><span>Refund entry reverses the ledger and adjusts commission.</span></li>
+        <li><span class="rid">R4</span><span>Settlement run: scheduled weekly job that groups unpaid ledger entries per operator and creates a settlement record.</span></li>
+        <li><span class="rid">R5</span><span>Admin reviews settlement run, approves payout, marks paid with payout reference. Operator sees it on OPR-EARN.</span></li>
+        <li><span class="rid">R6</span><span>Reconciliation report: gateway payouts vs platform records, flag drift.</span></li>
+      </ul>
+
+      <h4>Currently built</h4>
+      <div class="builtBox">
+        <ul>
+          <li>Nothing.</li>
+        </ul>
+      </div>
+
+      <h4>Pending</h4>
+      <ul class="pendList">
+        <li><span class="pTag"><span class="prio p0">P0</span></span><span>Entire module &mdash; built in Sprint 5.</span></li>
+      </ul>
+
+      <h4>Acceptance criteria</h4>
+      <div class="ac">
+        <ul>
+          <li>For 100 test bookings of varied types, the ledger reconciles to the rupee.</li>
+          <li>A weekly settlement run produces a payable amount per operator that matches the sum of their unpaid ledger entries.</li>
+          <li>A refund posts the reverse ledger entry within the same transaction as the gateway refund.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ADM-DISP -->
+    <div class="doc" id="ADM-DISP">
+      <div class="docHead">
+        <div>
+          <div class="id">ADM-DISP</div>
+          <h3 class="ti">Disputes &amp; Refunds</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-new">not built</span>
+          <span class="prio p1">P1</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>Admin Portal &middot; Support</div>
+        <div><b>Related</b>USR-MY, ADM-BOOK, ADM-COMM</div>
+      </div>
+
+      <h4>Purpose</h4>
+      <p>Catch-all for the things that go wrong: no-show by operator, passenger no-show, payment disputed, refund stuck. A single queue where the support team works.</p>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span>Dispute is opened from USR-MY ("Raise dispute") or by admin from ADM-BOOK.</span></li>
+        <li><span class="rid">R2</span><span>Dispute fields: booking, type (no-show by operator / by passenger / refund stuck / wrong charge / other), description, attachments.</span></li>
+        <li><span class="rid">R3</span><span>Status: Open, Investigating, Resolved (refund issued / no refund / partial), Closed.</span></li>
+        <li><span class="rid">R4</span><span>SLA: first response &le; 4h, resolution &le; 72h.</span></li>
+        <li><span class="rid">R5</span><span>On resolve-with-refund: trigger payment refund, post ledger reverse entry (ADM-COMM), notify user and operator.</span></li>
+      </ul>
+
+      <h4>Currently built</h4>
+      <div class="builtBox">
+        <ul>
+          <li>Nothing.</li>
+        </ul>
+      </div>
+
+      <h4>Pending</h4>
+      <ul class="pendList">
+        <li><span class="pTag"><span class="prio p1">P1</span></span><span>Entire module &mdash; built in Sprint 7-8.</span></li>
+      </ul>
+    </div>
+
+    <!-- ADM-PROMO -->
+    <div class="doc" id="ADM-PROMO">
+      <div class="docHead">
+        <div>
+          <div class="id">ADM-PROMO</div>
+          <h3 class="ti">Promotions &amp; Pricing</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-new">not built</span>
+          <span class="prio p2">P2</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>Admin Portal &middot; Growth</div>
+        <div><b>Related</b>USR-PAY</div>
+      </div>
+
+      <h4>Purpose</h4>
+      <p>Replace the hard-coded <code>WELCOME50</code> promo with a real promotions engine.</p>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span>Create / edit / archive promo codes with: code, discount type (flat / %), value, min fare, validity window, max uses, per-user use limit, applicable routes / operators.</span></li>
+        <li><span class="rid">R2</span><span>Auto-apply promos (e.g. first-booking discount without a code).</span></li>
+        <li><span class="rid">R3</span><span>Promo usage report.</span></li>
+        <li><span class="rid">R4</span><span>Promo cost is borne by UTHBUS (deducted from platform commission), not the operator, by default. Configurable.</span></li>
+      </ul>
+
+      <h4>Currently built</h4>
+      <div class="builtBox">
+        <ul>
+          <li>Nothing. <code>WELCOME50</code> is hard-coded in <code>app/booking/review-pay/page.tsx</code>.</li>
+        </ul>
+      </div>
+
+      <h4>Pending</h4>
+      <ul class="pendList">
+        <li><span class="pTag"><span class="prio p2">P2</span></span><span>Entire module.</span></li>
+      </ul>
+    </div>
+
+  </section>
+
+  <!-- ============ SPRINT PLAN ============ -->
+  <section id="MVP">
+    <p class="kicker">First, the only thing that matters</p>
+    <h2>What is the UTHBUS MVP?</h2>
+    <p class="lead">"MVP" is one of the most abused words in product. For UTHBUS, here is the only definition that matters: <b>the smallest version of the platform that can take real money from a real traveler, give them a truthful ticket, and pay the real operator their share.</b> Everything else is post-MVP.</p>
+
+    <div class="callout ok">
+      <b>MVP in one sentence:</b> A verified Nepali operator lists one bus &rarr; a real traveler finds it on uthbus.com &rarr; pays via eSewa &rarr; receives a ticket that is true &rarr; rides the bus &rarr; you, as platform, can show what you owe that operator and settle them. Anything not needed to make that loop work end-to-end is post-MVP.
+    </div>
+
+    <h3>What is IN the MVP</h3>
+    <ul>
+      <li><b>Honest e-ticket.</b> Payment Mode rendered from real data, never hard-coded.</li>
+      <li><b>Operator KYC.</b> Documents uploaded, admin approves, verified badge shows. "Verified operators" becomes true in software.</li>
+      <li><b>One payment method: eSewa.</b> Most common in Nepal, simplest sandbox, fastest to ship. Khalti, cards, wallet &mdash; later.</li>
+      <li><b>Cancellation policy + manual refund.</b> Policy enforced in UI; refund triggered by you from admin (manual eSewa refund through their dashboard). Automated refund is post-MVP.</li>
+      <li><b>Commission ledger (read-only).</b> Every paid booking writes a ledger entry with gross / commission / net. Operator can see what they are owed. Actual payout happens outside the system (you bank-transfer them weekly). Automated settlement run is post-MVP.</li>
+      <li><b>Admin can step into a booking.</b> Already built. Add reason fields, that is enough.</li>
+    </ul>
+
+    <h3>What is NOT in the MVP (and why)</h3>
+    <ul>
+      <li><b>Khalti, cards (Stripe), wallet.</b> Cost vs benefit is wrong for a v0. Add the second payment method only after the first one shows traction.</li>
+      <li><b>Automated refunds.</b> Solo, ten refunds a week is faster done manually than building a robust refund API. Build the manual flow well, automate later.</li>
+      <li><b>Automated settlement run.</b> Same logic. Excel sheet + bank transfer + mark-paid on admin is enough until you have 10+ active operators.</li>
+      <li><b>Bus photo upload.</b> Use brand-tier placeholder images by bus type for MVP. Real photos are post-MVP polish.</li>
+      <li><b>WhatsApp / email notifications.</b> Manual WhatsApp from your business number is faster than building Wati integration solo. In-app + email-on-booking-confirmation is enough.</li>
+      <li><b>Ratings and reviews.</b> Not needed to take the first 100 bookings.</li>
+      <li><b>Disputes module.</b> Use a Google Form + WhatsApp until you actually have disputes worth ticketing.</li>
+      <li><b>Programmatic SEO, PWA, Sleeper layouts, promo engine.</b> All post-MVP.</li>
+      <li><b>2FA on admin, audit log UI.</b> Audit log writes yes (cheap), UI no.</li>
+    </ul>
+
+    <div class="callout">
+      <b>The rule:</b> if a feature is not needed for "a traveler pays real money and rides a real bus, and you can pay the operator", it is not in the MVP. When in doubt, cut it. You can ship a feature in week 14; you cannot un-ship time spent building the wrong thing.
+    </div>
+
+    <h3>How you know MVP is done</h3>
+    <ul>
+      <li>You have at least <b>one verified operator</b> with one bus listed.</li>
+      <li>A real user (not you, not a friend) can complete a booking end-to-end on production.</li>
+      <li>The ticket they receive accurately reflects payment status and method.</li>
+      <li>You can show that operator, by Monday, exactly what they earned, what your commission was, and what you owe them &mdash; even if you settle them by manual bank transfer.</li>
+      <li>You have run <b>one full booking-to-settlement cycle</b> with real money. Even at NPR 500, it counts.</li>
+    </ul>
+  </section>
+
+  <section id="SP-REALITY">
+    <p class="kicker">Solo reality check</p>
+    <h2>Capacity, scope, and the math</h2>
+
+    <p class="lead">A solo founder-developer is not 1/5 of a five-person team. You are also doing sales, operator acquisition, support, ops, and decisions. The honest math:</p>
+
+    <h3>Your capacity</h3>
+    <ul>
+      <li><b>Realistic coding time:</b> 25-30 productive hours per week. The other 25+ go to operator calls, content, support, decisions, taxes, life.</li>
+      <li><b>Per two-week sprint:</b> ~50-60 hours of focused engineering work. Plan to this number, not to optimistic ones.</li>
+      <li><b>Solo penalty:</b> every task takes ~1.3-1.5x longer than the same task with a team, because there is no one to bounce ideas, review your PR, or unblock you when you are stuck on a gateway sandbox.</li>
+      <li><b>Context-switch cost:</b> doing backend + frontend + ops in the same sprint is slower than batching. Try to batch by surface: one week mostly backend, one week mostly frontend, in each sprint.</li>
+    </ul>
+
+    <h3>Sprint operating model (just you)</h3>
+    <div class="roleGrid">
+      <div class="roleCard">
+        <h5>Build (Mon-Thu mornings)</h5>
+        <div class="who">~16 hours / week</div>
+        <ul>
+          <li>Deep work on the current sprint's one big thing.</li>
+          <li>No meetings before 1pm if you can help it.</li>
+          <li>If you finish the sprint goal early, pull from "Pending" of the same feature spec &mdash; do NOT start a new feature.</li>
+        </ul>
+      </div>
+      <div class="roleCard fe">
+        <h5>Test &amp; ship (Thu afternoon, Fri)</h5>
+        <div class="who">~8 hours / week</div>
+        <ul>
+          <li>Self-QA the week's work against the requirement IDs (USR-PAY-R1, R2&hellip;).</li>
+          <li>Deploy to staging Friday. Production only when the full sprint is signed off by you.</li>
+          <li>Keep a personal regression checklist; run it before every prod deploy.</li>
+        </ul>
+      </div>
+      <div class="roleCard qa">
+        <h5>Ops &amp; support (daily)</h5>
+        <div class="who">~6 hours / week</div>
+        <ul>
+          <li>Triage Sentry errors and user messages daily, 30 min cap.</li>
+          <li>Do not let support eat the build block. Batch responses at lunch and end of day.</li>
+          <li>Anything not on fire goes into the backlog, not into today.</li>
+        </ul>
+      </div>
+      <div class="roleCard do">
+        <h5>Plan &amp; review (Friday afternoon)</h5>
+        <div class="who">~2 hours / week</div>
+        <ul>
+          <li>Mini-retro: what shipped, what slipped, what to defer.</li>
+          <li>Confirm next week's single goal. Write it on top of the doc.</li>
+          <li>Don't replan past the next sprint &mdash; solo plans drift fast.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Rules that protect a solo developer from themselves</h3>
+    <ol>
+      <li><b>One sprint, one goal.</b> If you can't summarise the sprint in one sentence, it has too much in it.</li>
+      <li><b>If a thing can be done manually, do it manually first.</b> Refunds, settlements, KYC review, notifications &mdash; manual is fine for MVP. Automate only after volume justifies it.</li>
+      <li><b>Never start two sprints' worth of work at once.</b> "I'll just also&hellip;" is the solo killer.</li>
+      <li><b>Cut before you stretch.</b> If a sprint is slipping, cut from this sprint, do not push the next sprint's date.</li>
+      <li><b>Don't refactor on the critical path to MVP.</b> Ugly working code &gt; pretty broken code. Refactor in Sprint 6+.</li>
+      <li><b>Ship to staging every Friday, even if the goal isn't fully done.</b> Avoids week-long branches that rot.</li>
+      <li><b>Write down one decision per week.</b> "Why I chose eSewa first" &mdash; one paragraph. Future you and the first hire will thank present you.</li>
+    </ol>
+
+    <div class="callout blue">
+      <b>The single most important rule:</b> ship MVP in 14 weeks. If by week 10 you are still on Sprint 3, the answer is to cut Sprint 5's scope, not to push to week 18. The cost of slow MVP &gt; the cost of a smaller MVP.
+    </div>
+  </section>
+
+  <section>
+    <p class="kicker">Execution</p>
+    <h2>The six sprints to MVP</h2>
+    <p class="lead">Two-week sprints (except Sprint 0). Each card lists the single sprint goal, the concrete tasks (mapped back to feature IDs), what you should not do in this sprint, and the exit criteria. After Sprint 5, the post-MVP roadmap is sketched.</p>
+
+    <!-- ============ SPRINT 0 ============ -->
+    <div class="sprint" id="SP-0">
+      <div class="sh p0">
+        <span class="tag">Sprint 0</span>
+        <span class="ti">Foundations &amp; the 1-hour fix</span>
+        <span class="go">Goal: a safe place to build, and stop the lie &middot; 1 week (~25 hrs)</span>
+      </div>
+      <div class="body">
+        <div class="lane">
+          <div class="who"><b>The one goal</b></div>
+          <div>You can deploy safely to staging, errors surface in Sentry, and the e-ticket no longer claims "Paid via UPI" when nothing was paid.</div>
+        </div>
+        <div class="lane">
+          <div class="who"><b>Tasks</b></div>
+          <div>
+            <ul>
+              <li><b>1-hour win first:</b> change <code>app/booking/ticket/[id]/page.tsx:344</code> from hard-coded "Online (UPI)" to read the new <code>paymentMode</code> field (default "Reserved &mdash; pay at counter"). Push this today. It is the cheapest credibility recovery available.</li>
+              <li>Create a separate Firebase staging project; deploy <code>main</code> there automatically.</li>
+              <li>Sentry on Next.js (free tier is fine). Smoke-test by throwing a deliberate error.</li>
+              <li>Daily Firestore export to a GCS bucket. Use Firebase scheduled export.</li>
+              <li>Audit <code>firestore.rules</code>: any rule that reads <code>allow read, write: if true</code> tightens to authenticated owner only.</li>
+              <li>Audit <code>BusService.searchAllBuses()</code> &mdash; verify it filters on <code>verificationStatus = "approved"</code>. Fix if not.</li>
+              <li>Remove the four stub pages (Billing, Credits, Notifications, Refer-a-Friend) from the user nav. 404 them.</li>
+              <li>Replace USR-MY "Need Help?" <code>alert()</code> with a WhatsApp deep link with the PNR pre-filled.</li>
+              <li>Write your personal pre-prod regression checklist (PDF or .md). 20-30 manual steps covering search &rarr; book &rarr; ticket &rarr; my bookings &rarr; admin approve &rarr; operator counter.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="lane">
+          <div class="who"><b>Cut from this sprint</b></div>
+          <div>Don't touch <code>paymentStatus</code> migration yet (Sprint 1). Don't start KYC. Don't refactor. Don't optimise Lighthouse beyond a baseline read.</div>
+        </div>
+        <div class="sf"><b>Sprint exit:</b> Production e-ticket no longer claims paid without payment. Staging deploys on every push. Sentry is on. Stubs are gone. <b>Tag this as <code>v0.0.1-foundations</code>.</b></div>
+      </div>
+    </div>
+
+    <!-- ============ SPRINT 1 ============ -->
+    <div class="sprint" id="SP-1">
+      <div class="sh p0">
+        <span class="tag">Sprint 1</span>
+        <span class="ti">Truthful Tickets &amp; Payment Status Model</span>
+        <span class="go">Goal: the booking model knows the truth about payment &middot; 2 weeks (~55 hrs)</span>
+      </div>
+      <div class="body">
+        <div class="lane">
+          <div class="who"><b>The one goal</b></div>
+          <div>Every booking carries an honest <code>paymentStatus</code> field, the ticket renders from that field, and there is now zero code path that produces a "Paid" ticket without a corresponding payment record. Everything in Sprint 3 will depend on this groundwork.</div>
+        </div>
+        <div class="lane">
+          <div class="who"><b>Week 1 &middot; data model</b></div>
+          <div>
+            <ul>
+              <li>Add <code>paymentStatus</code> to <code>IActiveBooking</code>: <code>unpaid_pending_counter | pending_gateway | paid | failed | refunded</code>. Default <code>unpaid_pending_counter</code>.</li>
+              <li>Add nullable <code>paymentMode</code> (eSewa / Khalti / Card / Cash / Counter) and <code>paymentTxnId</code> fields.</li>
+              <li>Write a one-off Firestore migration script that backfills all existing bookings to <code>unpaid_pending_counter</code>. Run on staging first, verify, then prod.</li>
+              <li>Add helpers in <code>ActiveBookingsService</code> to read/write payment fields atomically with status.</li>
+              <li>Add Firestore composite index on <code>(paymentStatus, createdAt)</code> for admin filtering later.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="lane">
+          <div class="who"><b>Week 2 &middot; UI &amp; sweep</b></div>
+          <div>
+            <ul>
+              <li><b>USR-TICKET R1-R4:</b> render Payment Mode conditionally on the e-ticket. Three variants: Paid (txn id shown), Reserved-pay-at-counter (amount due banner), Pending-gateway (retry CTA &mdash; just stub for now, becomes live in Sprint 3).</li>
+              <li>Audit every place a booking is rendered (My Bookings, admin bookings list, operator bookings list) and switch to the new field.</li>
+              <li>Nightly cron (Cloud Function or scheduled Firebase task) that flips Confirmed bookings with past dates to Completed (USR-MY R2).</li>
+              <li>Run your personal pre-prod regression checklist. Walk through booking &rarr; ticket on three fake bookings of different statuses.</li>
+              <li>Deploy to production. Monitor Sentry for 48h before moving on.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="lane">
+          <div class="who"><b>Cut from this sprint</b></div>
+          <div>Don't start eSewa yet. Don't touch KYC schema (Sprint 2). Don't build the admin payment-status filter (Sprint 5). QR code on ticket can wait.</div>
+        </div>
+        <div class="sf"><b>Sprint exit:</b> <code>v0.1</code>. No production ticket shows "Paid" unless a paymentMode and paymentTxnId are present. The data foundation for eSewa is laid.</div>
+      </div>
+    </div>
+
+    <!-- ============ SPRINT 2 ============ -->
+    <div class="sprint" id="SP-2">
+      <div class="sh p0">
+        <span class="tag">Sprint 2</span>
+        <span class="ti">Operator KYC end-to-end</span>
+        <span class="go">Goal: "verified operators" stops being a lie &middot; 2-3 weeks (~70 hrs)</span>
+      </div>
+      <div class="body">
+        <div class="lane">
+          <div class="who"><b>The one goal</b></div>
+          <div>A new operator registers, uploads their company papers, you review and approve from admin, and only then their buses become visible to travelers. The verified badge surfaces to users.</div>
+        </div>
+        <div class="lane">
+          <div class="who"><b>Week 1 &middot; data + uploads</b></div>
+          <div>
+            <ul>
+              <li>Add <code>kycStatus</code> to <code>OperatorProfile</code>: <code>pending_verification | approved | rejected</code>. Default <code>pending_verification</code>. Backfill all existing operators to <code>approved</code> (you'll re-verify them manually as you onboard, but don't break what's there).</li>
+              <li>Add subcollection <code>operators/{uid}/kycDocs/</code> with metadata: type (companyCert / license / pan), storagePath, uploadedAt.</li>
+              <li>Firebase Storage rules: operator writes only to <code>kyc/{uid}/*</code>; admin reads all of <code>kyc/*</code>. Max 5MB per file, PDFs and images only.</li>
+              <li>Update <code>OPR-AUTH</code> registration page with three required document upload fields.</li>
+              <li>Operator dashboard banner: shows current KYC status with rejection reason if rejected.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="lane">
+          <div class="who"><b>Week 2 &middot; admin + gating</b></div>
+          <div>
+            <ul>
+              <li>Build ADM-KYC admin page: queue of pending operators, detail view with documents inline (PDF / image preview), Approve / Reject (with reason text) buttons.</li>
+              <li>Wire the user search query: only return buses whose operator has <code>kycStatus = "approved"</code>. Best done at <code>BusService.searchAllBuses()</code> by joining operator state cache, since Firestore can't join.</li>
+              <li>Approach: denormalise <code>operatorKycStatus</code> onto each bus document; update via Cloud Function or via operator service when KYC flips.</li>
+              <li>Verified badge component (small green tick + "Verified Operator"); place on search card and on e-ticket.</li>
+              <li>Email operator on approve/reject. Use Firebase "Trigger Email" extension &mdash; cheapest reliable solo option.</li>
+              <li>Audit log: write a record on every admin KYC action (admin uid, operator uid, action, reason, timestamp). No UI yet, just the write.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="lane">
+          <div class="who"><b>Week 3 (buffer)</b></div>
+          <div>If anything from Week 1-2 slips, finish here. Otherwise: walk a real (or test) operator through register &rarr; upload &rarr; you-approve &rarr; their bus appears in search. This is the first time "verified operator" is true on UTHBUS.</div>
+        </div>
+        <div class="lane">
+          <div class="who"><b>Cut from this sprint</b></div>
+          <div>No 2FA on admin. No audit log UI. No bulk approve. No "request more info" status (just Reject with reason). Don't migrate the existing 6 SEO route pages.</div>
+        </div>
+        <div class="sf"><b>Sprint exit:</b> <code>v0.2-kyc</code>. The "verified operators" promise is now backed by code. Your first real operator gets the badge.</div>
+      </div>
+    </div>
+
+    <!-- ============ SPRINT 3 ============ -->
+    <div class="sprint" id="SP-3">
+      <div class="sh p1">
+        <span class="tag">Sprint 3</span>
+        <span class="ti">eSewa Payment (one gateway only)</span>
+        <span class="go">Goal: a real traveler can pay real money &middot; 2-3 weeks (~75 hrs)</span>
+      </div>
+      <div class="body">
+        <div class="lane">
+          <div class="who"><b>The one goal</b></div>
+          <div>Booking flow ends with a real eSewa transaction. Booking only flips to Confirmed on successful callback. The "Paid via eSewa" variant of the e-ticket renders with the real txn id.</div>
+        </div>
+        <div class="lane">
+          <div class="who"><b>Pre-sprint (do before week 1)</b></div>
+          <div>
+            <ul>
+              <li><b>Get eSewa merchant credentials.</b> This can take days to a week with their team. <b>Start now</b>, not on day 1 of the sprint. Sandbox creds first, prod later.</li>
+              <li>Read eSewa v2 ePay documentation cover to cover. Especially: signature scheme, callback URL format, transaction status verification endpoint.</li>
+              <li>Write down on paper: who initiates, who redirects, what callback carries, how to verify.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="lane">
+          <div class="who"><b>Week 1 &middot; intent + initiate</b></div>
+          <div>
+            <ul>
+              <li>Add Firestore collection <code>paymentIntents</code>: <code>{id, bookingId, gateway: "esewa", amount, status: "initiated|success|failed", gatewayTxnId, createdAt, updatedAt}</code>.</li>
+              <li>Update booking write path: on "Confirm &amp; Pay", create paymentIntent + write booking with <code>paymentStatus = "pending_gateway"</code>. Do NOT mark Confirmed yet.</li>
+              <li>Add seat-hold record: hold the seats for 15 min tied to the paymentIntent id. Expired holds release the seats.</li>
+              <li>Build the eSewa initiate handler: take amount, build signed payload, redirect to eSewa.</li>
+              <li>Test in eSewa sandbox: can you reach the eSewa page from your local app?</li>
+            </ul>
+          </div>
+        </div>
+        <div class="lane">
+          <div class="who"><b>Week 2 &middot; callback + idempotency</b></div>
+          <div>
+            <ul>
+              <li>Build the eSewa success callback handler (in <code>app/api/</code> or Cloud Function).</li>
+              <li><b>Signature verification first.</b> Reject any callback that doesn't verify, log to Sentry. This is your security-critical path.</li>
+              <li>Verify the transaction with eSewa's status API as a second check (don't trust the callback alone &mdash; users can replay/forge).</li>
+              <li>Update paymentIntent &rarr; success, update booking &rarr; <code>paymentStatus="paid"</code>, <code>paymentMode="eSewa"</code>, <code>paymentTxnId=&lt;refid&gt;</code>, <code>status="Confirmed"</code>. All in one Firestore transaction.</li>
+              <li>Idempotency: if the same gateway txn id arrives twice (it will, eSewa sometimes retries), the second call is a no-op. Test by replaying manually.</li>
+              <li>Build the failure callback handler. Mark intent failed, release seat hold, leave booking flippable to "Pay at Counter" fallback.</li>
+              <li>Front-end: update <code>app/booking/review-pay/page.tsx</code> &mdash; remove the auto-confirm path entirely. Add eSewa as the only paid option. Add "Pay at Counter" as the second option (writes Pending-Counter immediately).</li>
+              <li>"Payment pending" screen for the case where the user is redirected back but the callback hasn't arrived yet. Poll the paymentIntent status, max 60s, then show retry.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="lane">
+          <div class="who"><b>Week 3 (buffer + production)</b></div>
+          <div>
+            <ul>
+              <li>Migrate to eSewa production credentials.</li>
+              <li>Take one real booking through (yourself, NPR 100, refund manually after).</li>
+              <li>Add Sentry alert: any callback that fails signature verification pages you.</li>
+              <li>Add a Cloud Function scheduled job: expire any paymentIntent stuck in "initiated" for &gt;15 min (releases held seats).</li>
+            </ul>
+          </div>
+        </div>
+        <div class="lane">
+          <div class="who"><b>Cut from this sprint</b></div>
+          <div><b>No Khalti.</b> No card / Stripe. No refund automation (cancellation policy is just text on the ticket page for now). No "Pay at Counter" operator opt-in flag (allow it for everyone in MVP). No promo engine.</div>
+        </div>
+        <div class="sf"><b>Sprint exit:</b> <code>v0.3-payments</code>. One real eSewa transaction has cleared on production. Idempotency verified by replay. <b>This is the hardest sprint &mdash; budget the buffer.</b></div>
+      </div>
+    </div>
+
+    <!-- ============ SPRINT 4 ============ -->
+    <div class="sprint" id="SP-4">
+      <div class="sh p1">
+        <span class="tag">Sprint 4</span>
+        <span class="ti">Cancellation Policy + Manual Refund</span>
+        <span class="go">Goal: users can cancel, money flows back (you press a button) &middot; 2 weeks (~50 hrs)</span>
+      </div>
+      <div class="body">
+        <div class="lane">
+          <div class="who"><b>The one goal</b></div>
+          <div>A user with a paid booking can cancel through the app, see what refund they will get, and you have a single admin queue showing every pending refund. You process the refund in eSewa's portal yourself, then click "Mark refunded" &mdash; the system handles the rest.</div>
+        </div>
+        <div class="lane">
+          <div class="who"><b>Why manual</b></div>
+          <div>Automating eSewa refund through their API takes another sprint and they are flaky in the sandbox. At MVP volumes (1-20 refunds a week), you logging into eSewa and pressing refund is faster, cheaper, and more reliable. Automation goes in post-MVP.</div>
+        </div>
+        <div class="lane">
+          <div class="who"><b>Week 1 &middot; policy + cancel UX</b></div>
+          <div>
+            <ul>
+              <li>Cancellation policy as a config: tiered refund %s by hours-to-departure. Defaults: <code>&gt;24h = 90%, 6-24h = 50%, &lt;6h = 0%</code>. Per-operator override possible but not required for MVP.</li>
+              <li>Helper <code>calculateRefund(booking)</code> returning <code>{refundable: boolean, amount: number, tier: string}</code>.</li>
+              <li>USR-MY cancel button updates: show refund preview ("You will be refunded NPR 450 of NPR 500. Refund processes in 3-5 business days."), confirm dialog, then call cancel API.</li>
+              <li>Add booking status <code>Cancelled_PendingRefund</code> (or use existing <code>Cancelled</code> with a separate <code>refundStatus</code> field: <code>none | pending | processed</code>).</li>
+              <li>When user cancels: write <code>refundStatus = "pending"</code>, store the calculated refund amount, free the seat immediately.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="lane">
+          <div class="who"><b>Week 2 &middot; admin refund queue</b></div>
+          <div>
+            <ul>
+              <li>New admin page <code>/admin/refunds</code>: list bookings with <code>refundStatus = "pending"</code>. Show: PNR, user, operator, original amount, refund amount, paymentTxnId, booked date, cancel date.</li>
+              <li>"Mark refunded" action: opens a dialog asking for refund reference (the txn id from eSewa's portal after you process it), then writes <code>refundStatus = "processed"</code> + <code>refundTxnId</code> + <code>refundProcessedAt</code> + admin uid.</li>
+              <li>Email user on refund processed (Firebase "Trigger Email" extension again).</li>
+              <li>Add a small dashboard card on the admin index: "X refunds pending".</li>
+              <li>USR-MY refund-status display: show "Refund pending" / "Refunded on &lt;date&gt; (ref: &lt;txnId&gt;)".</li>
+            </ul>
+          </div>
+        </div>
+        <div class="lane">
+          <div class="who"><b>Cut from this sprint</b></div>
+          <div>No automated gateway refund API. No partial-refund splits. No refund webhook (you're triggering manually). No reason-required field on cancel (optional).</div>
+        </div>
+        <div class="sf"><b>Sprint exit:</b> <code>v0.4-refunds</code>. A cancellation moves money back, even if you are the bottleneck. Time-to-refund target: same day if cancelled before 5pm.</div>
+      </div>
+    </div>
+
+    <!-- ============ SPRINT 5 ============ -->
+    <div class="sprint" id="SP-5">
+      <div class="sh p1">
+        <span class="tag">Sprint 5</span>
+        <span class="ti">Commission Ledger &rarr; SHIP MVP</span>
+        <span class="go">Goal: you know what each operator earned. Then ship. &middot; 2-3 weeks (~70 hrs)</span>
+      </div>
+      <div class="body">
+        <div class="lane">
+          <div class="who"><b>The one goal</b></div>
+          <div>Every paid booking writes a ledger entry that breaks down gross / commission / net. The operator can see what they have earned and what you owe them on their portal. You can see the same on admin, and you settle them by bank transfer outside the system.</div>
+        </div>
+        <div class="lane">
+          <div class="who"><b>Why no automation</b></div>
+          <div>An automated settlement run with bank-API integration is a sprint of its own. Solo, with 1-5 operators, manual is fine. The ledger needs to be accurate; the payout itself is a few clicks in your banking portal each Friday.</div>
+        </div>
+        <div class="lane">
+          <div class="who"><b>Week 1 &middot; ledger</b></div>
+          <div>
+            <ul>
+              <li>Add Firestore collection <code>ledgerEntries</code>: <code>{id, bookingId, operatorId, type: "earning|refund_reversal|adjustment", grossAmount, commissionAmount, netAmount, settledStatus: "unsettled|settled", settledAt, settlementId, createdAt}</code>.</li>
+              <li>Config doc <code>config/commission</code>: <code>{defaultRate: 0.10}</code>. Per-operator override goes on operator doc as <code>commissionRateOverride</code>.</li>
+              <li>Helper <code>computeCommission(grossAmount, operator)</code> returning <code>{grossAmount, commissionAmount, netAmount}</code>.</li>
+              <li>On payment success (Sprint 3 callback): write a ledger entry with type=earning. Same Firestore transaction as the booking flip.</li>
+              <li>On refund processed (Sprint 4 admin action): write a reversal entry (negative gross, negative commission, negative net) referencing the original.</li>
+              <li>Test by hand on staging: 10 fake bookings + 2 refunds. Sum the ledger per operator. Numbers must reconcile.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="lane">
+          <div class="who"><b>Week 2 &middot; operator + admin views</b></div>
+          <div>
+            <ul>
+              <li>OPR-EARN page (<code>/operator/counter/earnings</code> or similar): three cards (this week / this month / all-time) showing gross, commission, net. Below: ledger table with PNR, date, gross, commission, net, settled status.</li>
+              <li>ADM-COMM admin page (<code>/admin/settlements</code>): one row per operator with unsettled balance. Click into row to see all unsettled ledger entries. "Mark settled" action: enter payout reference (your bank transaction id), date, and it marks all selected entries settled.</li>
+              <li>Add bank/eSewa/Khalti payout fields to operator profile (just text fields, you'll copy-paste when you do the transfer).</li>
+            </ul>
+          </div>
+        </div>
+        <div class="lane">
+          <div class="who"><b>Week 3 &middot; MVP regression + ship</b></div>
+          <div>
+            <ul>
+              <li>Run your full personal regression checklist across user / operator / admin portals. Cross-check against requirement IDs of every P0/P1 feature.</li>
+              <li>Onboard your first operator end-to-end on production: register, upload KYC, you approve, they list one bus, you list it.</li>
+              <li>Take one real booking yourself, ride the bus if you can, settle the operator manually that week.</li>
+              <li>Write a short post-mortem doc: what worked, what was harder than expected, what to fix first post-MVP. This is the artifact for your future first hire.</li>
+              <li><b>Production deploy. Announce. Take real bookings.</b></li>
+            </ul>
+          </div>
+        </div>
+        <div class="lane">
+          <div class="who"><b>Cut from this sprint</b></div>
+          <div>No automated settlement run. No reconciliation report. No CSV export (operator can take screenshots, you can manually pull from Firestore for the first few). No multi-currency. No per-route commission. No promo cost allocation. <b>Anything that is not "ledger writes and two views" is post-MVP.</b></div>
+        </div>
+        <div class="sf"><b>Sprint exit:</b> <code>v1.0-mvp</code>. 🚀 <b>MVP IS LIVE.</b> First real operator is verified, first real booking is taken on prod, first real settlement is paid by you. From here, the plan changes &mdash; you'll know what hurts and what to do next.</div>
+      </div>
+    </div>
+
+  </section>
+
+  <section id="SP-POST">
+    <p class="kicker">After MVP ships</p>
+    <h2>Post-MVP roadmap (sketched)</h2>
+    <p class="lead">Anything planned in detail past month four is fiction. By the time MVP is live you will know which gaps hurt most &mdash; and the order below will be wrong. Use this as a menu, not a contract. Each sprint is still ~2-3 weeks solo. Pull one at a time, the one that is hurting MVP users the most.</p>
+
+    <div class="callout amber">
+      <b>The bigger decision at this point:</b> hire someone. Solo can ship MVP. Solo cannot do MVP + sales + ops + post-MVP features at the same time without something breaking. The first hire is probably a frontend engineer (most volume of UI work below) or, if money permits, a full-stack mid-level who can pair with you. Re-evaluate at end of Sprint 5.
+    </div>
+
+    <div class="sprint" id="SP-POST-6">
+      <div class="sh p2">
+        <span class="tag">Sprint 6</span>
+        <span class="ti">Khalti as second payment</span>
+        <span class="go">If MVP shows eSewa is &lt; 70% of intended payments &middot; ~2 weeks</span>
+      </div>
+      <div class="body">
+        <div class="lane">
+          <div class="who"><b>Tasks</b></div>
+          <div>
+            <ul>
+              <li>Mirror the eSewa pattern: initiate, callback, signature, idempotency. The architecture is already there.</li>
+              <li>Add Khalti as a payment method in USR-PAY.</li>
+              <li>Test sandbox + production.</li>
+              <li>Track via ledger which gateway each payment came through.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="sf"><b>Why second:</b> if eSewa converts well, this is a low-priority add. Don't build it preemptively.</div>
+      </div>
+    </div>
+
+    <div class="sprint" id="SP-POST-7">
+      <div class="sh p2">
+        <span class="tag">Sprint 7</span>
+        <span class="ti">Bus photo upload pipeline</span>
+        <span class="go">When operators ask for it or conversion is hurting &middot; ~3 weeks</span>
+      </div>
+      <div class="body">
+        <div class="lane">
+          <div class="who"><b>Tasks</b></div>
+          <div>
+            <ul>
+              <li>Firebase Storage upload with signed URLs.</li>
+              <li>Client-side resize + WebP conversion (browser-image-compression library).</li>
+              <li>Cloud Function for thumbnail generation.</li>
+              <li>OPR-FLEET upload UI with reorder, delete, cover photo.</li>
+              <li>USR-SEARCH carousel on bus card.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="sf"><b>Until then:</b> use four brand-tier placeholder images per bus type (Deluxe interior, AC Deluxe, Hiace, etc.). Looks intentional rather than missing.</div>
+      </div>
+    </div>
+
+    <div class="sprint" id="SP-POST-8">
+      <div class="sh p2">
+        <span class="tag">Sprint 8</span>
+        <span class="ti">Email + WhatsApp notifications</span>
+        <span class="go">When manual WhatsApp from your phone stops scaling &middot; ~2-3 weeks</span>
+      </div>
+      <div class="body">
+        <div class="lane">
+          <div class="who"><b>Tasks</b></div>
+          <div>
+            <ul>
+              <li>Booking confirmation email (Firebase Trigger Email extension &mdash; cheap and reliable).</li>
+              <li>T-24h and T-2h reminder emails via scheduled Cloud Functions.</li>
+              <li>WhatsApp: Wati is simpler than Twilio for Nepal. Get business-verified number first (1-2 weeks lead time).</li>
+              <li>Approve message templates (another 1-2 weeks).</li>
+              <li>Wire booking lifecycle events to send WhatsApp.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="sf"><b>Until then:</b> a single Google Form + a WhatsApp Business number you check three times a day handles 5-10 bookings/day comfortably.</div>
+      </div>
+    </div>
+
+    <div class="sprint" id="SP-POST-9">
+      <div class="sh p2">
+        <span class="tag">Sprint 9</span>
+        <span class="ti">Ratings &amp; Reviews</span>
+        <span class="go">When you have your first 50+ completed bookings &middot; ~2 weeks</span>
+      </div>
+      <div class="body">
+        <div class="lane">
+          <div class="who"><b>Tasks</b></div>
+          <div>
+            <ul>
+              <li>Ratings collection: 1-5 stars + optional review text, one per user-booking.</li>
+              <li>Post-trip rating prompt on USR-MY for Completed bookings.</li>
+              <li>Display average rating + count on USR-SEARCH cards.</li>
+              <li>Operator can reply to reviews (post-MVP++).</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sprint" id="SP-POST-10">
+      <div class="sh p2">
+        <span class="tag">Sprint 10+</span>
+        <span class="ti">Everything else &mdash; replan</span>
+        <span class="go">Order depends on what hurts &middot; replan from MVP data</span>
+      </div>
+      <div class="body">
+        <div class="lane">
+          <div class="who"><b>Menu, not a plan</b></div>
+          <div>
+            <ul>
+              <li><b>Automated settlement run</b> &mdash; when you have 10+ active operators and manual Excel is taking &gt; 2 hours / week.</li>
+              <li><b>Automated refund via gateway API</b> &mdash; when you do &gt; 20 refunds / week.</li>
+              <li><b>Programmatic SEO</b> &mdash; when organic traffic plateaus on the 6 hand-built pages. Highest ROI of the lot for acquisition.</li>
+              <li><b>Card payments (Stripe)</b> &mdash; only when tourist segment is &gt; 15% of bookings or partners ask.</li>
+              <li><b>Disputes module</b> &mdash; once disputes &gt; 5/week, Google Form stops working.</li>
+              <li><b>PWA / Core Web Vitals</b> &mdash; once mobile bounce rate or LCP becomes the bottleneck on Search Console.</li>
+              <li><b>Operator confirmation loop</b> &mdash; if no-show incidents start happening, build this fast.</li>
+              <li><b>Sleeper / Tourist AC bus types</b> &mdash; when operators with those vehicles ask to list.</li>
+              <li><b>Promo engine</b> &mdash; once you actually want to run campaigns. Until then, hard-coded codes are fine.</li>
+              <li><b>2FA on admin + audit log UI</b> &mdash; once you bring on a second admin user.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="sf"><b>Posture:</b> replan after every 2 sprints post-MVP, using real numbers from production. The roadmap will change. Write it down then, not now.</div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ============ RISKS & ASSUMPTIONS ============ -->
+  <section>
+    <p class="kicker">What could derail this</p>
+    <h2>Risks &amp; assumptions</h2>
+
+    <h3>Assumptions baked into the plan</h3>
+    <ul>
+      <li>eSewa merchant credentials are procured by end of Sprint 2. <b>Start the application now</b> &mdash; their team takes days to a week to respond. Sandbox first; production once Sprint 3 is ready.</li>
+      <li>You can dedicate ~25-30 productive engineering hours per week. If real life (illness, family, a Diwali week) eats into that, slide sprint boundaries &mdash; do not stretch the goal.</li>
+      <li>By end of Sprint 2 you have a real candidate first operator already in conversation, so KYC has a real subject to test on. Operator acquisition is its own workstream and not in this doc.</li>
+      <li>You will not pull yourself toward the mobile app, loyalty features, or programmatic SEO until MVP is shipped. Write the next idea down, put it in this doc's post-MVP menu, then close the tab.</li>
+      <li>The codebase is stable enough on <code>main</code> that small migrations (paymentStatus, kycStatus) won't break unrelated flows. Smoke-test before each migration.</li>
+    </ul>
+
+    <h3>Risks</h3>
+    <div class="risk"><span class="n">1</span><span><b>You are the single point of failure.</b> Sick week = sprint slip. Mitigation: keep sprints to one goal so a one-week slip costs one feature, not the whole plan. Tag every prod deploy with a version so you can roll back without thinking.</span></div>
+    <div class="risk"><span class="n">2</span><span><b>eSewa sandbox is flaky.</b> Their docs are out of date in places, and callback IPs sometimes drift. Mitigation: budget a full week of buffer in Sprint 3 specifically for "things eSewa-shaped don't work". Have a backup plan to ship "Pay at Counter only" if eSewa slips by &gt; 3 weeks.</span></div>
+    <div class="risk"><span class="n">3</span><span><b>Scope creep on yourself.</b> Solo devs are notorious for "while I'm in here, I'll also fix&hellip;". Mitigation: write the temptation down in the post-MVP menu, do not action it. Re-read the MVP definition every Monday.</span></div>
+    <div class="risk"><span class="n">4</span><span><b>No code review.</b> No second pair of eyes on payment / ledger code, which is where bugs are most expensive. Mitigation: write tests for the money paths (compute commission, refund reversal, idempotency). Also: re-read your own PR the next morning before merging &mdash; the gap of a night helps a lot.</span></div>
+    <div class="risk"><span class="n">5</span><span><b>Data migrations on production with no team backup.</b> If a backfill goes wrong on prod data, recovery is on you alone. Mitigation: Sprint 0 sets up daily Firestore exports for a reason. Every migration runs on staging twice before prod, and never on a Friday afternoon.</span></div>
+    <div class="risk"><span class="n">6</span><span><b>Webhook reliability + idempotency.</b> Money flows depend on webhook delivery and not double-processing. Build retry and idempotency from Sprint 3 day one, not as a "we'll harden later" item.</span></div>
+    <div class="risk"><span class="n">7</span><span><b>Operator supply.</b> The plan assumes a real operator is ready to be your first verified KYC by end of Sprint 2. If not, the verification flow tests on synthetic data and the first MVP transaction slips. Run operator acquisition in parallel.</span></div>
+    <div class="risk"><span class="n">8</span><span><b>Burnout.</b> Solo at 25-30 productive hours for 14 weeks straight is doable; at 50 hours, you crash by week 8. Protect the 30-hour ceiling. Take a real day off each week. The plan respects that already.</span></div>
+    <div class="risk"><span class="n">9</span><span><b>Security rules per new collection.</b> Every new Firestore collection (paymentIntents, ledgerEntries, kycDocs) needs explicit rules. Solo means no one reminds you. Put it on the per-sprint definition of done.</span></div>
+    <div class="risk"><span class="n">10</span><span><b>You take the first booking and break it under load.</b> Unlikely at MVP traffic, but the day a route goes viral, payment + seat-hold + ledger writes all spike. Mitigation: build the booking write inside a Firestore transaction (already implied above). Add a Sentry "transaction failed" alert.</span></div>
+  </section>
+
+  <!-- ============ GLOSSARY ============ -->
+  <section style="border-bottom:none;">
+    <p class="kicker">Reference</p>
+    <h2>Glossary &amp; conventions</h2>
+    <ul>
+      <li><b>PNR.</b> Passenger Name Record &mdash; the unique booking reference shown on the ticket.</li>
+      <li><b>KYC.</b> Know Your Customer &mdash; in our context, the operator-side document verification.</li>
+      <li><b>Ledger entry.</b> One immutable financial record per money event (booking paid, refund, commission, settlement).</li>
+      <li><b>Settlement run.</b> The job that aggregates unsettled ledger entries per operator into a payable. For MVP this is manual: you query the ledger, total it, bank-transfer the operator, then click "mark settled" in admin.</li>
+      <li><b>Verified badge.</b> UI mark shown next to an operator on user surfaces once their KYC is approved.</li>
+      <li><b>P0 / P1 / P2 / P3.</b> Priority: P0 = blocks revenue or trust (must ship before MVP); P1 = needed for a healthy MVP; P2 = needed to scale; P3 = nice-to-have.</li>
+      <li><b>Feature IDs.</b> Stable identifiers, used in tickets and test cases. Format: <code>{PORTAL}-{SHORT}</code>. Requirement IDs: <code>{FEATURE-ID}-R{n}</code>.</li>
+      <li><b>Sprint length.</b> Two weeks for MVP sprints (except Sprint 0 = 1 week). Some sprints budget a third buffer week for solo realities. Demo + mini-retro on the last Friday.</li>
+      <li><b>Definition of Done (solo edition).</b> Code merged to <code>main</code>, deployed to staging, you walked through your personal regression checklist mapping to feature requirement IDs, Sentry has no new errors after 24h, and the related feature spec in this doc has been updated (move items from Pending to Built).</li>
+      <li><b>MVP.</b> The smallest version that can take real money, give a true ticket, and pay an operator. Not a smaller version of v1.0 &mdash; a <i>different</i> product that does only the loop. See the MVP section.</li>
+      <li><b>Manual-first.</b> The solo principle: build the manual flow (refunds, settlements, notifications) before the automation. Cheaper, faster, more reliable at MVP volumes. Automate when manual hurts.</li>
+    </ul>
+
+    <div class="callout blue">
+      <b>One-line summary.</b> Ship eSewa-only, manually-settled, KYC-verified MVP in 14 weeks. Then take real bookings, see what hurts, and use the post-MVP menu as a guide &mdash; not a contract. By Sprint 6 or 7, hire someone.
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="logo"><span class="uth">uth</span><span class="bus">bus</span></div>
+    <p style="margin-top:12px;">UTHBUS BA Handover &amp; Sprint Plan &middot; Internal &middot; v1.1 (solo) &middot; 2026-06-05</p>
+  </div>
+</footer>
+
+</body>
+</html>
