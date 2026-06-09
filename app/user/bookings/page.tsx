@@ -460,7 +460,18 @@ export default function BookingsPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => alert("Contact support for booking modifications")}
+                      onClick={() => {
+                        const msg =
+                          `Hi UthBus support, I need help with my booking.\n` +
+                          `PNR: ${booking.pnr || booking.id}\n` +
+                          `Bus: ${booking.busName}\n` +
+                          `Route: ${booking.from} → ${booking.to}\n` +
+                          `Date: ${booking.date}`
+                        window.open(
+                          `https://wa.me/9779810511415?text=${encodeURIComponent(msg)}`,
+                          "_blank"
+                        )
+                      }}
                     >
                       Need Help?
                     </Button>

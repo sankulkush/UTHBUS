@@ -5,23 +5,12 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Card } from "@/components/ui/card"
-import {
-  User,
-  TicketIcon,
-  CreditCard,
-  Gift,
-  MapPin,
-  Bell,
-} from "lucide-react"
+import { User, TicketIcon } from "lucide-react"
 import UserAuthGuard from "@/components/auth/UserAuthGuard"
 
 const sidebarItems = [
-  { title: "My Bookings",      href: "/user/bookings",      icon: TicketIcon },
-  { title: "UthBus Cash",      href: "/user/credits",       icon: CreditCard },
-  { title: "Refer A Friend",   href: "/user/refer-friend",  icon: Gift },
-  { title: "Profile",          href: "/user/profile",       icon: User },
-  { title: "Billing Address",  href: "/user/billing",       icon: MapPin },
-  { title: "Notification",     href: "/user/notifications", icon: Bell },
+  { title: "My Bookings", href: "/user/bookings", icon: TicketIcon },
+  { title: "Profile",     href: "/user/profile",  icon: User },
 ]
 
 function SidebarNav({ horizontal = false }: { horizontal?: boolean }) {

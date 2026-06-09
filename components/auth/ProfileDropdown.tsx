@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { User, BookOpen, LogOut, Gift, Bell, CreditCard, MapPin } from "lucide-react"
+import { User, BookOpen, LogOut } from "lucide-react"
 
 export default function ProfileDropdown() {
   const { userProfile, logout } = useUserAuth()
@@ -62,30 +62,6 @@ export default function ProfileDropdown() {
           <Link href="/user/bookings" className="cursor-pointer">
             <BookOpen className="mr-2 h-4 w-4" />
             <span>My Bookings</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/user/billing" className="cursor-pointer">
-            <MapPin className="mr-2 h-4 w-4" />
-            <span>Billing Address</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/user/credits" className="cursor-pointer">
-            <CreditCard className="mr-2 h-4 w-4" />
-            <span>UthBus Cash</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/user/refer-friend" className="cursor-pointer">
-            <Gift className="mr-2 h-4 w-4" />
-            <span>Refer A Friend</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/user/notifications" className="cursor-pointer">
-            <Bell className="mr-2 h-4 w-4" />
-            <span>Notification</span>
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />

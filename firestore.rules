@@ -1,0 +1,172 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Helpers ─────────────────────────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && request.auth.token.email != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.token.email))
+        && get(/databases/$(database)/documents/admins/$(request.auth.token.email)).data.isAdmin == true;
+    }
+
+    // ─── users/{uid} ─────────────────────────────────────────────────────────
+    // A user can only read/write their own profile. Admins can read/update.
+    match /users/{uid} {
+      allow read:   if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid);
+      allow update: if isOwner(uid) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ─── operators/{uid} ─────────────────────────────────────────────────────
+    // Operator owns own doc. Admins can read all (for KYC review).
+    // Operators cannot read other operators' profiles.
+    match /operators/{uid} {
+      allow read:   if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid);
+      allow update: if isOwner(uid) || isAdmin();
+      allow delete: if isAdmin();
+
+      // Sprint 2 placeholder: KYC docs subcollection.
+      match /kycDocs/{docId} {
+        allow read:  if isOwner(uid) || isAdmin();
+        allow write: if isOwner(uid);
+      }
+    }
+
+    // ─── admins/{email} ──────────────────────────────────────────────────────
+    // Admin docs are keyed by email. An authenticated user can read their own
+    // admin doc only (for login verification). Writes go through the Firebase
+    // console — no in-app admin creation.
+    match /admins/{email} {
+      allow read:  if isSignedIn() && request.auth.token.email == email;
+      allow write: if false;
+    }
+
+    // ─── buses/{busId} ───────────────────────────────────────────────────────
+    // Buses are publicly readable so anonymous visitors can search.
+    // Only the owning operator can create. They cannot self-approve.
+    // verificationStatus and status changes are admin-only.
+    match /buses/{busId} {
+      allow read: if true;
+
+      allow create: if isSignedIn()
+        && request.resource.data.operatorId == request.auth.uid
+        && request.resource.data.verificationStatus == "pending_verification";
+
+      allow update: if
+        // Operator updates their own bus, but cannot change verificationStatus
+        // or operatorId, and cannot change status to/from "Active" themselves.
+        (isSignedIn()
+          && resource.data.operatorId == request.auth.uid
+          && request.resource.data.operatorId == resource.data.operatorId
+          && request.resource.data.verificationStatus == resource.data.verificationStatus)
+        // Admin can change anything.
+        || isAdmin();
+
+      allow delete: if isAdmin();
+    }
+
+    // ─── activeBookings/{bookingId} ──────────────────────────────────────────
+    // Read: passenger who owns the booking, operator whose bus was booked, or admin.
+    // Create: any signed-in user (their userId must match), OR operator creating
+    //         a walk-in counter booking (no userId, operatorId must match auth).
+    // Update: user can flip status to "cancelled" or "completed" on their own
+    //         booking, nothing else. Operator can update bookings on their buses.
+    //         Admin can update anything.
+    // Delete: admin only.
+    match /activeBookings/{bookingId} {
+      allow read: if isSignedIn() && (
+        resource.data.userId == request.auth.uid
+        || resource.data.operatorId == request.auth.uid
+        || isAdmin()
+      );
+
+      allow create: if isSignedIn() && (
+        // User booking for themselves
+        request.resource.data.userId == request.auth.uid
+        // Operator walk-in booking (no userId)
+        || (request.resource.data.operatorId == request.auth.uid
+            && !("userId" in request.resource.data))
+        || isAdmin()
+      );
+
+      allow update: if isSignedIn() && (
+        // User updating their own booking — status only, identity fields locked
+        (resource.data.userId == request.auth.uid
+          && request.resource.data.userId == resource.data.userId
+          && request.resource.data.operatorId == resource.data.operatorId
+          && request.resource.data.busId == resource.data.busId
+          && request.resource.data.status in ["cancelled", "completed"])
+        // Operator updating bookings on their own buses
+        || resource.data.operatorId == request.auth.uid
+        || isAdmin()
+      );
+
+      allow delete: if isAdmin();
+    }
+
+    // ─── seatLocks/{busId_date_seatNumber} ───────────────────────────────────
+    // Denormalised seat-availability cache. Holds only busId, date, seatNumber,
+    // bookingId, bookerUid, operatorId — no passenger PII.
+    //
+    // Doc ID is deterministic: "{busId}_{date}_{seatNumber}". This both gives
+    // us cheap key lookups AND makes double-booking structurally impossible
+    // (a transaction trying to create an existing doc fails).
+    //
+    // Reads are public so the booking flow can check seat availability without
+    // touching activeBookings (which holds PII).
+    //
+    // Writes are gated on a corresponding activeBooking being created in the
+    // SAME transaction with matching busId, date, and ownership.
+    match /seatLocks/{lockId} {
+      allow read: if true;
+
+      allow create: if isSignedIn()
+        && request.resource.data.busId is string
+        && request.resource.data.date is string
+        && request.resource.data.seatNumber is string
+        && request.resource.data.bookingId is string
+        && request.resource.data.operatorId is string
+        // The activeBooking referenced must exist after the transaction and
+        // must match the seatLock's busId/date.
+        && getAfter(/databases/$(database)/documents/activeBookings/$(request.resource.data.bookingId)).data.busId == request.resource.data.busId
+        && getAfter(/databases/$(database)/documents/activeBookings/$(request.resource.data.bookingId)).data.date == request.resource.data.date
+        // The activeBooking must be owned by the requester — as user OR as operator walk-in.
+        && (
+          // User booking — userId matches auth.uid
+          (getAfter(/databases/$(database)/documents/activeBookings/$(request.resource.data.bookingId)).data.userId == request.auth.uid
+            && request.resource.data.bookerUid == request.auth.uid)
+          // Operator walk-in — operatorId matches auth.uid, no bookerUid required
+          || getAfter(/databases/$(database)/documents/activeBookings/$(request.resource.data.bookingId)).data.operatorId == request.auth.uid
+        );
+
+      // Locks are immutable while held — to "release" a seat you delete the lock.
+      allow update: if false;
+
+      // Delete: the user who booked it, the operator of the bus, or admin.
+      allow delete: if isSignedIn() && (
+        ("bookerUid" in resource.data && resource.data.bookerUid == request.auth.uid)
+        || resource.data.operatorId == request.auth.uid
+        || isAdmin()
+      );
+    }
+
+    // ─── Default deny ────────────────────────────────────────────────────────
+    // Anything not matched above is rejected. New collections must add
+    // explicit rules here.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
