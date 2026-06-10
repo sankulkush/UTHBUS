@@ -128,6 +128,16 @@ export const UserAuthProvider = ({ children }: UserAuthProviderProps) => {
     const userCred = await signInWithEmailAndPassword(auth, email, password);
     const user = userCred.user;
 
+    // Refuse to log in as a user if this UID is already registered as an operator.
+    // Prevents a single Firebase Auth identity from owning both a users/{uid} and
+    // operators/{uid} doc, which would cause the homepage and counter-layout
+    // redirects to fight each other.
+    const opDoc = await getDoc(doc(db, "operators", user.uid));
+    if (opDoc.exists()) {
+      await signOut(auth);
+      throw new Error("This account is registered as an operator. Please use the Operator Portal.");
+    }
+
     // Fetch profile
     const userDoc = await getDoc(doc(db, "users", user.uid));
     if (!userDoc.exists()) {
@@ -154,7 +164,16 @@ export const UserAuthProvider = ({ children }: UserAuthProviderProps) => {
     const provider = new GoogleAuthProvider();
     const userCred = await signInWithPopup(auth, provider);
     const user = userCred.user;
-    
+
+    // Refuse to register/sign-in as a user if this UID is already an operator,
+    // otherwise loginWithGoogle silently double-registers the identity and the
+    // homepage ↔ counter-layout redirects fight each other forever.
+    const opDoc = await getDoc(doc(db, "operators", user.uid));
+    if (opDoc.exists()) {
+      await signOut(auth);
+      throw new Error("This Google account is registered as an operator. Please use the Operator Portal.");
+    }
+
     const userDoc = await getDoc(doc(db, "users", user.uid));
     if (userDoc.exists()) {
       const data = userDoc.data() as UserProfile;
@@ -194,6 +213,13 @@ export const UserAuthProvider = ({ children }: UserAuthProviderProps) => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password)
       const user = userCredential.user
+
+      // Don't double-register a UID that already owns an operator profile.
+      const opDoc = await getDoc(doc(db, "operators", user.uid))
+      if (opDoc.exists()) {
+        await signOut(auth)
+        throw new Error("This account is already registered as an operator. Please use the Operator Portal.")
+      }
 
       // Create user profile in Firestore
       const newUserProfile: UserProfile = {
