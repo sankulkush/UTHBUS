@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation"
 import { useAdminAuth } from "@/contexts/admin-auth-context"
 import { ActiveBookingsService } from "@/components/operator/counter/services/active-booking.service"
 import type { IActiveBooking } from "@/components/operator/counter/services/active-booking.service"
+import { PaymentStatusBadge } from "@/components/booking/PaymentStatusBadge"
 import {
   LogOut, RefreshCw, Loader2, Bus, BookOpen, Search, X,
   User, Phone, MapPin, Calendar, Clock, Banknote,
@@ -255,6 +256,7 @@ export default function AdminBookingsPage() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-semibold text-foreground text-sm truncate">{booking.passengerName}</p>
                         {statusBadge(booking.status)}
+                        <PaymentStatusBadge status={booking.paymentStatus} />
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {booking.from} → {booking.to} · {booking.date} · {booking.busName ?? "Bus"}

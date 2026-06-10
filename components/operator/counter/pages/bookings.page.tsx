@@ -8,6 +8,7 @@ import {
 import { useCounter } from "../context/counter-context";
 import { ActiveBookingsService } from "../services/active-booking.service";
 import type { IActiveBooking } from "../context/counter-context";
+import { PaymentStatusBadge } from "@/components/booking/PaymentStatusBadge";
 
 const service = new ActiveBookingsService();
 
@@ -369,9 +370,12 @@ export function BookingsPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold capitalize ${statusBadge(b.status)}`}>
-                          {b.status}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold capitalize ${statusBadge(b.status)}`}>
+                            {b.status}
+                          </span>
+                          <PaymentStatusBadge status={b.paymentStatus} />
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-right">
                         <Eye className="w-3.5 h-3.5 text-muted-foreground inline-block" />
@@ -401,9 +405,12 @@ export function BookingsPage() {
                       <p className="font-semibold text-foreground text-sm truncate">{b.passengerName}</p>
                       <p className="text-xs text-muted-foreground truncate">{b.busName} · {b.from} → {b.to}</p>
                     </div>
-                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold capitalize ${statusBadge(b.status)}`}>
-                      {b.status}
-                    </span>
+                    <div className="shrink-0 flex flex-col items-end gap-1">
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold capitalize ${statusBadge(b.status)}`}>
+                        {b.status}
+                      </span>
+                      <PaymentStatusBadge status={b.paymentStatus} />
+                    </div>
                   </div>
                   <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                     <span>Seat {seats}</span>
