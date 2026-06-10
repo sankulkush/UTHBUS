@@ -22,30 +22,12 @@ import {
 } from "firebase/firestore";
 import { firestore } from "@/lib/firebase";
 
-export interface IActiveBooking {
-  id?: string;
-  /** Passenger-facing reference (12 chars, e.g. "KAPO26051801"). Optional on read for
-   *  backward-compat with bookings created before PNR was introduced. */
-  pnr?: string;
-  operatorId: string;
-  userId?: string;
-  busId: string;
-  busName: string;
-  busType: string;
-  from: string;
-  to: string;
-  date: string;
-  time: string;
-  seatNumber?: string;
-  seatNumbers?: string[];
-  passengerName: string;
-  passengerPhone: string;
-  boardingPoint: string;
-  droppingPoint: string;
-  amount: number;
-  bookingTime: any;
-  status: "booked" | "cancelled" | "completed";
-}
+// Single source of truth lives in the service; re-export here so existing
+// `import type { IActiveBooking } from "../context/counter-context"` callsites
+// don't break. Keeps Sprint 1's paymentStatus / paymentMode / paymentTxnId /
+// paidAt fields automatically available everywhere.
+import type { IActiveBooking } from "../services/active-booking.service";
+export type { IActiveBooking };
 
 interface CounterContextType {
   operator: OperatorProfile | null;

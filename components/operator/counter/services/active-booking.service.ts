@@ -25,6 +25,26 @@ function seatLockId(busId: string, date: string, seatNumber: string): string {
   return `${busId}_${date}_${seatNumber}`;
 }
 
+// ── Payment status / mode taxonomy (Sprint 1 foundation) ─────────────────────
+// Every booking carries paymentStatus. paymentMode + paymentTxnId are only
+// populated once money actually moves. The e-ticket renders differently for
+// each combination — see app/booking/ticket/[id]/page.tsx.
+export type PaymentStatus =
+  | "unpaid_pending_counter" // booking made, user will pay cash at the counter (default)
+  | "pending_gateway"        // user kicked off a gateway flow (eSewa/Khalti/Card), no callback yet
+  | "paid"                   // gateway callback verified, money received
+  | "failed"                 // gateway returned failure, or signature verify failed
+  | "refunded";              // money returned to user (cancellation, dispute)
+
+export type PaymentMode =
+  | "eSewa"
+  | "Khalti"
+  | "Card"
+  | "Cash"
+  | "Counter";
+
+export const DEFAULT_PAYMENT_STATUS: PaymentStatus = "unpaid_pending_counter";
+
 export interface IActiveBooking {
   id?: string;
   /** Passenger-facing reference (e.g. "KAPO26051801"). 12 chars:
@@ -52,6 +72,12 @@ export interface IActiveBooking {
   amount: number;
   status: "booked" | "cancelled" | "completed";
   bookingTime: any;
+  // Payment state — see PaymentStatus union above.
+  paymentStatus: PaymentStatus;
+  // Null until a gateway callback fills these in.
+  paymentMode?: PaymentMode | null;
+  paymentTxnId?: string | null;
+  paidAt?: any | null;
   createdAt?: any;
   updatedAt?: any;
 }
@@ -128,11 +154,26 @@ export class ActiveBookingsService {
    *  — closing the loophole where someone could lock seats without booking.
    */
   async createActiveBooking(
-    booking: Omit<IActiveBooking, "id" | "createdAt" | "updatedAt" | "pnr"> & { pnr?: string }
+    booking: Omit<
+      IActiveBooking,
+      "id" | "createdAt" | "updatedAt" | "pnr" | "paymentStatus" | "paymentMode" | "paymentTxnId" | "paidAt"
+    > & {
+      pnr?: string;
+      paymentStatus?: PaymentStatus;
+      paymentMode?: PaymentMode | null;
+      paymentTxnId?: string | null;
+    }
   ): Promise<IActiveBooking> {
     const pnr = booking.pnr || this.generatePNR(booking.from, booking.to, booking.date);
     const seats = booking.seatNumbers || [];
     if (!seats.length) throw new Error("At least one seat is required.");
+
+    // Payment defaults: anything created here without an explicit paymentStatus
+    // is treated as "user will pay at the counter". Sprint 3 (eSewa) will pass
+    // paymentStatus: "pending_gateway" + paymentMode: "eSewa" on the gateway path.
+    const paymentStatus: PaymentStatus = booking.paymentStatus || DEFAULT_PAYMENT_STATUS;
+    const paymentMode: PaymentMode | null = booking.paymentMode ?? null;
+    const paymentTxnId: string | null = booking.paymentTxnId ?? null;
 
     const bookingRef = docRef(this.col());
     const bookingId = bookingRef.id;
@@ -151,6 +192,10 @@ export class ActiveBookingsService {
       const bookingData = {
         ...booking,
         pnr,
+        paymentStatus,
+        paymentMode,
+        paymentTxnId,
+        paidAt: null,
         bookingTime: serverTimestamp(),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -170,7 +215,7 @@ export class ActiveBookingsService {
       });
     });
 
-    return { ...booking, pnr, id: bookingId };
+    return { ...booking, pnr, paymentStatus, paymentMode, paymentTxnId, paidAt: null, id: bookingId };
   }
 
   /** Delete all seatLocks for a given booking. Safe to call multiple times;
@@ -257,6 +302,48 @@ export class ActiveBookingsService {
     await updateDoc(ref, { ...updates, updatedAt: serverTimestamp() });
     const updated = await getDoc(ref);
     return { ...(updated.data() as Omit<IActiveBooking, "id">), id: updated.id };
+  }
+
+  // ── Payment-state transitions (Sprint 1 foundation, called from Sprint 3) ──
+  // Each helper writes a coherent set of payment fields atomically. Designed to
+  // be called from a gateway callback handler. Status, mode, txnId, and paidAt
+  // move together so the model never lands in an inconsistent state.
+
+  /** Mark a booking as paid. Called by the gateway success callback (eSewa,
+   *  Khalti, Card) once signature + transaction status have been verified. */
+  async markPaid(
+    id: string,
+    paymentMode: PaymentMode,
+    paymentTxnId: string
+  ): Promise<void> {
+    const ref = docRef(firestore, "activeBookings", id);
+    await updateDoc(ref, {
+      paymentStatus: "paid" satisfies PaymentStatus,
+      paymentMode,
+      paymentTxnId,
+      paidAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  }
+
+  /** Gateway returned failure (declined / signature mismatch). Booking stays
+   *  open so the user can retry or fall back to Pay-at-Counter. */
+  async markPaymentFailed(id: string): Promise<void> {
+    const ref = docRef(firestore, "activeBookings", id);
+    await updateDoc(ref, {
+      paymentStatus: "failed" satisfies PaymentStatus,
+      updatedAt: serverTimestamp(),
+    });
+  }
+
+  /** Money has been returned to the user. Called by the admin refund queue
+   *  (Sprint 4) after the operator confirms the refund happened in eSewa. */
+  async markRefunded(id: string): Promise<void> {
+    const ref = docRef(firestore, "activeBookings", id);
+    await updateDoc(ref, {
+      paymentStatus: "refunded" satisfies PaymentStatus,
+      updatedAt: serverTimestamp(),
+    });
   }
 
   /** Cancel a booking. Flips status to "cancelled" AND releases the seatLocks
