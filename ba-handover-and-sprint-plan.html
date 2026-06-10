@@ -215,9 +215,330 @@
     section, .doc, .sprint, .phase, .roleCard { page-break-inside: avoid; }
     .cover, .sprint .sh, .callout, footer, .portal { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
+
+  /* ============================================================
+     PERSONAL TASK TRACKER — interactive shell added on top of the static BA doc.
+     Everything below this line drives the navbar, dashboard, and
+     collapsible sprint cards. Update DATA in the <script> at the
+     bottom of the file to mark progress / add notes.
+     ============================================================ */
+
+  html { scroll-padding-top: 70px; }
+  [id] { scroll-margin-top: 80px; }
+
+  /* sticky nav */
+  .tnav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(13, 20, 36, 0.94);
+    backdrop-filter: saturate(180%) blur(14px);
+    -webkit-backdrop-filter: saturate(180%) blur(14px);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .tnav .row {
+    max-width: 980px; margin: 0 auto;
+    padding: 12px 40px;
+    display: flex; align-items: center; gap: 24px;
+  }
+  .tnav .brand { font-weight: 800; font-size: 18px; letter-spacing: -0.02em; flex: none; }
+  .tnav .brand .uth { color: #6ea0ff; } .tnav .brand .bus { color: #ff6b5e; }
+  .tnav .links { display: flex; gap: 2px; flex-wrap: wrap; margin-left: auto; }
+  .tnav .links a {
+    color: #c9d6ea; text-decoration: none;
+    font-size: 13px; font-weight: 600;
+    padding: 7px 12px; border-radius: 8px;
+    transition: background 0.15s, color 0.15s;
+  }
+  .tnav .links a:hover { background: rgba(255,255,255,0.08); color: #fff; }
+  .tnav .links a.active { background: rgba(110,160,255,0.22); color: #fff; }
+  .tnav .date {
+    color: #6c7c95; font-size: 10.5px;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    margin-left: 6px; padding-left: 14px; border-left: 1px solid rgba(255,255,255,0.08);
+    flex: none;
+  }
+
+  /* dashboard */
+  .dash { padding: 52px 0 38px; border-bottom: 1px solid var(--line); }
+  .dash .topGrid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .dash .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 22px 26px;
+  }
+  .dash .panel.current { border-left: 5px solid var(--blue); }
+  .dash .panel.next { border-left: 5px solid var(--muted); }
+  .dash .panel h4 {
+    margin: 0 0 4px;
+    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); font-weight: 800;
+  }
+  .dash .panel .name { font-size: 22px; font-weight: 900; color: var(--navy); margin: 0 0 4px; letter-spacing: -0.02em; }
+  .dash .panel .sub { font-size: 13px; color: var(--muted); margin: 0 0 14px; }
+  .dash .panel .stats { display: flex; gap: 24px; font-size: 12px; flex-wrap: wrap; }
+  .dash .panel .stat { color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; font-weight: 800; font-size: 10.5px; }
+  .dash .panel .stat b { color: var(--navy); font-size: 22px; font-weight: 900; display: block; letter-spacing: -0.02em; margin-top: 2px; text-transform: none; font-family: 'Inter', sans-serif; }
+  .dash .panel .stat.ok b { color: var(--ok); }
+  .dash .panel .stat.amber b { color: var(--amber); }
+  .dash .panel .stat.red b { color: var(--red); }
+  .dash .progress { height: 6px; background: var(--surface); border-radius: 3px; overflow: hidden; margin: 16px 0 4px; }
+  .dash .progress .fill { height: 100%; background: var(--ok); border-radius: 3px; transition: width 0.4s ease; }
+  .dash .progress .fill.partial { background: var(--blue); }
+
+  .activity {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 22px 26px; margin-bottom: 14px;
+  }
+  .activity h4 {
+    margin: 0 0 12px;
+    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); font-weight: 800;
+  }
+  .activity ul { list-style: none; padding: 0; margin: 0; }
+  .activity li {
+    display: flex; gap: 14px;
+    padding: 9px 0;
+    border-bottom: 1px dashed var(--line);
+    font-size: 14px; line-height: 1.5;
+  }
+  .activity li:last-child { border-bottom: none; }
+  .activity li .when {
+    flex: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--muted);
+    width: 92px; padding-top: 2px; letter-spacing: 0.02em;
+  }
+  .activity li .what b { color: var(--navy); }
+  .activity li .what code { font-size: 11.5px; }
+
+  .deferredBox {
+    background: #fff8eb; border: 1px solid #f5d8a3;
+    border-left: 5px solid var(--amber); border-radius: var(--radius);
+    padding: 22px 26px;
+  }
+  .deferredBox h4 {
+    margin: 0 0 2px;
+    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--amber); font-weight: 800;
+  }
+  .deferredBox .subtitle { font-size: 13px; color: #8a6a30; margin: 0 0 14px; }
+  .deferredBox ul { list-style: none; padding: 0; margin: 0; }
+  .deferredBox li {
+    padding: 12px 0;
+    border-bottom: 1px dashed #f5d8a3;
+    font-size: 14px;
+  }
+  .deferredBox li:last-child { border-bottom: none; padding-bottom: 0; }
+  .deferredBox li:first-child { padding-top: 0; }
+  .deferredBox .row1 { display: flex; align-items: baseline; flex-wrap: wrap; gap: 10px; }
+  .deferredBox li .ti { font-weight: 700; color: var(--navy); font-size: 14.5px; }
+  .deferredBox li .target {
+    font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--amber); font-weight: 800;
+    background: rgba(217, 119, 6, 0.12);
+    padding: 2px 8px; border-radius: 4px;
+  }
+  .deferredBox li .why { color: #6a5a3a; font-size: 13px; margin-top: 4px; line-height: 1.55; }
+
+  /* sprint accordion */
+  .sprintList { display: flex; flex-direction: column; gap: 12px; }
+  .sprintCard {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    transition: box-shadow 0.2s, border-color 0.2s;
+  }
+  .sprintCard:hover { box-shadow: 0 4px 18px rgba(13,20,36,0.05); }
+  .sprintCard.current { border-color: var(--blue); box-shadow: 0 0 0 1px var(--blue) inset; }
+
+  .sprintCard .head {
+    padding: 14px 22px;
+    display: flex; align-items: center; gap: 12px;
+    cursor: pointer; user-select: none;
+    background: var(--card);
+    border-bottom: 1px solid transparent;
+  }
+  .sprintCard.open .head { border-bottom-color: var(--line); background: var(--surface); }
+  .sprintCard .head .tag {
+    font-size: 11px; font-weight: 900;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 4px 10px; border-radius: 6px;
+    background: var(--navy); color: #fff;
+    flex: none;
+  }
+  .sprintCard.p0 .head .tag { background: var(--red); }
+  .sprintCard.p1 .head .tag { background: var(--blue); }
+  .sprintCard.p2 .head .tag { background: var(--navy); }
+  .sprintCard.p3 .head .tag { background: var(--violet); }
+  .sprintCard .head .ti { font-size: 16px; font-weight: 800; color: var(--navy); letter-spacing: -0.01em; }
+  .sprintCard .head .right {
+    margin-left: auto; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .sprintCard .head .progressMini {
+    font-size: 11.5px; color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .sprintCard .head .progressMini b { color: var(--navy); }
+  .sprintCard .head .chev {
+    color: var(--muted); transition: transform 0.2s;
+    font-size: 12px;
+  }
+  .sprintCard.open .head .chev { transform: rotate(90deg); }
+
+  .sprintCard .body { display: none; padding: 18px 22px 22px; }
+  .sprintCard.open .body { display: block; }
+
+  .sprintCard .goal {
+    background: #f7fbff; border: 1px solid #d4e3ff;
+    border-radius: 8px; padding: 12px 16px;
+    font-size: 14px; margin-bottom: 16px;
+    line-height: 1.5;
+  }
+  .sprintCard .goal b { color: var(--blue); }
+
+  .sprintCard .duration {
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted); font-weight: 800; margin-bottom: 14px;
+  }
+
+  .taskGroup { margin-bottom: 18px; }
+  .taskGroup:last-child { margin-bottom: 0; }
+  .taskGroup h5 {
+    margin: 0 0 8px;
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted); font-weight: 800;
+  }
+
+  .task {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 10px 12px; border-radius: 8px; margin-bottom: 6px;
+    background: var(--surface);
+    transition: background 0.15s;
+  }
+  .task:hover { background: #e6edf6; }
+  .task.done { background: #eaf6ee; }
+  .task.deferred { background: #fff5e3; border-left: 3px solid var(--amber); padding-left: 9px; }
+  .task.blocked { background: #fdeae9; border-left: 3px solid var(--red); padding-left: 9px; }
+  .task.in-progress { background: #ebf2ff; border-left: 3px solid var(--blue); padding-left: 9px; }
+
+  .task .check {
+    flex: none;
+    width: 18px; height: 18px;
+    border: 2px solid var(--muted); border-radius: 4px;
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 1px;
+    transition: background 0.15s, border 0.15s;
+  }
+  .task.done .check { background: var(--ok); border-color: var(--ok); }
+  .task.done .check::after {
+    content: ""; display: block;
+    width: 4px; height: 9px;
+    border-right: 2px solid #fff; border-bottom: 2px solid #fff;
+    transform: rotate(45deg) translate(-1px, -1px);
+  }
+  .task.deferred .check { background: var(--amber); border-color: var(--amber); }
+  .task.deferred .check::after {
+    content: "II"; color: #fff; font-size: 9px; font-weight: 900; letter-spacing: -0.5px;
+  }
+  .task.blocked .check { background: var(--red); border-color: var(--red); }
+  .task.blocked .check::after {
+    content: "×"; color: #fff; font-size: 14px; font-weight: 800; line-height: 1;
+  }
+  .task.in-progress .check { background: var(--blue); border-color: var(--blue); }
+  .task.in-progress .check::after {
+    content: ""; width: 6px; height: 6px; background: #fff; border-radius: 50%;
+  }
+
+  .task .col { flex: 1; min-width: 0; }
+  .task .title { font-size: 14px; color: var(--navy); font-weight: 600; line-height: 1.4; }
+  .task.done .title { color: var(--muted); text-decoration: line-through; text-decoration-color: rgba(101, 117, 139, 0.4); }
+  .task .desc { font-size: 13px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+  .task .annot {
+    margin-top: 8px;
+    padding: 9px 12px;
+    background: rgba(255,255,255,0.7);
+    border: 1px solid rgba(217, 119, 6, 0.25);
+    border-left: 3px solid var(--amber);
+    border-radius: 6px;
+    font-size: 12.5px;
+    color: var(--ink); line-height: 1.55;
+  }
+  .task .annot::before {
+    content: "Note  ";
+    font-size: 10px; font-weight: 800; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--amber);
+  }
+  .task.blocked .annot { border-color: rgba(239, 50, 37, 0.25); border-left-color: var(--red); }
+  .task.blocked .annot::before { color: var(--red); content: "Blocker  "; }
+  .task.in-progress .annot { border-color: rgba(37, 99, 235, 0.25); border-left-color: var(--blue); }
+  .task.in-progress .annot::before { color: var(--blue); content: "WIP  "; }
+  .task.done .annot { border-color: rgba(22, 163, 74, 0.25); border-left-color: var(--ok); }
+  .task.done .annot::before { color: var(--ok); content: "Note  "; }
+
+  .task .commits {
+    margin-top: 6px;
+    display: flex; gap: 6px; flex-wrap: wrap;
+  }
+  .task .commits .sha {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    background: #fff;
+    border: 1px solid var(--line);
+    color: var(--blue);
+    padding: 2px 7px;
+    border-radius: 4px;
+    text-decoration: none;
+  }
+  .task .commits .sha:hover { background: var(--blue); color: #fff; border-color: var(--blue); }
+
+  .sprintCard .exit {
+    padding: 12px 16px;
+    background: #f7fbff;
+    border-radius: 8px;
+    font-size: 13px; color: var(--navy);
+    margin-top: 12px;
+    line-height: 1.5;
+  }
+  .sprintCard .exit b { color: var(--blue); }
+  .sprintCard .cut {
+    padding: 12px 16px;
+    background: #fdf6f5;
+    border-radius: 8px;
+    font-size: 13px; color: #7a3530;
+    margin-top: 12px;
+    line-height: 1.5;
+  }
+  .sprintCard .cut b { color: var(--red); }
+
+  /* hide the old static sprint section now that JS renders it */
+  #legacy-sprint-section { display: none; }
+
+  @media (max-width: 820px) {
+    .tnav .row { padding: 10px 20px; gap: 12px; }
+    .tnav .date { display: none; }
+    .dash .topGrid { grid-template-columns: 1fr; }
+    .sprintCard .head { padding: 14px 16px; flex-wrap: wrap; }
+  }
 </style>
 </head>
 <body>
+
+<!-- ============ STICKY NAV ============ -->
+<nav class="tnav">
+  <div class="row">
+    <div class="brand"><span class="uth">uth</span><span class="bus">bus</span></div>
+    <div class="links">
+      <a href="#dashboard" data-view="dashboard">Dashboard</a>
+      <a href="#sprints" data-view="sprints">Sprints</a>
+      <a href="#deferred" data-view="deferred">Deferred</a>
+      <a href="#docs" data-view="docs">Docs</a>
+      <a href="#risks" data-view="risks">Risks</a>
+    </div>
+    <span class="date" id="lastUpdatedNav">Updated <span data-last-updated>—</span></span>
+  </div>
+</nav>
 
 <!-- ============ COVER ============ -->
 <div class="cover">
@@ -236,8 +557,57 @@
 
 <div class="wrap">
 
+  <!-- ============ DASHBOARD ============ -->
+  <section class="dash" id="dashboard" data-view="dashboard">
+    <p class="kicker">Command centre</p>
+    <h2>Where we are right now</h2>
+    <p class="lead" style="margin-bottom: 22px;">Snapshot for today. Recent activity and what's on the runway. Use the navbar above to jump to Sprints, Deferred items, full Docs, or Risks.</p>
+
+    <div class="topGrid">
+      <div class="panel current" id="dash-current">
+        <h4>Current sprint</h4>
+        <div class="name" data-current-name>—</div>
+        <div class="sub" data-current-goal>—</div>
+        <div class="stats">
+          <div class="stat ok">Done<b data-current-done>0</b></div>
+          <div class="stat amber">Deferred<b data-current-deferred>0</b></div>
+          <div class="stat red">Blocked<b data-current-blocked>0</b></div>
+          <div class="stat">Total<b data-current-total>0</b></div>
+        </div>
+        <div class="progress"><div class="fill" data-current-fill style="width: 0%"></div></div>
+      </div>
+      <div class="panel next" id="dash-next">
+        <h4>Up next</h4>
+        <div class="name" data-next-name>—</div>
+        <div class="sub" data-next-goal>—</div>
+        <div class="stats">
+          <div class="stat">Duration<b data-next-duration>—</b></div>
+          <div class="stat">Priority<b data-next-priority>—</b></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="activity">
+      <h4>Recent activity</h4>
+      <ul data-activity-list></ul>
+    </div>
+
+  </section>
+
+  <!-- ============ DEFERRED ============ -->
+  <section id="deferred" data-view="deferred">
+    <p class="kicker">Parked</p>
+    <h2>Deferred &amp; carry-over</h2>
+    <p class="lead">Things we noticed during the work but consciously parked. Each carries a target (when we'll revisit) and a reason (why now isn't the moment).</p>
+    <div class="deferredBox">
+      <h4>Open items</h4>
+      <p class="subtitle">Update <code>DATA.deferred</code> at the bottom of this file to add/remove entries.</p>
+      <ul data-deferred-list></ul>
+    </div>
+  </section>
+
   <!-- ============ HOW TO READ ============ -->
-  <section>
+  <section data-view="docs">
     <p class="kicker">Read me first</p>
     <h2>How this document is organised</h2>
     <p class="lead">This document has three parts. Read in order.</p>
@@ -271,7 +641,7 @@
   </section>
 
   <!-- ============ CONTEXT & CORRECTION ============ -->
-  <section>
+  <section data-view="docs">
     <p class="kicker">Correction to the CEO inventory</p>
     <h2>What is actually in <code>main</code> today</h2>
     <p class="lead">The CEO's inventory dated June 2026 calls out an "absent admin control tower." That is no longer true. Several things have shipped since that document was written. This section is the canonical starting point for the BA.</p>
@@ -309,7 +679,7 @@
   </section>
 
   <!-- ============ PHASE STRIP ============ -->
-  <section>
+  <section data-view="docs">
     <p class="kicker">Plan at a glance</p>
     <h2>Solo execution &middot; MVP in ~14 weeks, V1.0 in ~9 months</h2>
     <p class="lead">Sprints are two weeks. Solo means no parallelism &mdash; the work that a team would split happens serially. The plan is detailed through MVP (Sprint 5) and sketched beyond it, because anything planned past four months for a one-person team is a fiction.</p>
@@ -389,7 +759,7 @@
   </section>
 
   <!-- ============ TOC ============ -->
-  <section>
+  <section id="docs" data-view="docs">
     <p class="kicker">Index</p>
     <h2>Feature specifications</h2>
     <p class="lead">Twenty-six feature specs across three portals. Click to jump to any one.</p>
@@ -452,7 +822,7 @@
   </section>
 
   <!-- ============ USER PORTAL ============ -->
-  <section>
+  <section data-view="docs">
     <p class="kicker">Side one</p>
     <h2>User Portal &mdash; feature specifications</h2>
 
@@ -992,7 +1362,7 @@
   </section>
 
   <!-- ============ OPERATOR PORTAL ============ -->
-  <section>
+  <section data-view="docs">
     <p class="kicker">Side two</p>
     <h2>Operator Portal &mdash; feature specifications</h2>
 
@@ -1502,7 +1872,7 @@
   </section>
 
   <!-- ============ ADMIN PORTAL ============ -->
-  <section>
+  <section data-view="docs">
     <p class="kicker">Side three</p>
     <h2>Admin Portal &mdash; feature specifications</h2>
 
@@ -1830,7 +2200,7 @@
   </section>
 
   <!-- ============ SPRINT PLAN ============ -->
-  <section id="MVP">
+  <section id="MVP" data-view="docs">
     <p class="kicker">First, the only thing that matters</p>
     <h2>What is the UTHBUS MVP?</h2>
     <p class="lead">"MVP" is one of the most abused words in product. For UTHBUS, here is the only definition that matters: <b>the smallest version of the platform that can take real money from a real traveler, give them a truthful ticket, and pay the real operator their share.</b> Everything else is post-MVP.</p>
@@ -1876,7 +2246,7 @@
     </ul>
   </section>
 
-  <section id="SP-REALITY">
+  <section id="SP-REALITY" data-view="docs">
     <p class="kicker">Solo reality check</p>
     <h2>Capacity, scope, and the math</h2>
 
@@ -1946,6 +2316,16 @@
     </div>
   </section>
 
+  <!-- ============ INTERACTIVE SPRINT BOARD ============ -->
+  <section id="sprints" data-view="sprints">
+    <p class="kicker">Execution</p>
+    <h2>Sprints</h2>
+    <p class="lead">Click any sprint to expand its tasks. Toggle the checkbox on a task to mark it done. Notes explain anything that was deferred or unblocked along the way.</p>
+    <div class="sprintList" id="sprintList"></div>
+  </section>
+
+  <!-- legacy static sprint section (hidden by CSS, kept for reference) -->
+  <div id="legacy-sprint-section">
   <section>
     <p class="kicker">Execution</p>
     <h2>The six sprints to MVP</h2>
@@ -2384,9 +2764,11 @@
     </div>
 
   </section>
+  </div>
+  <!-- /legacy static sprint section -->
 
   <!-- ============ RISKS & ASSUMPTIONS ============ -->
-  <section>
+  <section id="risks" data-view="risks">
     <p class="kicker">What could derail this</p>
     <h2>Risks &amp; assumptions</h2>
 
@@ -2413,7 +2795,7 @@
   </section>
 
   <!-- ============ GLOSSARY ============ -->
-  <section style="border-bottom:none;">
+  <section style="border-bottom:none;" data-view="docs">
     <p class="kicker">Reference</p>
     <h2>Glossary &amp; conventions</h2>
     <ul>
@@ -2437,10 +2819,763 @@
 
 </div>
 
+<!-- ============================================================
+     DATA + RENDERER
+     ============================================================
+     Update the DATA object below to track Sprint progress nightly.
+     Statuses: 'done' | 'in-progress' | 'deferred' | 'blocked' | 'todo'
+     Annotations on individual tasks are inline `annot:` HTML strings.
+     Task checkboxes are persisted in localStorage; clear with
+     `localStorage.removeItem('uthbus-task-state')` to reset.
+============================================================ -->
+<script>
+const DATA = {
+  meta: {
+    lastUpdated: '2026-06-11',
+    currentSprintId: 'SP-0',
+    nextSprintId: 'SP-1',
+  },
+
+  activity: [
+    { when: '2026-06-11', what: '<b>sp0-c5 done.</b> Corrupt <code>users/{uid}</code> doc deleted from Firebase Console. With code-level guards in place, this both-flags state can no longer be created. <b>Sprint 0 carry-overs are all closed except sp0-c4 (Sentry source-maps), which is intentionally deferred to Sprint 5 prep.</b>' },
+    { when: '2026-06-11', what: '<b>sp0-c3 done.</b> pnpm pinned as the single package manager: <code>"packageManager": "pnpm@10.34.1"</code> in <code>package.json</code>, <code>git rm package-lock.json</code>, added to <code>.gitignore</code>. <code>pnpm install --frozen-lockfile</code> resolves clean.' },
+    { when: '2026-06-11', what: '<b>sp0-c6 done.</b> <code>git rm -r services/</code> — removed the dead duplicate <code>bus.service.ts</code> (and its sibling <code>active-booking.service.ts</code>, also dead). Closes the latent-footgun risk on the unfiltered <code>searchAllBuses</code>.' },
+    { when: '2026-06-11', what: 'Side-fix: cleaned up a corrupted <code>.gitignore</code> (line 27 had UTF-16 byte noise concatenated onto <code>next-env.d.ts</code>, so neither that nor <code>firebase-imports/serviceAccountKey.json</code> was actually being ignored — including a service-account key path).' },
+    { when: '2026-06-11', what: '<b>sp0-c2 unblocked.</b> Real Firebase service-account credentials in place for both <code>.env.preview</code> (dev) and <code>.env.production</code> (prod). Server-side Admin SDK calls and <code>/api/auth/*</code> routes can authenticate on deployed environments. Minor follow-up: <code>.env.local</code> still has the personal Gmail.' },
+    { when: '2026-06-11', what: 'Tracker is now read-only. Click handler + <code>localStorage</code> override system removed; statuses are driven only by the <code>DATA</code> object in this file. Old browser-side toggles are cleared on load.' },
+    { when: '2026-06-11', what: 'Sprint 0 audit: <b>sp0-t7</b> (searchAllBuses approved-filter audit) reclassified from <i>in-progress</i> to <i>done</i> — the filter is enforced at <code>components/operator/counter/services/bus.service.ts:77</code>; the deferred bit is just the Firestore-index optimisation. Surfaced new carry-over <b>sp0-c6</b>: dead duplicate <code>services/bus.service.ts</code> has no verification filter.' },
+    { when: '2026-06-11', what: 'Fixed a stale-state race in <code>UserAuthGuard</code> that bounced successful logins to <code>/</code>. The modal called <code>onClose()</code> right after <code>setUserProfile</code>, but React had not committed yet, so the synchronous redirect check saw <code>userProfile === null</code> and routed home. Replaced with a <code>closeRequested</code> flag + useEffect that runs after React commits.' },
+    { when: '2026-06-11', what: 'Fixed redirect-loop bug surfaced during guest-gate testing. Root cause: <code>loginWithGoogle</code> happily created a <code>users/{uid}</code> doc even when <code>operators/{uid}</code> already existed for the same UID — so the same identity ended up <code>isUser:true</code> AND <code>isOperator:true</code>, and the homepage ↔ counter-layout redirects fought each other. Now <code>login</code>, <code>loginWithGoogle</code>, and <code>signup</code> all check the operators collection first and refuse to register a duplicate role.' },
+    { when: '2026-06-11', what: 'Defence-in-depth: <code>homepage.tsx</code> and <code>app/operator/counter/layout.tsx</code> now sign the user out instead of redirecting if they spot a both-flags corrupted account. Stops the loop even if a stray double-registered account exists from the past.' },
+    { when: '2026-06-11', what: 'Removed stray <code>&lt;AvatarImage src={operator.email}&gt;</code> in <code>OperatorProfileDropdown</code> that caused background <code>/notsivansh@gmail.com</code> 404 fetches.' },
+    { when: '2026-06-11', what: 'Guest-user login gate added at <code>/booking</code> layout via <code>UserAuthGuard</code>. Anonymous user picks seats on /search, navigates to /booking, sees a login modal; on Google sign-in the modal closes and they continue with seat selection intact.' },
+    { when: '2026-06-11', what: 'Booking context now persists to <code>sessionStorage</code> (key <code>uthbus:booking-draft</code>) and exposes a <code>hydrated</code> flag. Seat selection + passenger draft survive the sign-in round-trip and accidental refreshes during checkout.' },
+    { when: '2026-06-11', what: '<code>UserAuthGuard</code> gained a <code>redirectOnDismiss</code> prop so closing the login modal on /booking routes the user home instead of stranding them on a blank page.' },
+    { when: '2026-06-10', what: 'Firestore rules deployed to <code>uthbus-prod</code>. <code>dev</code> merged to <code>main</code>.' },
+    { when: '2026-06-10', what: 'Added <b>Sprint 10 · Performance &amp; rendering modernisation</b> to the post-MVP plan. Eleven tasks across three tiers: TanStack Query adoption, Firestore <code>onSnapshot</code> migration, pagination on admin/operator lists, Server Components for SEO pages, image optimization, code-splitting, memoization, and skeleton loaders. Existing "menu" sprint bumped to Sprint 11+.' },
+    { when: '2026-06-09', what: 'Denormalised <b>seatLocks</b> collection shipped — PII-free seat availability cache. Double-booking is now structurally impossible.' },
+    { when: '2026-06-09', what: 'Locked down <code>firestore.rules</code> + added <code>firebase.json</code>. Per-collection owner/admin rules replace the previous <code>if true</code>.' },
+    { when: '2026-06-09', what: 'Sentry installed (<code>@sentry/nextjs</code>) with DSN wired for dev/preview/prod.' },
+    { when: '2026-06-09', what: 'Four stub pages (Billing, Credits, Notifications, Refer-a-Friend) removed from user nav.' },
+    { when: '2026-06-09', what: 'E-ticket "Paid via UPI" lie replaced with <code>paymentMode</code> field.' },
+    { when: '2026-06-09', what: 'My Bookings <code>alert()</code> replaced with WhatsApp deep link to <code>wa.me/9779810511415</code>.' },
+    { when: '2026-06-09', what: 'Pre-prod regression checklist drafted at <code>docs/regression-checklist.md</code>.' },
+  ],
+
+  deferred: [
+    { title: 'Daily Firestore export to GCS', target: 'Sprint 4 · before Sprint 5', why: 'Requires Blaze plan (~$0.10/mo) with credit card. CEO/COO need to approve the spend. Prod is empty so loss exposure is near-zero. Interim safety: manual Firestore export before any destructive prod op.' },
+    { title: 'Guest checkout (book without ever signing in)', target: 'TBD · product call', why: 'Login is required at the moment a guest enters /booking — the gate now lives in <code>app/booking/layout.tsx</code>. Whether to one-day allow truly anonymous reservations is a separate product call (anti-fraud, no-show risk, post-MVP).' },
+    { title: 'searchAllBuses verification filter → Firestore query', target: 'TBD', why: 'Client-side filter works for now. Composite index on (verificationStatus, status, fromCity, toCity) needed before scale.' },
+    { title: 'FIREBASE_CLIENT_EMAIL service account', target: 'Before Sprint 1 migrations', why: 'Current env value is a personal Gmail, not a generated service account. Server-side /api/auth/* routes and Admin SDK scripts will fail until fixed.' },
+    { title: 'pnpm vs npm lockfile coexistence', target: 'TBD', why: 'Both lockfiles in repo. Vercel uses pnpm. Local installs sometimes use npm. Drift is guaranteed. Pick pnpm, delete the other.' },
+    { title: 'Sentry source-map uploads', target: 'Before Sprint 5 launch', why: 'SENTRY_AUTH_TOKEN missing from Vercel env. Until set, prod errors will show minified stack traces.' },
+  ],
+
+  sprints: [
+    // =================================================================
+    // SPRINT 0 — DONE (with carry-over)
+    // =================================================================
+    {
+      id: 'SP-0', tag: 'Sprint 0', title: 'Foundations & the 1-hour fix',
+      goal: 'A safe place to build, and stop the lie.',
+      duration: '1 week (~25 hrs)', priority: 'p0', version: 'v0.0.1-foundations',
+      groups: [
+        { title: 'Original sprint tasks', tasks: [
+          { id: 'sp0-t1', title: '1-hour fix: stop the e-ticket "Paid via UPI" lie',
+            desc: '<code>app/booking/ticket/[id]/page.tsx:344</code> reads <code>paymentMode</code> field with fallback "Reserved — pay at counter".',
+            status: 'done', commits: ['760a279'] },
+          { id: 'sp0-t2', title: 'Sentry on Next.js (free tier)',
+            desc: '<code>@sentry/nextjs</code> installed; DSN configured for dev/preview/prod. Deprecated options stripped.',
+            status: 'done', commits: ['760a279', 'f835ba3', '3a09f04'] },
+          { id: 'sp0-t3', title: 'Audit firestore.rules — kill any "allow if true"',
+            desc: 'Full rewrite from wildcard to per-collection owner+admin rules. Added rules for new seatLocks collection.',
+            status: 'done', commits: ['a5f5d2c', 'eb89cfe'],
+            annot: 'Caught two static-analyzer footguns: OR-branched conditions need careful structuring for list queries, and the autoCompletePastBookings cron needed the update rule to allow <code>status="completed"</code>.' },
+          { id: 'sp0-t4', title: 'Remove four stub pages from user nav',
+            desc: 'Billing, Credits, Notifications, Refer-a-Friend hidden from <code>app/user/layout.tsx</code> and <code>ProfileDropdown</code>.',
+            status: 'done', commits: ['760a279'] },
+          { id: 'sp0-t5', title: 'Replace USR-MY "Need Help?" alert() with WhatsApp deep link',
+            desc: '<code>app/user/bookings/page.tsx:463</code> → <code>wa.me/9779810511415</code> with PNR pre-filled.',
+            status: 'done', commits: ['760a279'] },
+          { id: 'sp0-t6', title: 'Personal pre-prod regression checklist',
+            desc: '<code>docs/regression-checklist.md</code> — 10 sections, ~60 manual steps.',
+            status: 'done', commits: ['760a279'] },
+          { id: 'sp0-t7', title: 'Audit searchAllBuses — verify approved filter',
+            desc: 'Filter confirmed at <code>components/operator/counter/services/bus.service.ts:77</code> — buses with a <code>verificationStatus</code> that isn\'t <code>"approved"</code> are dropped client-side.',
+            status: 'done',
+            annot: 'Audit objective met: unapproved buses do not surface in user search. The performance move to a Firestore composite-index query is listed separately in the Deferred panel (it\'s an optimisation, not an audit gap).' },
+          { id: 'sp0-t8', title: 'Separate Firebase staging project',
+            desc: 'Originally a Sprint 0 task — spin up a third Firebase project.',
+            status: 'deferred',
+            annot: 'NOT NEEDED at this scale. Already have <code>uthbus-39a14</code> (dev) and <code>uthbus-prod</code>. Vercel auto-deploys main → uthbus.com and preview branches → preview URLs. Two environments cover the staging need.' },
+          { id: 'sp0-t9', title: 'Daily Firestore export to GCS bucket',
+            desc: 'Firebase scheduled export → GCS, originally a Sprint 0 task.',
+            status: 'deferred',
+            annot: '<b>Deferred to Sprint 4/5.</b> Needs Blaze plan (~$0.10/mo) and CEO/COO approval. Prod is empty so loss exposure is near-zero. <b>Hard deadline: before Sprint 5 ships.</b> Interim safety: manual Firestore export before any destructive prod op.' },
+        ]},
+        { title: 'Bonus — done while we were in there', tasks: [
+          { id: 'sp0-b1', title: 'Denormalised seatLocks collection',
+            desc: 'PII-free seat-availability cache. Doc ID <code>{busId}_{date}_{seatNumber}</code> makes double-booking structurally impossible (transaction-locked).',
+            status: 'done', commits: ['eb89cfe'],
+            annot: 'Picked option C (denormalised) over filtering activeBookings — safer (no PII leak), faster (cheap key lookup), correct under race.' },
+          { id: 'sp0-b2', title: 'Random PNR generation',
+            desc: 'Replaced sequence-based PNR with random 6-char from alphabet excluding O/0/I/1.',
+            status: 'done', commits: ['eb89cfe'],
+            annot: 'Sequence-based PNR required querying activeBookings (PII-bearing) which the strict rules now block. Random PNR is hacker-friendlier too.' },
+          { id: 'sp0-b3', title: 'Atomic booking + seat-lock writes (Firestore transaction)',
+            desc: '<code>createActiveBooking()</code> creates booking + seat locks in one <code>runTransaction</code>.',
+            status: 'done', commits: ['eb89cfe'] },
+          { id: 'sp0-b4', title: 'firebase.json + Firebase CLI wired for rule deploys',
+            desc: 'firebase-tools installed; <code>firebase.json</code> points to <code>firestore.rules</code> + <code>firestore.indexes.json</code>.',
+            status: 'done', commits: ['a5f5d2c'] },
+          { id: 'sp0-b5', title: 'Migration script for seatLocks backfill',
+            desc: '<code>scripts/migrate-seat-locks.mjs</code> — idempotent, skips existing locks.',
+            status: 'done', commits: ['eb89cfe'],
+            annot: 'Never actually run on prod (empty) or dev (wiped). Kept for the next environment that needs it. Note: this script fails today because FIREBASE_CLIENT_EMAIL is a personal Gmail, not a service account.' },
+        ]},
+        { title: 'Carry-over (surfaced during Sprint 0, parked)', tasks: [
+          { id: 'sp0-c1', title: 'Login redirect for guest users after seat selection',
+            desc: 'Wrap the booking flow in <code>UserAuthGuard</code>; persist seat selection + passenger draft across the sign-in popup.',
+            status: 'done',
+            annot: 'Shipped 2026-06-11. <code>app/booking/layout.tsx</code> mounts UserAuthGuard with <code>redirectOnDismiss="/"</code>. Booking context (<code>contexts/booking-context.tsx</code>) now persists to <code>sessionStorage</code> with a <code>hydrated</code> flag; passenger-details + review-pay pages wait for hydration before the "no bus → /" bounce. Existing Google <code>signInWithPopup</code> means no page navigation, so context state survives the sign-in untouched.' },
+          { id: 'sp0-c2', title: 'Service account credentials (FIREBASE_CLIENT_EMAIL)',
+            desc: 'Replace the personal-Gmail placeholder with a real service account from Firebase Console → Project Settings → Service Accounts.',
+            status: 'done',
+            annot: 'Resolved 2026-06-11. <code>.env.preview</code> and <code>.env.production</code> now both point at proper <code>*@uthbus-*.iam.gserviceaccount.com</code> identities, so deployed Admin SDK calls and <code>/api/auth/*</code> routes can authenticate. Minor follow-up: <code>.env.local</code> still holds the personal Gmail — only matters when running scripts (e.g. <code>scripts/migrate-seat-locks.mjs</code>) locally. Copy <code>FIREBASE_CLIENT_EMAIL</code> + <code>FIREBASE_PRIVATE_KEY</code> from <code>.env.preview</code> when you need them locally.' },
+          { id: 'sp0-c3', title: 'pnpm vs npm lockfile cleanup',
+            desc: 'Pin <code>pnpm</code> as the single package manager, untrack and ignore <code>package-lock.json</code>.',
+            status: 'done',
+            annot: 'Shipped 2026-06-11. Added <code>"packageManager": "pnpm@10.34.1"</code> to <code>package.json</code> (corepack auto-enforces). <code>git rm package-lock.json</code>, appended it to <code>.gitignore</code>. Verified with <code>pnpm install --frozen-lockfile</code> — clean resolve. As a side-bonus, fixed a corrupted <code>.gitignore</code> (line 27 had UTF-16 noise that silently broke the <code>next-env.d.ts</code> and <code>firebase-imports/serviceAccountKey.json</code> ignore patterns).' },
+          { id: 'sp0-c6', title: 'Delete dead duplicate <code>services/</code> directory',
+            desc: 'Two stale files at <code>services/bus.service.ts</code> and <code>services/active-booking.service.ts</code> with no callers — the live ones live under <code>components/operator/counter/services/</code>.',
+            status: 'done',
+            annot: 'Shipped 2026-06-11. <code>git rm -r services/</code>. Confirmed via grep that nothing imported from <code>@/services/*</code>. Removes the latent footgun where the legacy <code>searchAllBuses</code> had no <code>verificationStatus</code> filter. Type-check still clean.' },
+          { id: 'sp0-c5', title: 'Delete corrupt users/{uid} doc from guest-gate test',
+            desc: 'During guest-gate testing, a Google sign-in created a <code>users/{uid}</code> doc for a UID that already had an <code>operators/{uid}</code> doc — caused the homepage ↔ counter-layout redirect loop.',
+            status: 'done',
+            annot: 'Cleaned up 2026-06-11 via Firebase Console. The Sprint-0 code hardening (login/signup/loginWithGoogle all reject duplicate-role registrations) means this corruption can no longer be created.' },
+          { id: 'sp0-c4', title: 'Sentry source-map uploads',
+            desc: '<code>SENTRY_AUTH_TOKEN</code> not set in Vercel env.',
+            status: 'deferred',
+            annot: 'Prod errors will show minified stack traces. Low-priority while traffic is zero. Wire before Sprint 5 launch.' },
+        ]},
+      ],
+      cut: "Don't touch paymentStatus migration yet (Sprint 1). Don't start KYC. Don't refactor. Don't optimise Lighthouse beyond a baseline read.",
+      exit: 'Production e-ticket no longer claims paid without payment. Sentry is on. Stubs are gone. <b>Tag as v0.0.1-foundations.</b>',
+    },
+
+    // =================================================================
+    // SPRINT 1
+    // =================================================================
+    {
+      id: 'SP-1', tag: 'Sprint 1', title: 'Truthful Tickets & Payment Status Model',
+      goal: 'The booking model knows the truth about payment.',
+      duration: '2 weeks (~55 hrs)', priority: 'p0', version: 'v0.1',
+      groups: [
+        { title: 'Week 1 · data model', tasks: [
+          { id: 'sp1-t1', title: 'Add paymentStatus field to IActiveBooking',
+            desc: 'Values: <code>unpaid_pending_counter | pending_gateway | paid | failed | refunded</code>. Default <code>unpaid_pending_counter</code>.', status: 'todo' },
+          { id: 'sp1-t2', title: 'Add nullable paymentMode and paymentTxnId fields',
+            desc: '<code>paymentMode</code>: eSewa / Khalti / Card / Cash / Counter.', status: 'todo' },
+          { id: 'sp1-t3', title: 'Firestore migration: backfill existing bookings',
+            desc: 'Default all existing bookings to <code>unpaid_pending_counter</code>. Run on dev first, verify, then prod.',
+            status: 'todo',
+            annot: 'Blocked until FIREBASE_CLIENT_EMAIL service account is fixed — see Sprint 0 carry-over.' },
+          { id: 'sp1-t4', title: 'Atomic payment-field helpers in ActiveBookingsService',
+            desc: 'Read/write payment fields with status in a single transaction.', status: 'todo' },
+          { id: 'sp1-t5', title: 'Firestore composite index on (paymentStatus, createdAt)',
+            desc: 'For admin filtering in later sprints.', status: 'todo' },
+        ]},
+        { title: 'Week 2 · UI & sweep', tasks: [
+          { id: 'sp1-t6', title: 'USR-TICKET: render Payment Mode conditionally',
+            desc: 'Three variants: Paid (txn id), Reserved-pay-at-counter (amount due), Pending-gateway (retry CTA stub).', status: 'todo' },
+          { id: 'sp1-t7', title: 'Audit every booking render point',
+            desc: 'My Bookings, admin bookings list, operator bookings list — switch to new field.', status: 'todo' },
+          { id: 'sp1-t8', title: 'Nightly cron: flip past-date Confirmed → Completed',
+            desc: 'Cloud Function or scheduled Firebase task.', status: 'todo' },
+          { id: 'sp1-t9', title: 'Run pre-prod regression checklist',
+            desc: 'Walk through booking → ticket on three fake bookings of different statuses.', status: 'todo' },
+          { id: 'sp1-t10', title: 'Deploy to production + monitor Sentry 48h',
+            desc: 'No new errors before moving on.', status: 'todo' },
+        ]},
+      ],
+      cut: 'No eSewa yet. No KYC schema (Sprint 2). No admin payment-status filter (Sprint 5). QR code on ticket can wait.',
+      exit: 'No production ticket shows "Paid" unless paymentMode and paymentTxnId are present. The data foundation for eSewa is laid.',
+    },
+
+    // =================================================================
+    // SPRINT 2
+    // =================================================================
+    {
+      id: 'SP-2', tag: 'Sprint 2', title: 'Operator KYC end-to-end',
+      goal: '"Verified operators" stops being a lie.',
+      duration: '2-3 weeks (~70 hrs)', priority: 'p0', version: 'v0.2-kyc',
+      groups: [
+        { title: 'Week 1 · data + uploads', tasks: [
+          { id: 'sp2-t1', title: 'Add kycStatus to OperatorProfile',
+            desc: '<code>pending_verification | approved | rejected</code>. Default pending. Backfill existing operators to approved.', status: 'todo' },
+          { id: 'sp2-t2', title: 'Subcollection operators/{uid}/kycDocs/',
+            desc: 'Metadata: type (companyCert / license / pan), storagePath, uploadedAt.', status: 'todo' },
+          { id: 'sp2-t3', title: 'Firebase Storage rules + size/type limits',
+            desc: 'Operator writes to <code>kyc/{uid}/*</code>; admin reads <code>kyc/*</code>. Max 5MB, PDFs/images only.', status: 'todo' },
+          { id: 'sp2-t4', title: 'OPR-AUTH registration: three doc upload fields',
+            desc: 'Block registration until docs are uploaded.', status: 'todo' },
+          { id: 'sp2-t5', title: 'Operator dashboard KYC status banner',
+            desc: 'Shows current status with rejection reason if rejected.', status: 'todo' },
+        ]},
+        { title: 'Week 2 · admin + gating', tasks: [
+          { id: 'sp2-t6', title: 'ADM-KYC admin page',
+            desc: 'Queue of pending operators, detail view with PDF/image preview, Approve/Reject buttons.', status: 'todo' },
+          { id: 'sp2-t7', title: 'Wire user search query to filter by operator KYC',
+            desc: 'Denormalise <code>operatorKycStatus</code> onto each bus doc; update via Cloud Function on flip.', status: 'todo' },
+          { id: 'sp2-t8', title: 'Verified badge component',
+            desc: 'Small green tick + "Verified Operator". On search card and e-ticket.', status: 'todo' },
+          { id: 'sp2-t9', title: 'Email operator on approve/reject',
+            desc: 'Firebase "Trigger Email" extension.', status: 'todo' },
+          { id: 'sp2-t10', title: 'Audit log on KYC actions',
+            desc: 'Record admin uid, operator uid, action, reason, timestamp. No UI yet.', status: 'todo' },
+        ]},
+        { title: 'Week 3 (buffer)', tasks: [
+          { id: 'sp2-t11', title: 'End-to-end test with real operator',
+            desc: 'Walk a real (or test) operator through register → upload → approve → bus in search.', status: 'todo' },
+        ]},
+      ],
+      cut: "No 2FA on admin. No audit log UI. No bulk approve. No \"request more info\" status. Don't migrate existing SEO route pages.",
+      exit: 'The "verified operators" promise is now backed by code. First real operator gets the badge.',
+    },
+
+    // =================================================================
+    // SPRINT 3
+    // =================================================================
+    {
+      id: 'SP-3', tag: 'Sprint 3', title: 'eSewa Payment (one gateway only)',
+      goal: 'A real traveler can pay real money.',
+      duration: '2-3 weeks (~75 hrs)', priority: 'p1', version: 'v0.3-payments',
+      groups: [
+        { title: 'Pre-sprint (start now)', tasks: [
+          { id: 'sp3-t1', title: 'Get eSewa merchant credentials',
+            desc: 'Sandbox first; prod once Sprint 3 is ready. eSewa team takes days to a week.',
+            status: 'todo',
+            annot: '<b>Start the application now</b> — this is the longest external dependency on the entire MVP roadmap.' },
+          { id: 'sp3-t2', title: 'Read eSewa v2 ePay docs cover to cover',
+            desc: 'Signature scheme, callback URL format, transaction status verification.', status: 'todo' },
+          { id: 'sp3-t3', title: 'Diagram the flow on paper',
+            desc: 'Who initiates, who redirects, what callback carries, how to verify.', status: 'todo' },
+        ]},
+        { title: 'Week 1 · intent + initiate', tasks: [
+          { id: 'sp3-t4', title: 'Firestore paymentIntents collection',
+            desc: '<code>{id, bookingId, gateway, amount, status, gatewayTxnId, createdAt, updatedAt}</code>.', status: 'todo' },
+          { id: 'sp3-t5', title: 'Update booking write path',
+            desc: 'On Confirm&Pay: create paymentIntent + write booking with <code>paymentStatus="pending_gateway"</code>. Do NOT confirm yet.', status: 'todo' },
+          { id: 'sp3-t6', title: 'Seat-hold record (15 min TTL)',
+            desc: 'Hold tied to paymentIntent id. Expired holds release seats.', status: 'todo' },
+          { id: 'sp3-t7', title: 'eSewa initiate handler',
+            desc: 'Take amount, build signed payload, redirect to eSewa.', status: 'todo' },
+          { id: 'sp3-t8', title: 'Sandbox smoke test', desc: 'Reach the eSewa page from local app.', status: 'todo' },
+        ]},
+        { title: 'Week 2 · callback + idempotency', tasks: [
+          { id: 'sp3-t9', title: 'eSewa success callback handler',
+            desc: 'In <code>app/api/</code> or Cloud Function.', status: 'todo' },
+          { id: 'sp3-t10', title: 'Signature verification (security-critical)',
+            desc: 'Reject any callback that does not verify; log to Sentry.', status: 'todo' },
+          { id: 'sp3-t11', title: 'Verify transaction via eSewa status API',
+            desc: "Second check — don't trust callback alone (replay/forge risk).", status: 'todo' },
+          { id: 'sp3-t12', title: 'Atomic flip on success',
+            desc: 'paymentIntent → success, booking → paid/confirmed, in one Firestore transaction.', status: 'todo' },
+          { id: 'sp3-t13', title: 'Idempotency on duplicate callbacks',
+            desc: 'Same gateway txn id arriving twice is a no-op. Test by replaying manually.', status: 'todo' },
+          { id: 'sp3-t14', title: 'Failure callback handler',
+            desc: 'Mark intent failed, release seat hold, leave booking flippable to Pay-at-Counter.', status: 'todo' },
+          { id: 'sp3-t15', title: 'Front-end review-pay page rewrite',
+            desc: 'Remove auto-confirm path. eSewa as paid option. Pay-at-Counter as second.', status: 'todo' },
+          { id: 'sp3-t16', title: '"Payment pending" screen',
+            desc: 'Poll paymentIntent status, max 60s, then show retry.', status: 'todo' },
+        ]},
+        { title: 'Week 3 (buffer + production)', tasks: [
+          { id: 'sp3-t17', title: 'Migrate to eSewa prod creds', desc: '', status: 'todo' },
+          { id: 'sp3-t18', title: 'Take one real booking (yourself, NPR 100, refund after)', desc: '', status: 'todo' },
+          { id: 'sp3-t19', title: 'Sentry alert on signature-verification failures', desc: 'Pages you.', status: 'todo' },
+          { id: 'sp3-t20', title: 'Scheduled job: expire stuck paymentIntents (>15min)', desc: 'Releases held seats.', status: 'todo' },
+        ]},
+      ],
+      cut: 'No Khalti. No card/Stripe. No refund automation. No Pay-at-Counter opt-in flag. No promo engine.',
+      exit: 'One real eSewa transaction has cleared on production. Idempotency verified by replay. <b>This is the hardest sprint.</b>',
+    },
+
+    // =================================================================
+    // SPRINT 4
+    // =================================================================
+    {
+      id: 'SP-4', tag: 'Sprint 4', title: 'Cancellation Policy + Manual Refund',
+      goal: 'Users can cancel; money flows back (you press a button).',
+      duration: '2 weeks (~50 hrs)', priority: 'p1', version: 'v0.4-refunds',
+      groups: [
+        { title: 'Week 1 · policy + cancel UX', tasks: [
+          { id: 'sp4-t1', title: 'Cancellation policy config (tiered refund %)',
+            desc: 'Defaults: <code>&gt;24h = 90%, 6-24h = 50%, &lt;6h = 0%</code>. Per-operator override possible.', status: 'todo' },
+          { id: 'sp4-t2', title: 'calculateRefund(booking) helper',
+            desc: 'Returns <code>{refundable, amount, tier}</code>.', status: 'todo' },
+          { id: 'sp4-t3', title: 'USR-MY cancel button: refund preview + confirm',
+            desc: '"You will be refunded NPR 450 of NPR 500. Refund in 3-5 business days."', status: 'todo' },
+          { id: 'sp4-t4', title: 'Booking status: Cancelled + refundStatus field',
+            desc: 'refundStatus: <code>none | pending | processed</code>.', status: 'todo' },
+          { id: 'sp4-t5', title: 'Free seat immediately on cancel',
+            desc: 'Write <code>refundStatus="pending"</code>, store calculated refund amount.', status: 'todo' },
+        ]},
+        { title: 'Week 2 · admin refund queue', tasks: [
+          { id: 'sp4-t6', title: 'Admin /admin/refunds page',
+            desc: 'List bookings with pending refund. PNR, user, operator, amount, txnId, dates.', status: 'todo' },
+          { id: 'sp4-t7', title: 'Mark refunded action',
+            desc: 'Dialog asks for refund reference (txn id from eSewa portal). Writes processed status + admin uid.', status: 'todo' },
+          { id: 'sp4-t8', title: 'Email user on refund processed',
+            desc: 'Firebase Trigger Email extension.', status: 'todo' },
+          { id: 'sp4-t9', title: 'Admin dashboard card: refunds pending count', desc: '', status: 'todo' },
+          { id: 'sp4-t10', title: 'USR-MY refund-status display',
+            desc: 'Show "Refund pending" / "Refunded on date (ref: txnId)".', status: 'todo' },
+        ]},
+        { title: 'Hard deadline this sprint — GCS backups', tasks: [
+          { id: 'sp4-gcs', title: 'GCS daily Firestore backups (deferred from Sprint 0)',
+            desc: 'Enable Blaze, configure scheduled export, verify weekly restore drill.',
+            status: 'todo',
+            annot: '<b>Last chance before MVP launch.</b> Sprint 5 ships money — backups become non-negotiable. Get CEO/COO approval ahead of this sprint so Blaze enablement is not the blocker.' },
+        ]},
+      ],
+      cut: 'No automated gateway refund API. No partial-refund splits. No refund webhook. No reason-required field on cancel.',
+      exit: 'A cancellation moves money back, even if you are the bottleneck. Time-to-refund: same day if cancelled before 5pm.',
+    },
+
+    // =================================================================
+    // SPRINT 5 — MVP SHIPS
+    // =================================================================
+    {
+      id: 'SP-5', tag: 'Sprint 5', title: 'Commission Ledger → SHIP MVP',
+      goal: 'You know what each operator earned. Then ship.',
+      duration: '2-3 weeks (~70 hrs)', priority: 'p1', version: 'v1.0-mvp',
+      groups: [
+        { title: 'Week 1 · ledger', tasks: [
+          { id: 'sp5-t1', title: 'Firestore ledgerEntries collection',
+            desc: '<code>{id, bookingId, operatorId, type, grossAmount, commissionAmount, netAmount, settledStatus, settledAt, settlementId, createdAt}</code>.', status: 'todo' },
+          { id: 'sp5-t2', title: 'config/commission doc',
+            desc: '<code>{defaultRate: 0.10}</code>. Per-operator override on operator doc.', status: 'todo' },
+          { id: 'sp5-t3', title: 'computeCommission helper', desc: '', status: 'todo' },
+          { id: 'sp5-t4', title: 'On payment success: ledger entry (type=earning)',
+            desc: 'Same Firestore transaction as the booking flip.', status: 'todo' },
+          { id: 'sp5-t5', title: 'On refund processed: reversal entry',
+            desc: 'Negative gross, commission, net referencing the original.', status: 'todo' },
+          { id: 'sp5-t6', title: 'Manual reconciliation test on dev',
+            desc: '10 fake bookings + 2 refunds. Sum the ledger per operator. Numbers must reconcile.', status: 'todo' },
+        ]},
+        { title: 'Week 2 · operator + admin views', tasks: [
+          { id: 'sp5-t7', title: 'OPR-EARN page',
+            desc: 'Three cards (week/month/all-time) gross/commission/net. Ledger table with PNR, date, settled status.', status: 'todo' },
+          { id: 'sp5-t8', title: 'ADM-COMM /admin/settlements page',
+            desc: 'One row per operator with unsettled balance. "Mark settled" with payout reference.', status: 'todo' },
+          { id: 'sp5-t9', title: 'Payout fields on operator profile',
+            desc: 'Bank / eSewa / Khalti — text fields you copy when transferring.', status: 'todo' },
+        ]},
+        { title: 'Week 3 · MVP regression + ship', tasks: [
+          { id: 'sp5-t10', title: 'Full personal regression checklist',
+            desc: 'Cross-check every P0/P1 feature against requirement IDs.', status: 'todo' },
+          { id: 'sp5-t11', title: 'Onboard first operator end-to-end on prod',
+            desc: 'Register → upload KYC → approve → list one bus → live.', status: 'todo' },
+          { id: 'sp5-t12', title: 'Take one real booking yourself',
+            desc: 'Ride the bus if you can. Settle the operator manually that week.', status: 'todo' },
+          { id: 'sp5-t13', title: 'Post-mortem doc',
+            desc: 'What worked, what was harder than expected, what to fix first post-MVP.', status: 'todo' },
+          { id: 'sp5-t14', title: 'Production deploy. Announce. Take real bookings.',
+            desc: '<b>v1.0-mvp ships. First real money flows.</b>', status: 'todo' },
+        ]},
+      ],
+      cut: 'No automated settlement run. No reconciliation report. No CSV export. No multi-currency. No per-route commission. No promo cost allocation.',
+      exit: '🚀 <b>MVP IS LIVE.</b> First verified operator. First real booking on prod. First settlement paid by you.',
+    },
+
+    // =================================================================
+    // POST-MVP (sketched)
+    // =================================================================
+    {
+      id: 'SP-POST-6', tag: 'Sprint 6', title: 'Khalti as second payment',
+      goal: 'If eSewa is < 70% of intended payments.',
+      duration: '~2 weeks', priority: 'p2',
+      groups: [{ title: 'Tasks', tasks: [
+        { id: 'sp6-t1', title: 'Mirror the eSewa pattern',
+          desc: 'Initiate, callback, signature, idempotency. Architecture is already there.', status: 'todo' },
+        { id: 'sp6-t2', title: 'Add Khalti as a payment method in USR-PAY', desc: '', status: 'todo' },
+        { id: 'sp6-t3', title: 'Test sandbox + production', desc: '', status: 'todo' },
+        { id: 'sp6-t4', title: 'Track via ledger which gateway each payment came through', desc: '', status: 'todo' },
+      ]}],
+      exit: "If eSewa converts well, this is low-priority. Don't build it preemptively.",
+    },
+    {
+      id: 'SP-POST-7', tag: 'Sprint 7', title: 'Bus photo upload pipeline',
+      goal: 'When operators ask for it or conversion is hurting.',
+      duration: '~3 weeks', priority: 'p2',
+      groups: [{ title: 'Tasks', tasks: [
+        { id: 'sp7-t1', title: 'Firebase Storage upload with signed URLs', desc: '', status: 'todo' },
+        { id: 'sp7-t2', title: 'Client-side resize + WebP conversion',
+          desc: 'browser-image-compression library.', status: 'todo' },
+        { id: 'sp7-t3', title: 'Cloud Function for thumbnail generation', desc: '', status: 'todo' },
+        { id: 'sp7-t4', title: 'OPR-FLEET upload UI', desc: 'Reorder, delete, cover photo.', status: 'todo' },
+        { id: 'sp7-t5', title: 'USR-SEARCH carousel on bus card', desc: '', status: 'todo' },
+      ]}],
+      exit: 'Until then: four brand-tier placeholder images per bus type.',
+    },
+    {
+      id: 'SP-POST-8', tag: 'Sprint 8', title: 'Email + WhatsApp notifications',
+      goal: 'When manual WhatsApp from your phone stops scaling.',
+      duration: '~2-3 weeks', priority: 'p2',
+      groups: [{ title: 'Tasks', tasks: [
+        { id: 'sp8-t1', title: 'Booking confirmation email',
+          desc: 'Firebase Trigger Email extension.', status: 'todo' },
+        { id: 'sp8-t2', title: 'T-24h and T-2h reminder emails',
+          desc: 'Scheduled Cloud Functions.', status: 'todo' },
+        { id: 'sp8-t3', title: 'WhatsApp via Wati',
+          desc: 'Get business-verified number first (1-2 weeks lead time).', status: 'todo' },
+        { id: 'sp8-t4', title: 'Approve WhatsApp message templates',
+          desc: 'Another 1-2 weeks.', status: 'todo' },
+        { id: 'sp8-t5', title: 'Wire booking lifecycle events to WhatsApp', desc: '', status: 'todo' },
+      ]}],
+      exit: 'Until then: Google Form + WhatsApp Business number checked 3x/day handles 5-10 bookings/day.',
+    },
+    {
+      id: 'SP-POST-9', tag: 'Sprint 9', title: 'Ratings & Reviews',
+      goal: 'When you have your first 50+ completed bookings.',
+      duration: '~2 weeks', priority: 'p2',
+      groups: [{ title: 'Tasks', tasks: [
+        { id: 'sp9-t1', title: 'Ratings collection',
+          desc: '1-5 stars + optional review text, one per user-booking.', status: 'todo' },
+        { id: 'sp9-t2', title: 'Post-trip rating prompt on USR-MY', desc: 'For Completed bookings.', status: 'todo' },
+        { id: 'sp9-t3', title: 'Display avg rating + count on USR-SEARCH cards', desc: '', status: 'todo' },
+        { id: 'sp9-t4', title: 'Operator reply to reviews', desc: 'Post-MVP++.', status: 'todo' },
+      ]}],
+    },
+    {
+      id: 'SP-POST-PERF', tag: 'Sprint 10', title: 'Performance & rendering modernisation',
+      goal: 'The app feels instant. No spinner on every click. Public pages render server-side.',
+      duration: '~2-3 weeks', priority: 'p2',
+      groups: [
+        { title: 'Tier 1 — biggest wins', tasks: [
+          { id: 'spPerf-t1', title: 'Adopt TanStack Query for data fetching',
+            desc: 'Replace hand-rolled <code>useState + useEffect + fetch</code> across admin and operator pages. Get caching, request deduplication, stale-while-revalidate, and optimistic-update primitives for free. Prove on <code>app/admin/buses/page.tsx</code> and <code>app/admin/bookings/page.tsx</code> first, then roll across operator counter.',
+            status: 'todo' },
+          { id: 'spPerf-t2', title: 'Switch admin tables from getDocs to onSnapshot',
+            desc: 'Real-time Firestore subscriptions in <code>BusService</code> / <code>ActiveBookingsService</code> hot paths. Removes the <code>await fetchBuses()</code> after every mutation — UI auto-updates when any admin acts on a row. Cheaper too (one open channel vs N full re-reads).',
+            status: 'todo' },
+          { id: 'spPerf-t3', title: 'Cursor pagination on admin/operator list queries',
+            desc: 'Add <code>limit() + startAfter()</code> to <code>getAllBusesForAdmin</code>, <code>getAllBookingsForAdmin</code>, and operator counter lists. Default page size 50. Without this, admin browser locks up beyond a few thousand rows.',
+            status: 'todo' },
+          { id: 'spPerf-t4', title: 'Move SEO landing pages to Server Components',
+            desc: 'Route-named pages (<code>kathmandu-to-pokhara-bus</code>, <code>biratnagar-to-kathmandu-bus</code>, etc.) and the public search page drop <code>"use client"</code> wherever possible. Static content renders on the server; only interactive widgets stay client-side. Big LCP / SEO win.',
+            status: 'todo' },
+        ]},
+        { title: 'Tier 2 — solid wins', tasks: [
+          { id: 'spPerf-t5', title: 'Re-enable Next.js image optimization',
+            desc: 'Flip <code>images.unoptimized</code> in <code>next.config.mjs</code> from <code>true</code> to <code>false</code>. Audit every <code>&lt;img&gt;</code> and convert to <code>next/image</code> with explicit width/height. Roughly halves payload on photo-heavy pages and adds automatic WebP + responsive srcset.',
+            status: 'todo' },
+          { id: 'spPerf-t6', title: 'Lazy-load heavy components with next/dynamic',
+            desc: 'Radix dialogs, Recharts, date pickers, any one-off-route components. Keep them out of the initial JS bundle. <code>dynamic(() =&gt; import(...), { ssr: false })</code> for browser-only widgets.',
+            status: 'todo' },
+          { id: 'spPerf-t7', title: 'Memoize hot list renders',
+            desc: 'Wrap row components in <code>React.memo</code>; <code>useMemo</code> the filtered/sorted derivations on admin pages. Stops re-rendering 200 rows when one toggle changes.',
+            status: 'todo' },
+          { id: 'spPerf-t8', title: 'Audit firestore.indexes.json for composite indexes',
+            desc: 'Every multi-<code>where()</code> query needs a matching composite index. Confirm <code>(verificationStatus, status, fromCity, toCity)</code> and other multi-clause searches are indexed. Missing indexes either fail outright or fall back to slow client-side filters.',
+            status: 'todo' },
+        ]},
+        { title: 'Tier 3 — perceived speed polish', tasks: [
+          { id: 'spPerf-t9', title: 'Skeleton loaders + loading.tsx per route',
+            desc: 'Replace centred spinners with skeleton shapes that match final layout. Add <code>loading.tsx</code> next to each <code>page.tsx</code> so Next.js streams the shell while data resolves — perceived speed jumps even when total time is identical.',
+            status: 'todo' },
+          { id: 'spPerf-t10', title: 'Verify next/link prefetching everywhere',
+            desc: 'Audit any raw <code>&lt;a href&gt;</code> internal links and swap to <code>&lt;Link&gt;</code>. Free hover-prefetch on every nav link.',
+            status: 'todo' },
+          { id: 'spPerf-t11', title: 'Bundle analyzer pass',
+            desc: '<code>@next/bundle-analyzer</code>. One report, list the five fattest deps, decide which to keep, lazy-load, or replace.',
+            status: 'todo' },
+        ]},
+      ],
+      cut: 'No PWA / offline (that\'s sp10-t6 in Sprint 11+). No service worker. No edge runtime migration. No React Compiler trial. No CDN re-shuffle.',
+      exit: 'Admin pages feel "instant" — no spinner between actions. Public SEO pages render server-side (Lighthouse perf &gt; 85, LCP &lt; 2.5s). Initial JS bundle measurably smaller. The win is qualitative more than numeric — clicks should respond, not load.',
+    },
+    {
+      id: 'SP-POST-10', tag: 'Sprint 11+', title: 'Everything else — replan',
+      goal: 'Order depends on what hurts. Replan from MVP data.',
+      duration: 'TBD', priority: 'p2',
+      groups: [{ title: 'Menu, not a plan', tasks: [
+        { id: 'sp10-t1', title: 'Automated settlement run',
+          desc: 'When 10+ active operators and manual takes >2hrs/week.', status: 'todo' },
+        { id: 'sp10-t2', title: 'Automated refund via gateway API',
+          desc: 'When >20 refunds/week.', status: 'todo' },
+        { id: 'sp10-t3', title: 'Programmatic SEO',
+          desc: 'When organic traffic plateaus on the 6 hand-built pages.', status: 'todo' },
+        { id: 'sp10-t4', title: 'Card payments (Stripe)',
+          desc: 'When tourist segment >15% of bookings.', status: 'todo' },
+        { id: 'sp10-t5', title: 'Disputes module',
+          desc: 'Once disputes >5/week, Google Form stops working.', status: 'todo' },
+        { id: 'sp10-t6', title: 'PWA / Core Web Vitals',
+          desc: 'Once mobile bounce or LCP becomes the Search Console bottleneck.', status: 'todo' },
+        { id: 'sp10-t7', title: 'Operator confirmation loop',
+          desc: 'If no-show incidents start happening, build this fast.', status: 'todo' },
+        { id: 'sp10-t8', title: 'Sleeper / Tourist AC bus types',
+          desc: 'When operators with those vehicles ask.', status: 'todo' },
+        { id: 'sp10-t9', title: 'Promo engine',
+          desc: 'Once you want to run campaigns. Until then, hard-coded codes.', status: 'todo' },
+        { id: 'sp10-t10', title: '2FA on admin + audit log UI',
+          desc: 'Once a second admin user joins.', status: 'todo' },
+      ]}],
+      exit: 'Posture: replan after every 2 sprints post-MVP, using real numbers.',
+    },
+  ],
+};
+
+// ============================================================
+// RENDERER
+// ============================================================
+(function() {
+  // Tracker is read-only: status comes from DATA in this file. To change a
+  // status, edit the corresponding sprint task in the DATA object and reload.
+  // (Drop any old browser-side toggle state from earlier iterations.)
+  try { localStorage.removeItem('uthbus-task-state'); } catch {}
+
+  function taskStatus(t) {
+    return t.status || 'todo';
+  }
+
+  function computeSprintStats(sprint) {
+    let done = 0, total = 0, deferred = 0, blocked = 0, inProgress = 0;
+    for (const g of sprint.groups) {
+      for (const t of g.tasks) {
+        total++;
+        const s = taskStatus(t);
+        if (s === 'done') done++;
+        else if (s === 'deferred') deferred++;
+        else if (s === 'blocked') blocked++;
+        else if (s === 'in-progress') inProgress++;
+      }
+    }
+    const closed = done + deferred;
+    const pct = total ? Math.round((closed / total) * 100) : 0;
+    return { done, total, deferred, blocked, inProgress, pct };
+  }
+
+  function renderDashboard() {
+    document.querySelectorAll('[data-last-updated]').forEach(el => {
+      el.textContent = DATA.meta.lastUpdated;
+    });
+
+    const current = DATA.sprints.find(s => s.id === DATA.meta.currentSprintId);
+    const next = DATA.sprints.find(s => s.id === DATA.meta.nextSprintId);
+
+    if (current) {
+      const stats = computeSprintStats(current);
+      document.querySelector('[data-current-name]').innerHTML = `${current.tag} · ${current.title}`;
+      document.querySelector('[data-current-goal]').innerHTML = current.goal;
+      document.querySelector('[data-current-done]').textContent = stats.done;
+      document.querySelector('[data-current-deferred]').textContent = stats.deferred;
+      document.querySelector('[data-current-blocked]').textContent = stats.blocked;
+      document.querySelector('[data-current-total]').textContent = stats.total;
+      const fill = document.querySelector('[data-current-fill]');
+      fill.style.width = stats.pct + '%';
+      if (stats.deferred > 0 || stats.blocked > 0) fill.classList.add('partial');
+    }
+    if (next) {
+      document.querySelector('[data-next-name]').innerHTML = `${next.tag} · ${next.title}`;
+      document.querySelector('[data-next-goal]').innerHTML = next.goal;
+      document.querySelector('[data-next-duration]').textContent = next.duration;
+      document.querySelector('[data-next-priority]').textContent = next.priority.toUpperCase();
+    }
+
+    const al = document.querySelector('[data-activity-list]');
+    al.innerHTML = DATA.activity.map(a =>
+      `<li><span class="when">${a.when}</span><span class="what">${a.what}</span></li>`
+    ).join('');
+
+    const dl = document.querySelector('[data-deferred-list]');
+    dl.innerHTML = DATA.deferred.map(d =>
+      `<li>
+        <div class="row1">
+          <span class="ti">${d.title}</span>
+          <span class="target">${d.target}</span>
+        </div>
+        <div class="why">${d.why}</div>
+      </li>`
+    ).join('');
+  }
+
+  function renderSprints() {
+    const root = document.getElementById('sprintList');
+    root.innerHTML = '';
+    for (const sprint of DATA.sprints) {
+      const stats = computeSprintStats(sprint);
+      const isCurrent = sprint.id === DATA.meta.currentSprintId;
+      const allClosed = stats.total > 0 && (stats.done + stats.deferred) === stats.total;
+      const isOpen = isCurrent;
+
+      const card = document.createElement('div');
+      card.className = `sprintCard ${sprint.priority || ''} ${isCurrent ? 'current' : ''} ${isOpen ? 'open' : ''}`;
+      card.id = sprint.id;
+      card.dataset.sprintId = sprint.id;
+
+      const head = document.createElement('div');
+      head.className = 'head';
+      head.innerHTML = `
+        <span class="tag">${sprint.tag}</span>
+        <span class="ti">${sprint.title}</span>
+        <span class="right">
+          <span class="progressMini"><b>${stats.done}</b>/${stats.total} done${stats.deferred ? ` · <b>${stats.deferred}</b> deferred` : ''}${stats.blocked ? ` · <b style="color: var(--red);">${stats.blocked}</b> blocked` : ''}</span>
+          ${allClosed ? '<span class="pill s-ok">complete</span>' : isCurrent ? '<span class="pill s-part">in flight</span>' : '<span class="pill s-stub">pending</span>'}
+          ${sprint.version ? `<code style="font-size: 11px;">${sprint.version}</code>` : ''}
+          <span class="chev">▶</span>
+        </span>
+      `;
+      head.addEventListener('click', () => card.classList.toggle('open'));
+      card.appendChild(head);
+
+      const body = document.createElement('div');
+      body.className = 'body';
+      body.innerHTML = `
+        <div class="duration">${sprint.duration} · Priority ${sprint.priority.toUpperCase()}</div>
+        <div class="goal"><b>Goal:</b> ${sprint.goal}</div>
+      `;
+
+      for (const g of sprint.groups) {
+        const grp = document.createElement('div');
+        grp.className = 'taskGroup';
+        grp.innerHTML = `<h5>${g.title}</h5>`;
+        for (const t of g.tasks) {
+          grp.appendChild(renderTask(t));
+        }
+        body.appendChild(grp);
+      }
+
+      if (sprint.cut) {
+        const cut = document.createElement('div');
+        cut.className = 'cut';
+        cut.innerHTML = `<b>Cut from this sprint:</b> ${sprint.cut}`;
+        body.appendChild(cut);
+      }
+      if (sprint.exit) {
+        const ex = document.createElement('div');
+        ex.className = 'exit';
+        ex.innerHTML = `<b>Sprint exit:</b> ${sprint.exit}`;
+        body.appendChild(ex);
+      }
+
+      card.appendChild(body);
+      root.appendChild(card);
+    }
+  }
+
+  function renderTask(t) {
+    const s = taskStatus(t);
+    const el = document.createElement('div');
+    el.className = `task ${s}`;
+    el.dataset.taskId = t.id;
+    el.innerHTML = `
+      <span class="check" aria-hidden="true"></span>
+      <div class="col">
+        <div class="title">${t.title}</div>
+        ${t.desc ? `<div class="desc">${t.desc}</div>` : ''}
+        ${t.annot ? `<div class="annot">${t.annot}</div>` : ''}
+        ${t.commits && t.commits.length ? `<div class="commits">${t.commits.map(c => `<span class="sha">${c}</span>`).join('')}</div>` : ''}
+      </div>
+    `;
+    return el;
+  }
+
+  // View switching — show only sections matching the active data-view
+  const VIEWS = ['dashboard', 'sprints', 'deferred', 'docs', 'risks'];
+  const DEFAULT_VIEW = 'dashboard';
+
+  function setView(view, opts) {
+    opts = opts || {};
+    if (!VIEWS.includes(view)) view = DEFAULT_VIEW;
+    document.querySelectorAll('[data-view]').forEach(el => {
+      if (el.closest('.tnav')) return; // nav links share data-view; don't hide them
+      el.style.display = el.dataset.view === view ? '' : 'none';
+    });
+    document.querySelectorAll('.tnav .links a').forEach(a => {
+      a.classList.toggle('active', a.dataset.view === view);
+    });
+    if (opts.updateHash !== false) {
+      history.replaceState(null, '', '#' + view);
+    }
+    if (opts.scroll !== false) {
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }
+  }
+
+  function resolveInitialView() {
+    const hash = (location.hash || '').replace(/^#/, '');
+    if (VIEWS.includes(hash)) return { view: hash, anchor: null };
+    // Internal anchor (e.g. USR-HOME, SP-0, SP-POST-6, MVP, SP-REALITY) —
+    // figure out which view owns it.
+    if (hash) {
+      const el = document.getElementById(hash);
+      if (el) {
+        const owner = el.closest('[data-view]');
+        if (owner) return { view: owner.dataset.view, anchor: hash };
+      }
+    }
+    return { view: DEFAULT_VIEW, anchor: null };
+  }
+
+  function wireNavClicks() {
+    document.querySelectorAll('.tnav .links a').forEach(a => {
+      a.addEventListener('click', (e) => {
+        const view = a.dataset.view;
+        if (!view) return;
+        e.preventDefault();
+        setView(view);
+      });
+    });
+    // Internal anchor clicks anywhere in the page — switch view first, then scroll.
+    document.addEventListener('click', (e) => {
+      const a = e.target.closest('a[href^="#"]');
+      if (!a) return;
+      if (a.dataset.view) return; // nav links handled above
+      const id = a.getAttribute('href').slice(1);
+      if (!id || VIEWS.includes(id)) return;
+      const target = document.getElementById(id);
+      if (!target) return;
+      const owner = target.closest('[data-view]');
+      if (!owner) return;
+      e.preventDefault();
+      setView(owner.dataset.view, { scroll: false, updateHash: false });
+      // Use rAF so layout settles before we scroll to the anchor.
+      requestAnimationFrame(() => {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        history.replaceState(null, '', '#' + id);
+      });
+    });
+    window.addEventListener('hashchange', () => {
+      const { view, anchor } = resolveInitialView();
+      setView(view, { updateHash: false, scroll: !anchor });
+      if (anchor) {
+        const el = document.getElementById(anchor);
+        if (el) requestAnimationFrame(() => el.scrollIntoView({ behavior: 'auto', block: 'start' }));
+      }
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    renderDashboard();
+    renderSprints();
+    wireNavClicks();
+    const { view, anchor } = resolveInitialView();
+    setView(view, { updateHash: false, scroll: !anchor });
+    if (anchor) {
+      const el = document.getElementById(anchor);
+      if (el) requestAnimationFrame(() => el.scrollIntoView({ behavior: 'auto', block: 'start' }));
+    }
+  });
+})();
+</script>
+
 <footer>
   <div class="wrap">
     <div class="logo"><span class="uth">uth</span><span class="bus">bus</span></div>
-    <p style="margin-top:12px;">UTHBUS BA Handover &amp; Sprint Plan &middot; Internal &middot; v1.1 (solo) &middot; 2026-06-05</p>
+    <p style="margin-top:12px;">UTHBUS personal task tracker &middot; Internal &middot; <span data-last-updated>—</span></p>
   </div>
 </footer>
 
