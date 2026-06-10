@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { signOut } from "firebase/auth"
+import { auth } from "@/firebaseConfig"
 import { useUserAuth } from "@/contexts/user-auth-context"
 import { useOperatorAuth } from "@/contexts/operator-auth-context"
 import { Button } from "@/components/ui/button"
@@ -341,13 +343,20 @@ export default function Homepage() {
   const isUserLoggedIn = !!userProfile && userProfile.isUser === true && userProfile.isOperator === false
 
   // Operators always belong in the counter portal — redirect on homepage.
+  // Guard against corrupted accounts that own BOTH a users/{uid} and an
+  // operators/{uid} doc: that would loop with counter-layout's user bounce.
   useEffect(() => {
+    if (isUserLoggedIn && isOperatorLoggedIn) {
+      console.error("Auth corruption: UID owns both a user and operator profile. Signing out.")
+      signOut(auth).catch(() => {})
+      return
+    }
     if (isOperatorLoggedIn) {
       router.replace("/operator/counter")
     }
-  }, [isOperatorLoggedIn, router])
+  }, [isUserLoggedIn, isOperatorLoggedIn, router])
 
-  if (isOperatorLoggedIn) return null
+  if (isOperatorLoggedIn && !isUserLoggedIn) return null
 
   const handleSearch = async () => {
     setFromError("")

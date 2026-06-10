@@ -9,7 +9,7 @@ import { ArrowLeft, User, Phone, MapPin, ChevronRight } from "lucide-react";
 
 export default function PassengerDetailsPage() {
   const router = useRouter();
-  const { booking, setPassengerDetails } = useBooking();
+  const { booking, hydrated, setPassengerDetails } = useBooking();
   const { userProfile } = useUserAuth();
 
   const [name, setName]           = useState("");
@@ -18,10 +18,11 @@ export default function PassengerDetailsPage() {
   const [dropping, setDropping]   = useState("");
   const [errors, setErrors]       = useState<Record<string, string>>({});
 
-  // Redirect if no bus selected
+  // Redirect if no bus selected — but wait for sessionStorage hydration first,
+  // otherwise a guest returning from sign-in gets bounced before restore.
   useEffect(() => {
-    if (!booking.bus) router.replace("/");
-  }, [booking.bus, router]);
+    if (hydrated && !booking.bus) router.replace("/");
+  }, [booking.bus, hydrated, router]);
 
   // Auto-fill logged-in user data
   useEffect(() => {
@@ -31,7 +32,7 @@ export default function PassengerDetailsPage() {
     }
   }, [userProfile]);
 
-  if (!booking.bus) return null;
+  if (!hydrated || !booking.bus) return null;
 
   const { bus, seats, from, to, date } = booking;
 
