@@ -6,6 +6,19 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const token = request.cookies.get('auth-token')?.value
 
+  // ── Internal task tracker ─────────────────────────────────────────────────
+  // public/tracker.html holds internal sprint/BA notes — visible on dev and
+  // preview deploys, 404'd on production so it never reaches uthbus.com.
+  if (pathname === '/tracker.html' || pathname === '/tracker') {
+    if (process.env.VERCEL_ENV === 'production') {
+      return new NextResponse(null, { status: 404 })
+    }
+    if (pathname === '/tracker') {
+      return NextResponse.rewrite(new URL('/tracker.html', request.url))
+    }
+    return NextResponse.next()
+  }
+
   // ── Operator counter portal ───────────────────────────────────────────────
   if (pathname.startsWith('/operator/counter')) {
     if (!token) {
@@ -45,5 +58,7 @@ export const config = {
     '/operator/register',
     '/admin',
     '/admin/buses/:path*',
+    '/tracker',
+    '/tracker.html',
   ]
 }
