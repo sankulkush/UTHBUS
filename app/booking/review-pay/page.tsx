@@ -23,7 +23,7 @@ const service = new ActiveBookingsService();
 
 export default function ReviewPayPage() {
   const router = useRouter();
-  const { booking, clearBooking } = useBooking();
+  const { booking, hydrated, clearBooking } = useBooking();
   const { userProfile } = useUserAuth();
 
   const [loading, setLoading] = useState(false);
@@ -33,15 +33,18 @@ export default function ReviewPayPage() {
   const [promoError, setPromoError] = useState("");
   const confirmedRef = useRef(false);
 
-  // Redirect if booking state is incomplete (skip after successful confirmation)
+  // Redirect if booking state is incomplete (skip after successful confirmation).
+  // Wait for sessionStorage hydration first so a guest returning from sign-in
+  // doesn't get bounced before restore.
   useEffect(() => {
     if (confirmedRef.current) return;
+    if (!hydrated) return;
     if (!booking.bus || !booking.seats.length || !booking.passenger.name) {
       router.replace("/");
     }
-  }, [booking, router]);
+  }, [booking, hydrated, router]);
 
-  if (!booking.bus || !booking.seats.length || !booking.passenger.name) return null;
+  if (!hydrated || !booking.bus || !booking.seats.length || !booking.passenger.name) return null;
 
   const { bus, seats, from, to, date, passenger } = booking;
   const subtotal = bus.price * seats.length;
