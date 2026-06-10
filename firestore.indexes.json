@@ -15,6 +15,32 @@
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "date", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "activeBookings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "bookingTime", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "activeBookings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "bookingTime", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "activeBookings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "operatorId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "bookingTime", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
