@@ -65,9 +65,9 @@ export default function ContactPage() {
         <div className="max-w-3xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-primary/10 text-primary text-sm font-medium px-4 py-1.5 rounded-full mb-4">
             <MailIcon className="w-4 h-4" />
-            Get in Touch
+            We&apos;re here to help
           </div>
-          <h1 className="text-4xl font-bold text-foreground mb-3">Contact Us</h1>
+          <h1 className="font-display text-4xl font-bold text-foreground mb-3">Talk to us</h1>
           <p className="text-muted-foreground">
             Have a question or need help with a booking? We&apos;re here for you.
           </p>
@@ -77,14 +77,14 @@ export default function ContactPage() {
       <div className="max-w-5xl mx-auto px-4 py-14 grid grid-cols-1 lg:grid-cols-5 gap-10">
         {/* Contact Info */}
         <div className="lg:col-span-2 space-y-4">
-          <h2 className="text-lg font-semibold text-foreground mb-2">Contact Information</h2>
+          <h2 className="font-display text-lg font-semibold text-foreground mb-2">How to reach us</h2>
           {contactInfo.map((item) => (
             <div key={item.label} className="flex items-start gap-4 p-4 bg-card rounded-xl border border-border">
               <div className="bg-primary/10 p-2.5 rounded-lg">
                 <item.icon className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{item.label}</p>
+                <p className="text-xs text-muted-foreground font-medium">{item.label}</p>
                 <p className="text-foreground font-medium">{item.value}</p>
                 <p className="text-xs text-muted-foreground">{item.sub}</p>
               </div>
@@ -96,7 +96,7 @@ export default function ContactPage() {
         <div className="lg:col-span-3">
           <Card>
             <CardHeader>
-              <CardTitle>Send a Message</CardTitle>
+              <CardTitle className="font-display">Send us a message</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -131,7 +131,7 @@ export default function ContactPage() {
 
                 <Button type="submit" disabled={sending} className="w-full">
                   <SendIcon className="w-4 h-4 mr-2" />
-                  {sending ? "Sending…" : "Send Message"}
+                  {sending ? "Sending…" : "Send message"}
                 </Button>
               </form>
             </CardContent>

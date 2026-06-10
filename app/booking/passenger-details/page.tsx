@@ -75,7 +75,7 @@ export default function PassengerDetailsPage() {
           <ChevronRight className="w-3 h-3 text-muted-foreground/50" />
           <span className="text-primary">Passenger details</span>
           <ChevronRight className="w-3 h-3 text-muted-foreground/50" />
-          <span className="text-muted-foreground">Review &amp; Pay</span>
+          <span className="text-muted-foreground">Review and pay</span>
         </div>
 
         {/* Trip summary chip */}
@@ -100,7 +100,10 @@ export default function PassengerDetailsPage() {
 
         {/* Form card */}
         <div className="bg-card border border-border rounded-xl p-6 space-y-5">
-          <h1 className="text-lg font-semibold text-foreground">Passenger details</h1>
+          <div>
+            <h1 className="font-display text-lg font-semibold text-foreground">Who&apos;s travelling?</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">We&apos;ll put the ticket in this person&apos;s name.</p>
+          </div>
 
           {/* Name */}
           <div>

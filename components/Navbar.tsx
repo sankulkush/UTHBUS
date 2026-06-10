@@ -69,8 +69,8 @@ export default function Navbar() {
         className={cn(
           "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
           scrolled
-            ? "bg-white/90 dark:bg-[#070c1a]/90 backdrop-blur-md shadow-soft border-b border-border/60"
-            : "bg-white/70 dark:bg-[#070c1a]/60 backdrop-blur-sm border-b border-transparent"
+            ? "bg-background/90 backdrop-blur-md shadow-soft border-b border-border/60"
+            : "bg-background/70 backdrop-blur-sm border-b border-transparent"
         )}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -78,8 +78,8 @@ export default function Navbar() {
 
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 select-none">
-              <span className="text-xl font-extrabold tracking-tight leading-none">
-                <span className="text-blue-600 dark:text-blue-400">uth</span>
+              <span className="font-display text-xl font-bold tracking-tight leading-none">
+                <span className="text-foreground">uth</span>
                 <span className="text-primary">bus</span>
               </span>
             </Link>

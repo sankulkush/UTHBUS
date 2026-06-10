@@ -156,19 +156,20 @@ export default function ReviewPayPage() {
           <ChevronRight className="w-3 h-3 text-muted-foreground/50" />
           <span className="text-muted-foreground">Passenger details</span>
           <ChevronRight className="w-3 h-3 text-muted-foreground/50" />
-          <span className="text-primary">Review &amp; Pay</span>
+          <span className="text-primary">Review and pay</span>
         </div>
 
-        <h1 className="text-xl font-bold text-foreground mb-6">Review your booking</h1>
+        <h1 className="font-display text-xl font-bold text-foreground mb-1">One last look</h1>
+        <p className="text-sm text-muted-foreground mb-6">Make sure everything below looks right before you pay.</p>
 
         <div className="space-y-4">
 
           {/* Journey summary */}
           <div className="bg-card border border-border rounded-xl p-5">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Journey</p>
+            <p className="text-xs font-medium text-muted-foreground mb-3">Your trip</p>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-2xl font-bold text-foreground">{fmt12(bus.departureTime)}</p>
+                <p className="font-display text-2xl font-bold text-foreground tabular-nums">{fmt12(bus.departureTime)}</p>
                 <p className="text-sm text-muted-foreground mt-0.5">{from}</p>
               </div>
               <div className="flex flex-col items-center gap-1 text-muted-foreground">
@@ -180,7 +181,7 @@ export default function ReviewPayPage() {
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-2xl font-bold text-foreground">{fmt12(bus.arrivalTime)}</p>
+                <p className="font-display text-2xl font-bold text-foreground tabular-nums">{fmt12(bus.arrivalTime)}</p>
                 <p className="text-sm text-muted-foreground mt-0.5">{to}</p>
               </div>
             </div>
@@ -201,7 +202,7 @@ export default function ReviewPayPage() {
 
           {/* Seats */}
           <div className="bg-card border border-border rounded-xl p-5">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Seats</p>
+            <p className="text-xs font-medium text-muted-foreground mb-3">Your seats</p>
             <div className="flex flex-wrap gap-2">
               {seats.map((s) => (
                 <span key={s} className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-semibold">
@@ -213,7 +214,7 @@ export default function ReviewPayPage() {
 
           {/* Passenger */}
           <div className="bg-card border border-border rounded-xl p-5">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Passenger</p>
+            <p className="text-xs font-medium text-muted-foreground mb-3">Passenger</p>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Name</span>
@@ -242,7 +243,7 @@ export default function ReviewPayPage() {
           <div className="bg-card border border-border rounded-xl p-5">
             <div className="flex items-center gap-2 mb-3">
               <Tag className="w-4 h-4 text-muted-foreground" />
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Promo code <span className="text-muted-foreground/60 normal-case tracking-normal">(optional)</span></p>
+              <p className="text-xs font-medium text-muted-foreground">Have a promo code?</p>
             </div>
 
             {promoApplied ? (
@@ -294,7 +295,7 @@ export default function ReviewPayPage() {
 
           {/* Price */}
           <div className="bg-card border border-border rounded-xl p-5">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Fare summary</p>
+            <p className="text-xs font-medium text-muted-foreground mb-3">What you&apos;ll pay</p>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between text-muted-foreground">
                 <span>NPR {bus.price.toLocaleString()} × {seats.length} seat{seats.length > 1 ? "s" : ""}</span>
@@ -325,7 +326,7 @@ export default function ReviewPayPage() {
           <button
             onClick={handleConfirm}
             disabled={loading}
-            className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground font-bold text-sm hover:opacity-90 active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full py-3.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm shadow-glow hover:bg-primary/90 active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (
               <>

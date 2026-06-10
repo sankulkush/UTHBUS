@@ -236,7 +236,7 @@ export default function DatePicker({ value, onChange }: DatePickerProps) {
             : "bg-transparent text-muted-foreground border-border hover:bg-muted hover:text-foreground"
         }`}
       >
-        Tmrw
+        Tomorrow
       </button>
     </div>
   )
@@ -248,11 +248,11 @@ export default function DatePicker({ value, onChange }: DatePickerProps) {
         className="cursor-pointer"
         onClick={() => setShowCalendar(!showCalendar)}
       >
-        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-1">
+        <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
           <CalendarIcon className="w-3 h-3" />
           Date
         </p>
-        <p className="text-sm font-semibold text-foreground whitespace-nowrap mb-2">
+        <p className="text-sm font-semibold text-foreground whitespace-nowrap mb-2 tabular-nums">
           {weekday}, {day} {month} {year}
         </p>
       </div>

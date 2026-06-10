@@ -135,18 +135,18 @@ export default function SearchBar({
               <button
                 type="submit"
                 disabled={isLoading || !formData.from || !formData.to || !formData.date}
-                className="flex items-center gap-2 bg-primary hover:opacity-90 disabled:opacity-50 text-primary-foreground px-6 lg:px-8 py-4 rounded-lg font-semibold transition-all min-w-[120px] lg:min-w-[140px] justify-center text-sm uppercase tracking-wide"
+                className="flex items-center gap-2 bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground px-6 lg:px-8 py-4 rounded-lg font-semibold transition-all min-w-[120px] lg:min-w-[140px] justify-center text-sm shadow-glow"
               >
                 {isLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-foreground border-t-transparent" />
-                    <span className="hidden lg:inline">Searching...</span>
-                    <span className="lg:hidden">...</span>
+                    <span className="hidden lg:inline">Searching…</span>
+                    <span className="lg:hidden">…</span>
                   </>
                 ) : (
                   <>
                     <Search className="w-4 h-4" />
-                    <span className="hidden lg:inline">Search Buses</span>
+                    <span className="hidden lg:inline">Find buses</span>
                     <span className="lg:hidden">Search</span>
                   </>
                 )}
@@ -185,7 +185,7 @@ export default function SearchBar({
             <div className="bg-card border border-border rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-hidden">
               {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-border">
-                <h2 className="text-base font-semibold text-foreground">Search for Buses</h2>
+                <h2 className="text-base font-semibold text-foreground font-display">Edit your trip</h2>
                 <button
                   onClick={() => setShowMobileModal(false)}
                   className="p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground"
@@ -228,7 +228,7 @@ export default function SearchBar({
                 </div>
 
                 <div className="border border-border rounded-xl px-4 py-3 bg-background">
-                  <p className="text-xs text-muted-foreground font-medium mb-1">Journey Date</p>
+                  <p className="text-xs text-muted-foreground font-medium mb-1">Date</p>
                   <DatePicker
                     value={formData.date}
                     onChange={(v) => handleInputChange('date', v)}
@@ -238,17 +238,17 @@ export default function SearchBar({
                 <button
                   type="submit"
                   disabled={isLoading || !formData.from || !formData.to || !formData.date}
-                  className="w-full flex items-center justify-center gap-2 bg-primary hover:opacity-90 disabled:opacity-50 text-primary-foreground px-6 py-4 rounded-xl font-semibold transition-all text-base"
+                  className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground px-6 py-4 rounded-xl font-semibold transition-all text-base shadow-glow"
                 >
                   {isLoading ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary-foreground border-t-transparent" />
-                      Searching...
+                      Searching…
                     </>
                   ) : (
                     <>
                       <Search className="w-5 h-5" />
-                      Search Buses
+                      Find buses
                     </>
                   )}
                 </button>

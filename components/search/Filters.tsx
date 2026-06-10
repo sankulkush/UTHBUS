@@ -39,8 +39,8 @@ const AMENITIES = [
 ];
 
 const DEPARTURE_TIMES = [
-  { id: 'day',   label: 'Day',   icon: Sun,  description: 'Before 12 PM' },
-  { id: 'night', label: 'Night', icon: Moon, description: 'After 12 PM' },
+  { id: 'day',   label: 'Daytime',   icon: Sun,  description: 'Before 12 PM' },
+  { id: 'night', label: 'Overnight', icon: Moon, description: 'After 12 PM' },
 ];
 
 export default function Filters({ filters, onFiltersChange, buses = [] }: FiltersProps) {
@@ -88,7 +88,7 @@ export default function Filters({ filters, onFiltersChange, buses = [] }: Filter
     <div className="p-6 h-full overflow-y-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-base font-semibold text-foreground">Filters</h3>
+        <h3 className="font-display text-base font-semibold text-foreground">Narrow it down</h3>
         <div className="flex items-center gap-2">
           {hasActiveFilters && (
             <button
@@ -109,8 +109,8 @@ export default function Filters({ filters, onFiltersChange, buses = [] }: Filter
 
       {/* AC / Non-AC */}
       <div className="mb-6">
-        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-          Air Conditioning
+        <h4 className="text-sm font-medium text-foreground mb-3">
+          Air conditioning
         </h4>
         <div className="flex gap-2">
           <button
@@ -132,8 +132,8 @@ export default function Filters({ filters, onFiltersChange, buses = [] }: Filter
 
       {/* Bus Type */}
       <div className="mb-6">
-        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-          Bus Type
+        <h4 className="text-sm font-medium text-foreground mb-3">
+          Bus type
         </h4>
         <div className="flex flex-wrap gap-2">
           {BUS_TYPES.map(({ id, label, icon: Icon }) => (
@@ -151,8 +151,8 @@ export default function Filters({ filters, onFiltersChange, buses = [] }: Filter
 
       {/* Departure Time */}
       <div className="mb-6">
-        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-          Departure Time
+        <h4 className="text-sm font-medium text-foreground mb-3">
+          Leaving
         </h4>
         <div className="flex gap-2">
           {DEPARTURE_TIMES.map(({ id, label, icon: Icon }) => (
@@ -170,8 +170,8 @@ export default function Filters({ filters, onFiltersChange, buses = [] }: Filter
 
       {/* Price Range */}
       <div className="mb-6">
-        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-          Price Range
+        <h4 className="text-sm font-medium text-foreground mb-3">
+          Price
         </h4>
         <div className="space-y-4">
           <div className="relative h-6 flex items-center">
@@ -208,8 +208,8 @@ export default function Filters({ filters, onFiltersChange, buses = [] }: Filter
 
       {/* Amenities */}
       <div className="mb-6">
-        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-          Amenities
+        <h4 className="text-sm font-medium text-foreground mb-3">
+          On board
         </h4>
         <div className="grid grid-cols-3 gap-2">
           {AMENITIES.map(({ id, label, icon: Icon }) => (

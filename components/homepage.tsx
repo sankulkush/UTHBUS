@@ -189,7 +189,7 @@ function RouteInsightModal({
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
               <div className="absolute bottom-4 left-5 right-5">
-                <h2 className="text-white text-xl font-bold leading-snug">{route.name}</h2>
+                <h2 className="font-display text-white text-xl font-bold leading-snug">{route.name}</h2>
                 <p className="text-white/65 text-sm mt-0.5 leading-snug">{route.highlight}</p>
               </div>
             </div>
@@ -213,8 +213,8 @@ function RouteInsightModal({
 
               {/* Peak Hours */}
               <div>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                  <Clock className="w-3 h-3" /> Peak Travel Hours
+                <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5" /> Busiest departure times
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {route.peakTimes.map((t) => (
@@ -225,8 +225,8 @@ function RouteInsightModal({
 
               {/* Popular origins */}
               <div>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                  <MapPin className="w-3 h-3" /> Popular Departure Cities
+                <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5" /> Where people travel from
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {route.fromCities.map((c) => (
@@ -244,7 +244,7 @@ function RouteInsightModal({
               {/* CTA */}
               <Button className="w-full h-11 font-semibold" onClick={() => onSearch(route.name)}>
                 <Search className="w-4 h-4 mr-2" />
-                Search Buses to {route.name}
+                Find buses to {route.name}
               </Button>
 
               {/* SEO page link — only shown when a dedicated route guide exists */}
@@ -253,7 +253,7 @@ function RouteInsightModal({
                   href={ROUTE_SEO_PAGES[route.name]}
                   className="flex items-center justify-center gap-1 text-sm text-primary hover:text-primary/80 font-medium transition-colors"
                 >
-                  Route guide &amp; travel info
+                  Read the full route guide
                   <ChevronRight className="w-3.5 h-3.5" />
                 </Link>
               )}
@@ -282,7 +282,7 @@ function AllRoutesModal({
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="sm:max-w-xl p-0 rounded-2xl overflow-hidden border-border gap-0">
         <DialogHeader className="p-5 pb-3 border-b border-border">
-          <DialogTitle className="text-base">All Available Routes</DialogTitle>
+          <DialogTitle className="text-base font-display">Every city we serve</DialogTitle>
         </DialogHeader>
         <div className="p-4 grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[68vh] overflow-y-auto">
           {ALL_ROUTES.map((route) => (
@@ -419,18 +419,18 @@ export default function Homepage() {
             {/* Live pill */}
             <div className="flex justify-center mb-3 md:mb-5 animate-fade-in">
               <span className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 text-white/90 text-xs font-medium px-4 py-1.5 rounded-full">
-                <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
-                Live seat availability · 50+ routes
+                <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+                Live seats on 50+ routes
               </span>
             </div>
 
             {/* Headline */}
-            <h1 className="text-center text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight tracking-tight mb-2 md:mb-3 animate-slide-up">
-              Book Bus Tickets
+            <h1 className="font-display text-center text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight tracking-tight mb-2 md:mb-3 animate-slide-up">
+              Bus tickets across Nepal,
               <br />
-              <span className="text-primary">Across Nepal</span>
+              <span className="text-primary">booked in minutes</span>
             </h1>
-            <p className="text-center text-orange-400 text-base sm:text-xl md:text-2xl font-semibold mb-5 md:mb-8 animate-slide-up [animation-delay:100ms]">
+            <p className="text-center text-white/70 text-base sm:text-lg md:text-xl font-medium mb-5 md:mb-8 animate-slide-up [animation-delay:100ms]">
               सरल बुकिंग, सफल यात्रा
             </p>
 
@@ -442,8 +442,8 @@ export default function Homepage() {
                 <div className="hidden md:flex items-stretch">
                   {/* FROM */}
                   <div className="flex-1 px-5 py-4">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-1">
-                      <MapPin className="w-2.5 h-2.5" /> Departure
+                    <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+                      <MapPin className="w-3 h-3" /> From
                     </p>
                     <CitySelect
                       value={from}
@@ -467,8 +467,8 @@ export default function Homepage() {
 
                   {/* TO */}
                   <div className="flex-1 px-5 py-4 border-l border-border/50">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2 flex items-center gap-1">
-                      <MapPin className="w-2.5 h-2.5" /> Destination
+                    <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+                      <MapPin className="w-3 h-3" /> To
                     </p>
                     <CitySelect
                       value={to}
@@ -490,10 +490,10 @@ export default function Homepage() {
                   <button
                     onClick={handleSearch}
                     disabled={isSearching}
-                    className="relative flex items-center justify-center gap-2.5 min-w-[130px] self-stretch px-8 text-sm font-semibold tracking-wide disabled:opacity-50 text-white rounded-r-2xl transition-all duration-200 bg-gradient-to-b from-[#f04535] to-[#c02818] hover:from-[#f55545] hover:to-[#d03020] [box-shadow:0_4px_20px_-2px_rgba(192,40,24,0.5),inset_0_1px_0_rgba(255,255,255,0.25)] hover:[box-shadow:0_6px_28px_-2px_rgba(192,40,24,0.65),inset_0_1px_0_rgba(255,255,255,0.25)]"
+                    className="relative flex items-center justify-center gap-2.5 min-w-[140px] self-stretch px-8 text-sm font-semibold disabled:opacity-50 bg-primary text-primary-foreground rounded-r-2xl transition-all duration-200 hover:bg-primary/90 shadow-glow hover:shadow-glow-lg"
                   >
                     <Search className="w-4 h-4 shrink-0" />
-                    {isSearching ? "Searching…" : "Search"}
+                    {isSearching ? "Searching…" : "Find buses"}
                   </button>
                 </div>
 
@@ -503,8 +503,8 @@ export default function Homepage() {
                   <div className="relative">
                     {/* FROM */}
                     <div className="px-3 pt-3 pb-2.5">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 flex items-center gap-1">
-                        <MapPin className="w-2.5 h-2.5" /> From
+                      <p className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
+                        <MapPin className="w-3 h-3" /> From
                       </p>
                       <CitySelect
                         value={from}
@@ -527,8 +527,8 @@ export default function Homepage() {
 
                     {/* TO */}
                     <div className="px-3 pt-2.5 pb-3">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1 flex items-center gap-1">
-                        <MapPin className="w-2.5 h-2.5" /> To
+                      <p className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
+                        <MapPin className="w-3 h-3" /> To
                       </p>
                       <CitySelect
                         value={to}
@@ -549,10 +549,10 @@ export default function Homepage() {
                     <button
                       onClick={handleSearch}
                       disabled={isSearching}
-                      className="w-full h-11 rounded-xl text-sm font-semibold tracking-wide disabled:opacity-50 text-white transition-all duration-200 flex items-center justify-center gap-2.5 bg-gradient-to-r from-[#f04535] to-[#c02818] hover:from-[#f55545] hover:to-[#d03020] [box-shadow:0_4px_16px_-2px_rgba(192,40,24,0.5),inset_0_1px_0_rgba(255,255,255,0.2)] hover:[box-shadow:0_6px_22px_-2px_rgba(192,40,24,0.65),inset_0_1px_0_rgba(255,255,255,0.2)]"
+                      className="w-full h-11 rounded-xl text-sm font-semibold disabled:opacity-50 bg-primary text-primary-foreground transition-all duration-200 flex items-center justify-center gap-2.5 hover:bg-primary/90 shadow-glow"
                     >
                       <Search className="w-4 h-4 shrink-0" />
-                      {isSearching ? "Searching…" : "Search Buses"}
+                      {isSearching ? "Searching…" : "Find buses"}
                     </button>
                   </div>
                 </div>
@@ -569,15 +569,15 @@ export default function Homepage() {
         <div className="container mx-auto px-4">
           <div className="flex items-end justify-between mb-7">
             <div>
-              <h2 className="text-2xl font-bold text-foreground tracking-tight">Available Routes</h2>
-              <p className="text-muted-foreground text-sm mt-0.5">Click any route to see insights & fare data</p>
+              <h2 className="font-display text-2xl font-bold text-foreground tracking-tight">Where do you want to go?</h2>
+              <p className="text-muted-foreground text-sm mt-0.5">Tap a city for fares, timings and travel tips.</p>
             </div>
             <Button
               variant="outline"
               className="font-medium shrink-0"
               onClick={() => setViewAllOpen(true)}
             >
-              View All
+              All routes
               <ChevronRight className="w-4 h-4 ml-1" />
             </Button>
           </div>
@@ -608,7 +608,7 @@ export default function Homepage() {
                   <div className="absolute bottom-0 left-0 right-0 p-4">
                     <div className="flex items-end justify-between gap-2">
                       <div>
-                        <h3 className="text-white font-bold text-lg leading-tight">{route.name}</h3>
+                        <h3 className="font-display text-white font-bold text-lg leading-tight">{route.name}</h3>
                         <p className="text-white/65 text-sm">{route.description}</p>
                       </div>
                       <span className="shrink-0 bg-black/50 backdrop-blur-sm text-white text-xs font-semibold px-2.5 py-1 rounded-full border border-white/20">
