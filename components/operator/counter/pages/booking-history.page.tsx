@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { HistoryIcon, SearchIcon, RefreshCwIcon } from "lucide-react"
 import { useCounter } from "../context/counter-context"
 import { ActiveBookingsService, type IActiveBooking } from "../services/active-booking.service"
+import { PaymentStatusBadge } from "@/components/booking/PaymentStatusBadge"
 
 export function BookingHistoryPage() {
   const { operator } = useCounter()
@@ -164,7 +165,10 @@ export function BookingHistoryPage() {
                         <p className="font-semibold text-gray-900 text-sm">Rs. {b.amount.toLocaleString()}</p>
                       </td>
                       <td className="py-4 px-4">
-                        <Badge className="bg-blue-100 text-blue-800 text-xs">Completed</Badge>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <Badge className="bg-blue-100 text-blue-800 text-xs">Completed</Badge>
+                          <PaymentStatusBadge status={b.paymentStatus} />
+                        </div>
                       </td>
                     </tr>
                   ))}

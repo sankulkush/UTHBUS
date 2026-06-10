@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react"
 import { useUserAuth } from "@/contexts/user-auth-context"
 import { ActiveBookingsService, type IActiveBooking } from "@/components/operator/counter/services/active-booking.service"
+import { PaymentStatusBadge } from "@/components/booking/PaymentStatusBadge"
+import { PayNowModal } from "@/components/booking/PayNowModal"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -86,6 +88,8 @@ export default function BookingsPage() {
     past: 0,
     cancelled: 0
   })
+  // PayNowModal target — null when closed.
+  const [payNowFor, setPayNowFor] = useState<IActiveBooking | null>(null)
 
   const activeBookingsService = new ActiveBookingsService()
 
@@ -367,9 +371,12 @@ export default function BookingsPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <Badge className={getStatusColor(booking.status)}>
-                      {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                    </Badge>
+                    <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                      <Badge className={getStatusColor(booking.status)}>
+                        {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                      </Badge>
+                      <PaymentStatusBadge status={booking.paymentStatus} />
+                    </div>
                     <p className="text-sm text-muted-foreground mt-1">
                       Booked: {formatBookingTime(booking.bookingTime)}
                     </p>
@@ -435,6 +442,21 @@ export default function BookingsPage() {
                 )}
                 {/* Action Buttons */}
                 <div className="flex flex-wrap gap-2 pt-4 border-t border-border">
+                  {/* Pay Now — only when the booking is still bookable AND the
+                      payment hasn't already cleared / been refunded. */}
+                  {booking.status === "booked" &&
+                    booking.paymentStatus !== "paid" &&
+                    booking.paymentStatus !== "refunded" && (
+                      <Button
+                        size="sm"
+                        className="bg-primary text-primary-foreground hover:opacity-90"
+                        onClick={() => setPayNowFor(booking)}
+                      >
+                        <CreditCardIcon className="w-4 h-4 mr-2" />
+                        Pay Now
+                      </Button>
+                    )}
+
                   <Button
                     size="sm"
                     variant="outline"
@@ -443,7 +465,7 @@ export default function BookingsPage() {
                     <PrinterIcon className="w-4 h-4 mr-2" />
                     Print Ticket
                   </Button>
-                  
+
                   {/* Show Cancel button for any booked booking */}
                   {booking.status === "booked" && (
                     <Button
@@ -481,6 +503,15 @@ export default function BookingsPage() {
             </Card>
           ))}
         </div>
+      )}
+
+      {/* Pay Now modal — Sprint 1 stub for Sprint 3 (eSewa) integration. */}
+      {payNowFor && (
+        <PayNowModal
+          isOpen={!!payNowFor}
+          onClose={() => setPayNowFor(null)}
+          booking={payNowFor}
+        />
       )}
     </div>
   )

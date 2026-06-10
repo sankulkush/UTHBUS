@@ -22,6 +22,7 @@ import {
 } from "lucide-react"
 import { useCounter } from "../context/counter-context"
 import { ActiveBookingsService, type IActiveBooking } from "../services/active-booking.service"
+import { PaymentStatusBadge } from "@/components/booking/PaymentStatusBadge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface BookingTabsProps {
@@ -394,9 +395,12 @@ export function BookedTransactionsPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <Badge className={getStatusColor(booking.status)}>
-                      {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                    </Badge>
+                    <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                      <Badge className={getStatusColor(booking.status)}>
+                        {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                      </Badge>
+                      <PaymentStatusBadge status={booking.paymentStatus} />
+                    </div>
                     <p className="text-sm text-gray-500 mt-1">
                       Booked: {formatBookingTime(booking.bookingTime)}
                     </p>
