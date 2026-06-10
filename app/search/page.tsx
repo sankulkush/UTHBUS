@@ -11,6 +11,7 @@ import SearchBar from "@/components/search/SearchBar";
 import Filters from "@/components/search/Filters";
 import ResultsList from "@/components/search/ResultsList";
 import { Loader2 } from "lucide-react";
+import { isBookable } from "@/lib/booking-cutoff";
 
 export interface FilterState {
   busType: string[];
@@ -53,7 +54,13 @@ export default function SearchPage() {
     setLoading(true);
     setError(null);
     busService.searchAllBuses(from, to, date)
-      .then((results) => setBuses(results))
+      .then((results) => {
+        // Hide buses whose 2-hour cutoff has passed (only affects today's
+        // departures). Server-side filtering would be tidier, but bus
+        // documents don't expose departureTime in the Firestore query path.
+        const bookable = results.filter((b) => isBookable(date, b.departureTime));
+        setBuses(bookable);
+      })
       .catch(() => setError("Failed to search buses. Please try again."))
       .finally(() => setLoading(false));
   }, [from, to, date, busService]);

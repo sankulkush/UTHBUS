@@ -7,6 +7,7 @@ import { useBooking } from "@/contexts/booking-context";
 import { useUserAuth } from "@/contexts/user-auth-context";
 import { ActiveBookingsService } from "@/components/operator/counter/services/active-booking.service";
 import { ArrowLeft, ChevronRight, Loader2, AlertTriangle, Tag, Check, X as XIcon } from "lucide-react";
+import { isBookable, cutoffReason } from "@/lib/booking-cutoff";
 
 // Single hard-coded promo rule per spec: WELCOME50 → flat NPR 50 off.
 function evaluatePromo(code: string, subtotal: number): { discount: number; valid: boolean } {
@@ -92,6 +93,14 @@ export default function ReviewPayPage() {
     setError("");
     setLoading(true);
     try {
+      // 2-hour cutoff guard — catches users who held this page open past the
+      // window. Search already filters these buses out for fresh visits.
+      if (!isBookable(date, bus.departureTime)) {
+        setError(cutoffReason(date, bus.departureTime));
+        setLoading(false);
+        return;
+      }
+
       // Final availability check
       const available = await service.areSeatAvailable(bus.id, date, seats);
       if (!available) {
