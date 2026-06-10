@@ -133,6 +133,10 @@ export interface IAuthService {
   logout(): Promise<void>
 }
 
+// Payment taxonomy is owned by active-booking.service.ts so the service
+// stays the single source of truth. Re-export here for the input shape.
+import type { PaymentStatus, PaymentMode } from "../services/active-booking.service"
+
 export interface IActiveBookingData {
   operatorId: string
   userId?: string
@@ -153,4 +157,8 @@ export interface IActiveBookingData {
   amount: number
   status: "booked" | "cancelled" | "completed"
   bookingTime: any
+  // Optional on input — createActiveBooking() fills in defaults.
+  paymentStatus?: PaymentStatus
+  paymentMode?: PaymentMode | null
+  paymentTxnId?: string | null
 }

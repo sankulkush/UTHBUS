@@ -7,10 +7,31 @@ import {
   ActiveBookingsService,
   type IActiveBooking,
 } from "@/components/operator/counter/services/active-booking.service";
+import { PayNowModal } from "@/components/booking/PayNowModal";
 import {
   CheckCircle2, Printer, Download, Share2, ArrowLeft,
   MessageCircle, Loader2, AlertTriangle, Bus, Copy, Check,
+  Clock, CreditCard, Receipt, Wallet,
 } from "lucide-react";
+
+// ── Payment display helpers ──────────────────────────────────────────────────
+
+/** Mask a transaction id for ticket display. Keeps the first 6 and last 4
+ *  characters with an ellipsis in the middle so the user can still match
+ *  against their gateway receipt without printing a 30-char string. */
+function maskTxnId(txnId: string): string {
+  if (txnId.length <= 12) return txnId;
+  return `${txnId.slice(0, 6)}…${txnId.slice(-4)}`;
+}
+
+function formatPaidAt(ts: any): string {
+  if (!ts) return "";
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleString("en-US", {
+    day: "numeric", month: "short", year: "numeric",
+    hour: "2-digit", minute: "2-digit",
+  });
+}
 
 const service = new ActiveBookingsService();
 
@@ -333,34 +354,16 @@ export default function TicketPage() {
                 </dl>
               </div>
 
-              {/* Payment / fare details */}
+              {/* Payment / fare details — renders by paymentStatus.
+                  Sprint 1: data foundation. Sprint 3 (eSewa) populates the
+                  paid/pending_gateway branches; cancellation flow populates
+                  refunded. */}
               <div className="px-5 py-4">
                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">
                   Payment Details
                 </p>
-                <dl className="space-y-2 text-sm">
-                  <div className="flex items-start justify-between gap-2">
-                    <dt className="text-muted-foreground">Payment Mode</dt>
-                    <dd className="font-medium text-foreground">
-                      {(booking as any).paymentMode || "Reserved — pay at counter"}
-                    </dd>
-                  </div>
-                  <div className="flex items-start justify-between gap-2">
-                    <dt className="text-muted-foreground">Ticket Fare</dt>
-                    <dd className="font-medium text-foreground">
-                      NPR {(booking.amount / seats.length).toLocaleString()}
-                    </dd>
-                  </div>
-                  <div className="flex items-start justify-between gap-2">
-                    <dt className="text-muted-foreground">No. of Seats</dt>
-                    <dd className="font-medium text-foreground">{seats.length}</dd>
-                  </div>
-                  <div className="h-px bg-border my-1" />
-                  <div className="flex items-start justify-between gap-2">
-                    <dt className="font-bold text-foreground">Total Amount</dt>
-                    <dd className="font-bold text-foreground text-base">NPR {booking.amount.toLocaleString()}</dd>
-                  </div>
-                </dl>
+
+                <PaymentBlock booking={booking} seats={seats} />
               </div>
             </div>
 
@@ -433,5 +436,189 @@ export default function TicketPage() {
         </div>
       </div>
     </>
+  );
+}
+
+// ── PaymentBlock ─────────────────────────────────────────────────────────────
+// Renders the payment summary on the e-ticket. Branches on booking.paymentStatus:
+//   - paid                    → green "Paid via <mode>" banner + masked txn id
+//   - unpaid_pending_counter  → amber "Pay at counter" banner with amount due
+//   - pending_gateway         → blue "Payment in progress" banner + retry CTA
+//   - failed                  → red "Payment failed" banner + retry CTA
+//   - refunded                → gray "Refunded" banner
+// Pre-Sprint-1 bookings (no paymentStatus field) fall through to the safest
+// default — Reserved/pay-at-counter — so old tickets keep rendering.
+function PaymentBlock({
+  booking,
+  seats,
+}: {
+  booking: IActiveBooking;
+  seats: string[];
+}) {
+  const [payNowOpen, setPayNowOpen] = useState(false);
+  const fare = (booking.amount / Math.max(seats.length, 1));
+  const total = booking.amount;
+  const status = booking.paymentStatus ?? "unpaid_pending_counter";
+  const mode = booking.paymentMode;
+  const txnId = booking.paymentTxnId;
+  const paidAt = booking.paidAt;
+
+  // Standalone "Pay Now" button used by the three unpaid variants.
+  // Opens the PayNowModal stub (Sprint 3 will replace its disabled gateway
+  // buttons with real handlers).
+  const PayNowButton = ({ tone }: { tone: "amber" | "blue" | "red" }) => {
+    const toneClasses =
+      tone === "blue"
+        ? "border-blue-300 bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+        : tone === "red"
+        ? "border-red-300 bg-red-600 text-white hover:bg-red-700"
+        : "border-amber-300 bg-amber-600 text-white hover:bg-amber-700";
+    return (
+      <button
+        type="button"
+        onClick={() => setPayNowOpen(true)}
+        className={`no-print mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${toneClasses}`}
+      >
+        <CreditCard className="w-3.5 h-3.5" /> Pay Now
+      </button>
+    );
+  };
+
+  const FareRows = (
+    <dl className="space-y-2 text-sm mt-4">
+      <div className="flex items-start justify-between gap-2">
+        <dt className="text-muted-foreground">Ticket Fare</dt>
+        <dd className="font-medium text-foreground">NPR {fare.toLocaleString()}</dd>
+      </div>
+      <div className="flex items-start justify-between gap-2">
+        <dt className="text-muted-foreground">No. of Seats</dt>
+        <dd className="font-medium text-foreground">{seats.length}</dd>
+      </div>
+      <div className="h-px bg-border my-1" />
+      <div className="flex items-start justify-between gap-2">
+        <dt className="font-bold text-foreground">Total Amount</dt>
+        <dd className="font-bold text-foreground text-base">NPR {total.toLocaleString()}</dd>
+      </div>
+    </dl>
+  );
+
+  if (status === "paid") {
+    return (
+      <div>
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 dark:border-emerald-900/40 dark:bg-emerald-950/30">
+          <div className="flex items-center gap-2 mb-1.5">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <span className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
+              Paid {mode ? `via ${mode}` : ""}
+            </span>
+          </div>
+          <dl className="text-xs space-y-1">
+            {txnId && (
+              <div className="flex items-start justify-between gap-2">
+                <dt className="text-emerald-700/70 dark:text-emerald-400/70">Transaction ID</dt>
+                <dd className="font-mono font-medium text-emerald-900 dark:text-emerald-200">
+                  {maskTxnId(txnId)}
+                </dd>
+              </div>
+            )}
+            {paidAt && (
+              <div className="flex items-start justify-between gap-2">
+                <dt className="text-emerald-700/70 dark:text-emerald-400/70">Paid on</dt>
+                <dd className="font-medium text-emerald-900 dark:text-emerald-200">
+                  {formatPaidAt(paidAt)}
+                </dd>
+              </div>
+            )}
+          </dl>
+        </div>
+        {FareRows}
+      </div>
+    );
+  }
+
+  if (status === "pending_gateway") {
+    return (
+      <div>
+        <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 dark:border-blue-900/40 dark:bg-blue-950/30">
+          <div className="flex items-center gap-2 mb-1">
+            <Clock className="w-4 h-4 text-blue-600 dark:text-blue-400 animate-pulse" />
+            <span className="text-sm font-bold text-blue-700 dark:text-blue-300">
+              Payment in progress
+            </span>
+          </div>
+          <p className="text-xs text-blue-800/80 dark:text-blue-200/80 mt-1 leading-relaxed">
+            We're waiting for {mode || "the payment gateway"} to confirm your payment.
+            This usually takes under a minute. Don't pay again until you've checked here.
+          </p>
+          <PayNowButton tone="blue" />
+        </div>
+        {FareRows}
+        <PayNowModal isOpen={payNowOpen} onClose={() => setPayNowOpen(false)} booking={booking} />
+      </div>
+    );
+  }
+
+  if (status === "failed") {
+    return (
+      <div>
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/40 dark:bg-red-950/30">
+          <div className="flex items-center gap-2 mb-1">
+            <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400" />
+            <span className="text-sm font-bold text-red-700 dark:text-red-300">
+              Payment failed
+            </span>
+          </div>
+          <p className="text-xs text-red-800/80 dark:text-red-200/80 mt-1 leading-relaxed">
+            Your {mode || "gateway"} payment didn't go through. Your seat is still held —
+            you can retry the payment or pay at the counter at boarding time.
+          </p>
+          <PayNowButton tone="red" />
+        </div>
+        {FareRows}
+        <PayNowModal isOpen={payNowOpen} onClose={() => setPayNowOpen(false)} booking={booking} />
+      </div>
+    );
+  }
+
+  if (status === "refunded") {
+    return (
+      <div>
+        <div className="rounded-lg border border-muted bg-muted/40 px-4 py-3">
+          <div className="flex items-center gap-2 mb-1">
+            <Receipt className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm font-bold text-foreground">Refunded</span>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+            This booking has been cancelled and the refund processed
+            {mode ? ` back to your ${mode} account` : ""}. Allow 3–5 business days
+            for the funds to appear.
+          </p>
+        </div>
+        {FareRows}
+      </div>
+    );
+  }
+
+  // Default: unpaid_pending_counter (also catches legacy bookings with no
+  // paymentStatus field, which fall back to ?? above).
+  return (
+    <div>
+      <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-900/40 dark:bg-amber-950/30">
+        <div className="flex items-center gap-2 mb-1">
+          <Wallet className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+          <span className="text-sm font-bold text-amber-800 dark:text-amber-200">
+            Reserved — pay at counter
+          </span>
+        </div>
+        <p className="text-xs text-amber-900/80 dark:text-amber-200/80 mt-1 leading-relaxed">
+          Your seat is held. Please bring this ticket and pay
+          <span className="font-bold"> NPR {total.toLocaleString()}</span> in cash to the
+          operator at the boarding point — or pay online now.
+        </p>
+        <PayNowButton tone="amber" />
+      </div>
+      {FareRows}
+      <PayNowModal isOpen={payNowOpen} onClose={() => setPayNowOpen(false)} booking={booking} />
+    </div>
   );
 }
