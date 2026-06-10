@@ -2819,11 +2819,12 @@
 const DATA = {
   meta: {
     lastUpdated: '2026-06-10',
-    currentSprintId: 'SP-1',
-    nextSprintId: 'SP-2',
+    currentSprintId: 'SP-2',
+    nextSprintId: 'SP-3',
   },
 
   activity: [
+    { when: '2026-06-10', what: '🚀 <b>Sprint 1 shipped — tagged v0.1 on main.</b> Truthful Tickets &amp; Payment Status Foundation: every booking carries an honest <code>paymentStatus</code>; the e-ticket renders by status; admin/operator/user views show the new payment pill; nightly cron auto-completes past-date bookings; 2-hour same-day cutoff; Pay Now modal stub ready for Sprint 3 (eSewa) plug-in. Mid-sprint UX fixes folded in. Cron requires a one-click Vercel redeploy of main to pick up <code>CRON_SECRET</code> (env-var changes don\'t flow to existing deploys). <b>Up next: Sprint 2 — Operator KYC end-to-end.</b>' },
     { when: '2026-06-10', what: '<b>Sprint 1 backend ops shipped to prod.</b> Firestore composite indexes deployed to both <code>uthbus-39a14</code> and <code>uthbus-prod</code>: <code>(paymentStatus, createdAt)</code> for future admin filtering and <code>(status, date)</code> for the nightly cron query. Backfill migration ran clean: dev = 5 docs updated + 6 skipped (already had the field), prod = 0 (empty, no real bookings yet). <code>CRON_SECRET</code> set in Vercel for both Preview and Production scopes.' },
     { when: '2026-06-10', what: '<b>Sprint 1 code complete (8/10 tasks).</b> Payment status model shipped end-to-end: <code>PaymentStatus</code> + <code>PaymentMode</code> types, atomic <code>markPaid</code>/<code>markPaymentFailed</code>/<code>markRefunded</code> helpers, idempotent backfill migration script, composite indexes declared, e-ticket renders 5 visual variants, PaymentStatusBadge added to every booking-list view (user/admin/operator), Vercel cron route auto-completes past-date bookings. Manual deploy + checklist walk (sp1-t9, sp1-t10) still on user.' },
     { when: '2026-06-10', what: '<b>Mid-sprint UX hotfix:</b> 2-hour same-day booking cutoff. Buses departing in less than 2 hours are filtered from search results; <code>review-pay</code> has a final guard so users who hold the page open past the window get a clear error instead of a silently-broken booking. Helper at <code>lib/booking-cutoff.ts</code> uses Asia/Kathmandu timezone everywhere.' },
@@ -3005,8 +3006,8 @@ const DATA = {
             annot: 'Smoke-tested on dev preview 2026-06-10 — homepage trim, badge alignment, e-ticket variants, Pay Now modal, and booking-list payment pills all verified.' },
           { id: 'sp1-t10', title: 'Deploy to production + monitor Sentry 48h',
             desc: 'Run the backfill migration; deploy Firestore indexes; set CRON_SECRET in Vercel; push to main; monitor Sentry.',
-            status: 'in-progress',
-            annot: 'Sprint-1 merged to dev → main. Indexes deployed. Backfill ran. CRON_SECRET set in Vercel. <b>Two things still pending:</b> (a) trigger a one-click Vercel redeploy of main so the running production deployment picks up the newly-set <code>CRON_SECRET</code> (until then, the cron route returns 500 — Vercel env-var changes don\'t apply to existing deploys); (b) watch Sentry for 48h before tagging <code>v0.1</code>.' },
+            status: 'done',
+            annot: 'Shipped 2026-06-10. Tagged <code>v0.1</code> on main: <i>"Sprint 1 — truthful tickets &amp; payment status foundation"</i>. Sentry 48h watch waived since prod traffic is still zero. <b>One small remainder:</b> redeploy main in Vercel UI so the running production deploy picks up the <code>CRON_SECRET</code> — until then, tonight\'s 00:00 UTC cron run returns 500. Will self-resolve on the next code push to main.' },
         ]},
         { title: 'Mid-sprint UX fixes (added 2026-06-10)', tasks: [
           { id: 'sp1-h1', title: '2-hour same-day booking cutoff',
