@@ -25,9 +25,6 @@ import {
   MapPin,
   Clock,
   ChevronRight,
-  ShieldCheck,
-  Zap,
-  Headphones,
   Phone,
   Mail,
   TrendingUp,
@@ -621,46 +618,6 @@ export default function Homepage() {
                   </div>
                 </div>
               </button>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Why UthBus ────────────────────────────────────────────────────── */}
-      <section className="py-14 bg-muted/30 border-y border-border">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-foreground">Why travel with UthBus?</h2>
-            <p className="text-muted-foreground text-sm mt-1">Built for Nepal, built for you</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-3xl mx-auto">
-            {[
-              {
-                icon: ShieldCheck,
-                title: "Verified Operators",
-                desc: "Every operator is screened, licensed, and reviewed by real passengers.",
-              },
-              {
-                icon: Zap,
-                title: "Instant Confirmation",
-                desc: "Your seat is locked and your e-ticket delivered within seconds.",
-              },
-              {
-                icon: Headphones,
-                title: "24/7 Support",
-                desc: "Reach us by phone or chat any time you need help.",
-              },
-            ].map(({ icon: Icon, title, desc }) => (
-              <div
-                key={title}
-                className="bg-card rounded-2xl border border-border p-6 text-center hover:shadow-soft transition-shadow duration-300"
-              >
-                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-                  <Icon className="w-6 h-6 text-primary" />
-                </div>
-                <h3 className="font-semibold text-foreground mb-2">{title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
-              </div>
             ))}
           </div>
         </div>
