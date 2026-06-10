@@ -5,6 +5,8 @@ import { useOperatorAuth } from "@/contexts/operator-auth-context"
 import { useUserAuth } from "@/contexts/user-auth-context"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
+import { signOut } from "firebase/auth"
+import { auth } from "@/firebaseConfig"
 
 async function clearAuthCookie() {
   try { await fetch("/api/auth/clear-token", { method: "POST" }) } catch { /* optional */ }
@@ -21,6 +23,15 @@ export default function CounterLayout({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     if (loading) return
+    // Corrupted account: this UID owns both a users/{uid} and an operators/{uid}
+    // doc. Don't redirect — that would fight homepage's "operator → counter"
+    // bounce forever. Sign out and let them re-auth cleanly.
+    if (isUserLoggedIn && isOperatorLoggedIn) {
+      console.error("Auth corruption: UID owns both a user and operator profile. Signing out.")
+      signOut(auth).catch(() => {})
+      clearAuthCookie().then(() => router.replace("/"))
+      return
+    }
     // Regular users have no business in the counter portal — bounce to homepage.
     if (isUserLoggedIn) {
       router.replace("/")
