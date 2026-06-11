@@ -23,8 +23,8 @@ export default function Footer() {
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
           <div>
-            <div className="font-display text-xl font-bold mb-4 tracking-tight">
-              <span className="text-foreground">uth</span>
+            <div className="text-xl font-extrabold mb-4 tracking-tight">
+              <span className="text-blue-600 dark:text-blue-400">uth</span>
               <span className="text-primary">bus</span>
             </div>
             <p className="text-muted-foreground text-sm leading-relaxed">

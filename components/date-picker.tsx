@@ -215,11 +215,11 @@ export default function DatePicker({ value, onChange }: DatePickerProps) {
   const isTomorrow = value === getTomorrowDate()
 
   const ChipButtons = (
-    <div className="flex gap-1.5 shrink-0">
+    <div className="flex flex-wrap gap-1.5 min-w-0">
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); onChange(getTodayDate()) }}
-        className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
+        className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border whitespace-nowrap transition-all duration-200 ${
           isToday
             ? "bg-primary text-primary-foreground border-primary"
             : "bg-transparent text-muted-foreground border-border hover:bg-muted hover:text-foreground"
@@ -230,7 +230,7 @@ export default function DatePicker({ value, onChange }: DatePickerProps) {
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); onChange(getTomorrowDate()) }}
-        className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border transition-all duration-200 ${
+        className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border whitespace-nowrap transition-all duration-200 ${
           isTomorrow
             ? "bg-primary text-primary-foreground border-primary"
             : "bg-transparent text-muted-foreground border-border hover:bg-muted hover:text-foreground"
@@ -252,7 +252,7 @@ export default function DatePicker({ value, onChange }: DatePickerProps) {
           <CalendarIcon className="w-3 h-3" />
           Date
         </p>
-        <p className="text-sm font-semibold text-foreground whitespace-nowrap mb-2 tabular-nums">
+        <p className="text-sm font-semibold text-foreground whitespace-nowrap truncate mb-2 tabular-nums">
           {weekday}, {day} {month} {year}
         </p>
       </div>

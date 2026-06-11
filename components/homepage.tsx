@@ -386,7 +386,7 @@ export default function Homepage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background bg-doodle">
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden pt-16">
@@ -441,7 +441,7 @@ export default function Homepage() {
                 {/* ── Desktop layout ── */}
                 <div className="hidden md:flex items-stretch">
                   {/* FROM */}
-                  <div className="flex-1 px-5 py-4">
+                  <div className="flex-1 min-w-0 px-4 lg:px-5 py-4">
                     <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
                       <MapPin className="w-3 h-3" /> From
                     </p>
@@ -466,7 +466,7 @@ export default function Homepage() {
                   </div>
 
                   {/* TO */}
-                  <div className="flex-1 px-5 py-4 border-l border-border/50">
+                  <div className="flex-1 min-w-0 px-4 lg:px-5 py-4 border-l border-border/50">
                     <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
                       <MapPin className="w-3 h-3" /> To
                     </p>
@@ -482,7 +482,7 @@ export default function Homepage() {
                   <div className="self-stretch w-px bg-border/50 my-3" />
 
                   {/* DATE */}
-                  <div className="flex-[1.1] px-5 py-4 border-l border-border/50">
+                  <div className="flex-[1.1] min-w-0 px-4 lg:px-5 py-4 border-l border-border/50">
                     <DatePicker value={date} onChange={setDate} />
                   </div>
 
@@ -490,7 +490,7 @@ export default function Homepage() {
                   <button
                     onClick={handleSearch}
                     disabled={isSearching}
-                    className="relative flex items-center justify-center gap-2.5 min-w-[140px] self-stretch px-8 text-sm font-semibold disabled:opacity-50 bg-primary text-primary-foreground rounded-r-2xl transition-all duration-200 hover:bg-primary/90 shadow-glow hover:shadow-glow-lg"
+                    className="relative shrink-0 flex items-center justify-center gap-2.5 min-w-[120px] lg:min-w-[140px] self-stretch px-5 lg:px-8 text-sm font-semibold disabled:opacity-50 bg-primary text-primary-foreground rounded-r-2xl transition-all duration-200 hover:bg-primary/90 shadow-glow hover:shadow-glow-lg whitespace-nowrap"
                   >
                     <Search className="w-4 h-4 shrink-0" />
                     {isSearching ? "Searching…" : "Find buses"}
@@ -565,7 +565,7 @@ export default function Homepage() {
   </section>
 
       {/* ── Route cards ───────────────────────────────────────────────────── */}
-      <section className="pt-2 pb-14 bg-background">
+      <section className="pt-2 pb-14">
         <div className="container mx-auto px-4">
           <div className="flex items-end justify-between mb-7">
             <div>

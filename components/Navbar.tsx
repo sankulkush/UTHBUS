@@ -78,8 +78,8 @@ export default function Navbar() {
 
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 select-none">
-              <span className="font-display text-xl font-bold tracking-tight leading-none">
-                <span className="text-foreground">uth</span>
+              <span className="text-xl font-extrabold tracking-tight leading-none">
+                <span className="text-blue-600 dark:text-blue-400">uth</span>
                 <span className="text-primary">bus</span>
               </span>
             </Link>

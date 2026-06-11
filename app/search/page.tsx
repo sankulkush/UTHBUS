@@ -71,7 +71,7 @@ export default function SearchPage() {
   };
 
   return (
-    <div className="min-h-screen bg-muted/30 pt-16">
+    <div className="min-h-screen bg-muted/30 bg-doodle pt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="mb-6">
           <SearchBar defaultFrom={from} defaultTo={to} defaultDate={date} />

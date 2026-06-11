@@ -182,7 +182,7 @@ export default function CitySelect({ value, onChange, placeholder, label }: City
         <input
           ref={inputRef}
           type="text"
-          className="flex-1 outline-none bg-transparent text-base font-medium text-foreground placeholder:text-muted-foreground/70"
+          className="flex-1 min-w-0 outline-none bg-transparent text-base font-medium text-foreground placeholder:text-muted-foreground/70 truncate"
           value={displayValue}
           onChange={handleInputChange}
           placeholder={placeholder}
@@ -190,7 +190,7 @@ export default function CitySelect({ value, onChange, placeholder, label }: City
         {value && !isOpen && (
           <button
             type="button"
-            className="ml-2 text-muted-foreground hover:text-foreground transition-colors"
+            className="ml-2 shrink-0 text-muted-foreground hover:text-foreground transition-colors"
             onClick={handleClear}
           >
             <XIcon className="w-4 h-4" />

@@ -139,29 +139,33 @@ export default function ReviewPayPage() {
   };
 
   return (
-    <div className="min-h-screen bg-muted/30 pt-16">
-      <div className="max-w-2xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-muted/30 bg-doodle pt-16">
+      <div className="max-w-2xl lg:max-w-5xl mx-auto px-4 py-8">
 
-        {/* Back */}
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" /> Back
-        </button>
-
-        {/* Progress */}
-        <div className="flex items-center gap-2 mb-8 text-xs font-medium">
-          <span className="text-muted-foreground">Seats</span>
-          <ChevronRight className="w-3 h-3 text-muted-foreground/50" />
-          <span className="text-muted-foreground">Passenger details</span>
-          <ChevronRight className="w-3 h-3 text-muted-foreground/50" />
-          <span className="text-primary">Review and pay</span>
+        {/* Back + progress — icon-only back button sits left of the step titles */}
+        <div className="flex items-center gap-3 mb-8">
+          <button
+            onClick={() => router.back()}
+            aria-label="Back"
+            title="Back"
+            className="shrink-0 w-9 h-9 rounded-full border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <div className="flex items-center gap-2 text-xs font-medium min-w-0">
+            <span className="text-muted-foreground">Seats</span>
+            <ChevronRight className="w-3 h-3 text-muted-foreground/50 shrink-0" />
+            <span className="text-muted-foreground">Passenger details</span>
+            <ChevronRight className="w-3 h-3 text-muted-foreground/50 shrink-0" />
+            <span className="text-primary">Review and pay</span>
+          </div>
         </div>
 
         <h1 className="font-display text-xl font-bold text-foreground mb-1">One last look</h1>
         <p className="text-sm text-muted-foreground mb-6">Make sure everything below looks right before you pay.</p>
 
+        {/* Desktop: trip details left, payment column right */}
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-6 lg:items-start">
         <div className="space-y-4">
 
           {/* Journey summary */}
@@ -238,6 +242,10 @@ export default function ReviewPayPage() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* Payment column — sticky on desktop */}
+        <div className="space-y-4 mt-4 lg:mt-0 lg:sticky lg:top-24">
 
           {/* Promo code */}
           <div className="bg-card border border-border rounded-xl p-5">
@@ -341,6 +349,7 @@ export default function ReviewPayPage() {
           <p className="text-center text-xs text-muted-foreground pb-2">
             By confirming you agree to the cancellation &amp; refund policy.
           </p>
+        </div>
         </div>
       </div>
     </div>
