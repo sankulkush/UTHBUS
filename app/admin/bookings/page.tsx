@@ -1,6 +1,6 @@
 "use client"
-import { useState, useEffect, useCallback, useMemo } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, useCallback, useMemo, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useAdminAuth } from "@/contexts/admin-auth-context"
 import { ActiveBookingsService } from "@/components/operator/counter/services/active-booking.service"
 import type { IActiveBooking } from "@/components/operator/counter/services/active-booking.service"
@@ -8,7 +8,7 @@ import { PaymentStatusBadge } from "@/components/booking/PaymentStatusBadge"
 import {
   LogOut, RefreshCw, Loader2, Bus, BookOpen, Search, X,
   User, Phone, MapPin, Calendar, Clock, Banknote,
-  CheckCircle2, XCircle, AlertTriangle, ChevronDown, Filter,
+  CheckCircle2, XCircle, AlertTriangle, ChevronDown, Filter, ShieldCheck, ScrollText,
 } from "lucide-react"
 
 const bookingService = new ActiveBookingsService()
@@ -33,9 +33,10 @@ function formatDate(ts: any): string {
   }
 }
 
-export default function AdminBookingsPage() {
+function AdminBookingsContent() {
   const { admin, loading: authLoading, logout } = useAdminAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [bookings, setBookings] = useState<IActiveBooking[]>([])
   const [loading, setLoading] = useState(true)
@@ -75,9 +76,12 @@ export default function AdminBookingsPage() {
     }
   }
 
+  const operatorFilter = searchParams.get("operator")
+
   const filteredBookings = useMemo(() => {
     const q = searchQuery.trim().toLowerCase()
     return bookings.filter((b) => {
+      if (operatorFilter && b.operatorId !== operatorFilter) return false
       if (statusFilter !== "all" && b.status !== statusFilter) return false
       if (!q) return true
       return (
@@ -90,7 +94,7 @@ export default function AdminBookingsPage() {
         b.operatorId?.toLowerCase().includes(q)
       )
     })
-  }, [bookings, searchQuery, statusFilter])
+  }, [bookings, searchQuery, statusFilter, operatorFilter])
 
   const counts = {
     all: bookings.length,
@@ -138,6 +142,18 @@ export default function AdminBookingsPage() {
               <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-primary/10 text-primary">
                 <BookOpen className="w-3.5 h-3.5" /> Bookings
               </span>
+              <button
+                onClick={() => router.push("/admin/operators")}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" /> Operators
+              </button>
+              <button
+                onClick={() => router.push("/admin/audit")}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <ScrollText className="w-3.5 h-3.5" /> Audit
+              </button>
             </nav>
           </div>
           <div className="flex items-center gap-2">
@@ -168,6 +184,18 @@ export default function AdminBookingsPage() {
           <span className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-semibold text-primary border-b-2 border-primary">
             <BookOpen className="w-3.5 h-3.5" /> Bookings
           </span>
+          <button
+            onClick={() => router.push("/admin/operators")}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+          >
+            <ShieldCheck className="w-3.5 h-3.5" /> Operators
+          </button>
+          <button
+            onClick={() => router.push("/admin/audit")}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+          >
+            <ScrollText className="w-3.5 h-3.5" /> Audit
+          </button>
         </div>
       </header>
 
@@ -192,6 +220,15 @@ export default function AdminBookingsPage() {
             ))}
           </div>
         </div>
+
+        {/* Operator filter chip (deep-linked from Operators page) */}
+        {operatorFilter && (
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-medium w-fit">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            Showing bookings for one operator
+            <button onClick={() => router.push("/admin/bookings")} className="ml-1 hover:underline">clear</button>
+          </div>
+        )}
 
         {/* Search + filter row */}
         <div className="flex gap-3 flex-wrap">
@@ -339,5 +376,13 @@ export default function AdminBookingsPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function AdminBookingsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>}>
+      <AdminBookingsContent />
+    </Suspense>
   )
 }

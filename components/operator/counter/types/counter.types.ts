@@ -51,6 +51,13 @@ export interface IBus {
   naSeats?: string[]
   // Admin verification gate — new buses start as pending_verification
   verificationStatus?: BusVerificationStatus
+  // Denormalised operator KYC state (Sprint 2). Lets user search gate on
+  // operator approval without a join. Kept in sync by KycService on review and
+  // stamped at bus-create time. Legacy buses without it are treated as approved.
+  operatorKycStatus?: "pending_verification" | "approved" | "rejected"
+  // Denormalised operator account status. false = operator suspended → hide
+  // from search. Absent/true = active. Kept in sync by KycService on suspend.
+  operatorActive?: boolean
 }
 
 export interface IBooking {

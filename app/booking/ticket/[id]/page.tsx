@@ -7,7 +7,9 @@ import {
   ActiveBookingsService,
   type IActiveBooking,
 } from "@/components/operator/counter/services/active-booking.service";
+import { BusService } from "@/components/operator/counter/services/bus.service";
 import { PayNowModal } from "@/components/booking/PayNowModal";
+import { VerifiedOperatorBadge } from "@/components/booking/VerifiedOperatorBadge";
 import {
   CheckCircle2, Printer, Download, Share2, ArrowLeft,
   MessageCircle, Loader2, AlertTriangle, Bus, Copy, Check,
@@ -34,6 +36,7 @@ function formatPaidAt(ts: any): string {
 }
 
 const service = new ActiveBookingsService();
+const busService = new BusService();
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -69,12 +72,26 @@ export default function TicketPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  // Verified-operator state. Bus docs are publicly readable and carry the
+  // denormalised operatorKycStatus, so we read it from there (a passenger
+  // cannot read the operator doc directly). Counter walk-in tickets for a
+  // not-yet-approved operator correctly show no badge.
+  const [operatorVerified, setOperatorVerified] = useState(false);
 
   useEffect(() => {
     if (!id) return;
     service
       .getActiveBookingById(id)
-      .then((b) => { if (!b) setError("Booking not found."); else setBooking(b); })
+      .then((b) => {
+        if (!b) { setError("Booking not found."); return; }
+        setBooking(b);
+        if (b.busId) {
+          busService
+            .getBusById(b.busId)
+            .then((bus) => setOperatorVerified(bus?.operatorKycStatus === "approved"))
+            .catch(() => setOperatorVerified(false));
+        }
+      })
       .catch(() => setError("Failed to load ticket. Please try again."))
       .finally(() => setLoading(false));
   }, [id]);
@@ -226,7 +243,10 @@ export default function TicketPage() {
             <div className="px-5 pt-5 pb-4 border-b border-border">
               {/* Bus name */}
               <div className="flex items-start justify-between gap-2 mb-4">
-                <p className="font-display font-bold text-foreground text-base leading-tight">{booking.busName}</p>
+                <div className="min-w-0">
+                  <p className="font-display font-bold text-foreground text-base leading-tight">{booking.busName}</p>
+                  {operatorVerified && <VerifiedOperatorBadge variant="full" className="mt-1" />}
+                </div>
                 <span className="shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
                   {booking.busType}
                 </span>

@@ -1,13 +1,13 @@
 "use client"
-import { useState, useEffect, useCallback } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, useCallback, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useAdminAuth } from "@/contexts/admin-auth-context"
 import { BusService } from "@/components/operator/counter/services/bus.service"
 import type { IBus } from "@/components/operator/counter/types/counter.types"
 import {
   CheckCircle2, XCircle, Clock, Bus, MapPin, LogOut,
   ChevronDown, RefreshCw, Loader2, PauseCircle, PlayCircle, Trash2,
-  BookOpen, AlertTriangle,
+  BookOpen, AlertTriangle, ShieldCheck, ScrollText,
 } from "lucide-react"
 
 const busService = new BusService()
@@ -24,9 +24,21 @@ function verificationBadge(s: string | undefined) {
   return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-400"><Clock className="w-3 h-3" /> Pending</span>
 }
 
-export default function AdminBusesPage() {
+/** Small badge showing the bus operator's KYC state (denormalised onto the bus). */
+function operatorKycBadge(s: string | undefined) {
+  if (s === "approved")
+    return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400"><ShieldCheck className="w-3 h-3" /> Operator verified</span>
+  if (s === "rejected")
+    return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400"><ShieldCheck className="w-3 h-3" /> Operator rejected</span>
+  if (s === "pending_verification")
+    return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-orange-50 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400"><ShieldCheck className="w-3 h-3" /> Operator pending</span>
+  return null
+}
+
+function AdminBusesContent() {
   const { admin, loading: authLoading, logout } = useAdminAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [buses, setBuses] = useState<IBus[]>([])
   const [loading, setLoading] = useState(true)
@@ -54,6 +66,18 @@ export default function AdminBusesPage() {
   useEffect(() => { if (admin) fetchBuses() }, [admin, fetchBuses])
 
   const handleVerify = async (busId: string, decision: "approved" | "rejected") => {
+    // Guard: don't let a bus go live if its operator hasn't passed KYC. Even if
+    // approved here, the search gate would still hide it — so block + explain.
+    if (decision === "approved") {
+      const bus = buses.find((b) => b.id === busId)
+      if (bus && bus.operatorKycStatus && bus.operatorKycStatus !== "approved") {
+        alert(
+          `This bus's operator is not verified (KYC: ${bus.operatorKycStatus.replace("_", " ")}). ` +
+          `Approve the operator under Operators first — otherwise the bus stays hidden from search.`
+        )
+        return
+      }
+    }
     setActionLoading(busId)
     try {
       await busService.verifyBus(busId, decision)
@@ -95,7 +119,11 @@ export default function AdminBusesPage() {
     }
   }
 
+  // Optional operator filter (deep-linked from the Operators page).
+  const operatorFilter = searchParams.get("operator")
+
   const filteredBuses = buses.filter((b) => {
+    if (operatorFilter && b.operatorId !== operatorFilter) return false
     const vs = b.verificationStatus ?? "pending_verification"
     if (tab === "pending") return vs === "pending_verification"
     if (tab === "approved") return vs === "approved"
@@ -152,6 +180,18 @@ export default function AdminBusesPage() {
               >
                 <BookOpen className="w-3.5 h-3.5" /> Bookings
               </button>
+              <button
+                onClick={() => router.push("/admin/operators")}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" /> Operators
+              </button>
+              <button
+                onClick={() => router.push("/admin/audit")}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <ScrollText className="w-3.5 h-3.5" /> Audit
+              </button>
             </nav>
           </div>
           <div className="flex items-center gap-2">
@@ -184,6 +224,18 @@ export default function AdminBusesPage() {
           >
             <BookOpen className="w-3.5 h-3.5" /> Bookings
           </button>
+          <button
+            onClick={() => router.push("/admin/operators")}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+          >
+            <ShieldCheck className="w-3.5 h-3.5" /> Operators
+          </button>
+          <button
+            onClick={() => router.push("/admin/audit")}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+          >
+            <ScrollText className="w-3.5 h-3.5" /> Audit
+          </button>
         </div>
       </header>
 
@@ -192,6 +244,15 @@ export default function AdminBusesPage() {
           <h1 className="text-lg font-bold text-foreground">Bus Management</h1>
           <p className="text-sm text-muted-foreground">Review, approve, suspend, and remove buses submitted by operators.</p>
         </div>
+
+        {/* Operator filter chip (deep-linked from Operators page) */}
+        {operatorFilter && (
+          <div className="mb-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-medium">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            Showing buses for one operator
+            <button onClick={() => router.push("/admin/buses")} className="ml-1 hover:underline">clear</button>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex gap-1 bg-muted p-1 rounded-xl w-fit overflow-x-auto">
@@ -239,6 +300,7 @@ export default function AdminBusesPage() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-semibold text-foreground text-sm">{bus.startPoint} → {bus.endPoint}</p>
                         {verificationBadge(bus.verificationStatus)}
+                        {operatorKycBadge(bus.operatorKycStatus)}
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">{bus.name} · {bus.type}{bus.isAC ? " · AC" : ""}</p>
                     </div>
@@ -370,5 +432,13 @@ export default function AdminBusesPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function AdminBusesPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>}>
+      <AdminBusesContent />
+    </Suspense>
   )
 }

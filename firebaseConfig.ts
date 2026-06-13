@@ -1,6 +1,7 @@
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app"
 import { getAuth, GoogleAuthProvider, type Auth } from "firebase/auth"
 import { getFirestore, type Firestore } from "firebase/firestore"
+import { getStorage, type FirebaseStorage } from "firebase/storage"
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -23,6 +24,7 @@ const app: FirebaseApp = hasConfig
 
 export const auth: Auth = hasConfig ? getAuth(app) : ({} as Auth)
 export const firestore: Firestore = hasConfig ? getFirestore(app) : ({} as Firestore)
+export const storage: FirebaseStorage = hasConfig ? getStorage(app) : ({} as FirebaseStorage)
 
 export const googleProvider = new GoogleAuthProvider()
 googleProvider.addScope("email")

@@ -27,11 +27,28 @@ export class BusService implements IBusService {
   }
 
   async createBus(bus: Omit<IBus, "id">): Promise<IBus> {
+    // Denormalise the operator's current KYC status onto the bus so user search
+    // can gate on operator approval without a join (Sprint 2). Defaults to
+    // pending if the operator doc is missing the field.
+    let operatorKycStatus: IBus["operatorKycStatus"] = "pending_verification";
+    let operatorActive = true;
+    try {
+      const opSnap = await getDoc(docRef(firestore, "operators", bus.operatorId));
+      if (opSnap.exists()) {
+        operatorKycStatus = (opSnap.data().kycStatus as IBus["operatorKycStatus"]) ?? "pending_verification";
+        operatorActive = opSnap.data().accountStatus !== "suspended";
+      }
+    } catch {
+      /* fall back to pending — admin approval re-stamps it anyway */
+    }
+
     // New buses require UthBus admin approval before going live.
     const busData = {
       ...bus,
       status: "Inactive" as const,
       verificationStatus: "pending_verification" as const,
+      operatorKycStatus,
+      operatorActive,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
@@ -75,6 +92,11 @@ export class BusService implements IBusService {
     return buses.filter((b) => {
       // Only show admin-approved buses (or legacy buses without the field)
       if (b.verificationStatus && b.verificationStatus !== "approved") return false;
+      // ...whose operator has passed KYC (Sprint 2). Legacy buses without the
+      // denormalised field are treated as approved so nothing pre-KYC vanishes.
+      if (b.operatorKycStatus && b.operatorKycStatus !== "approved") return false;
+      // ...and whose operator account isn't suspended (only an explicit false hides).
+      if (b.operatorActive === false) return false;
       return !b.unavailableDates?.includes(date);
     });
   }

@@ -5,6 +5,14 @@ import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firest
 import { auth, firestore as db } from "@/firebaseConfig"
 import { useRouter } from "next/navigation"
 
+/** Operator-level KYC review state. Set at registration, flipped by admin. */
+export type KycStatus = "pending_verification" | "approved" | "rejected"
+
+/** Operator account status, orthogonal to KYC. Admin can suspend a bad actor
+ *  even after they've been KYC-approved. Suspended operators can't log in and
+ *  their buses are hidden from user search. */
+export type AccountStatus = "active" | "suspended"
+
 export interface OperatorProfile {
   uid: string
   email: string
@@ -12,11 +20,20 @@ export interface OperatorProfile {
   phoneNumber: string
   companyName?: string
   licenseNumber?: string
+  panNumber?: string
   address?: string
   description?: string
   contactNumber?: string
   isOperator: boolean
   isUser: boolean
+  // KYC gate (Sprint 2). New operators start pending_verification; their buses
+  // cannot surface in user search until an admin sets this to "approved".
+  kycStatus?: KycStatus
+  kycRejectionReason?: string
+  kycReviewedAt?: any
+  kycReviewedBy?: string // admin email
+  // Account status (admin suspend/reactivate). Absent = active (legacy operators).
+  accountStatus?: AccountStatus
   createdAt?: any
   updatedAt?: any
 }
@@ -34,7 +51,9 @@ interface OperatorAuthContextType {
     description?: string
     name?: string
     phoneNumber?: string
-  }) => Promise<void>
+    licenseNumber?: string
+    panNumber?: string
+  }) => Promise<string>
   logout: () => Promise<void>
   updateProfile: (profileData: Partial<OperatorProfile>) => Promise<void>
   refreshToken: () => Promise<void>
@@ -133,6 +152,10 @@ export const OperatorAuthProvider = ({ children }: OperatorAuthProviderProps) =>
       await signOut(auth)
       throw new Error("This account is not authorised as an operator.")
     }
+    if (data.accountStatus === "suspended") {
+      await signOut(auth)
+      throw new Error("This operator account has been suspended. Please contact UthBus support.")
+    }
 
     await setUserToken(firebaseUser)
     setOperator({ ...data, uid: firebaseUser.uid })
@@ -150,8 +173,10 @@ export const OperatorAuthProvider = ({ children }: OperatorAuthProviderProps) =>
       description?: string
       name?: string
       phoneNumber?: string
+      licenseNumber?: string
+      panNumber?: string
     }
-  ) => {
+  ): Promise<string> => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password)
     const firebaseUser = userCredential.user
 
@@ -161,12 +186,15 @@ export const OperatorAuthProvider = ({ children }: OperatorAuthProviderProps) =>
       name: profileData.name || profileData.companyName,
       phoneNumber: profileData.phoneNumber || profileData.contactNumber || "",
       companyName: profileData.companyName,
-      licenseNumber: "",
+      licenseNumber: profileData.licenseNumber || "",
+      panNumber: profileData.panNumber || "",
       address: profileData.address || "",
       description: profileData.description || "",
       contactNumber: profileData.contactNumber || "",
       isOperator: true,
       isUser: false,
+      // KYC gate — every new operator starts unverified (Sprint 2).
+      kycStatus: "pending_verification",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     }
@@ -176,7 +204,9 @@ export const OperatorAuthProvider = ({ children }: OperatorAuthProviderProps) =>
 
     await setUserToken(firebaseUser)
     setOperator(operatorProfile)
-    router.push("/operator/counter")
+    // NOTE: no redirect here. The register page uploads KYC documents under the
+    // returned uid before navigating, so it owns the post-registration redirect.
+    return firebaseUser.uid
   }
 
   const logout = async () => {
