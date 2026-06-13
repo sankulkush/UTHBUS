@@ -4,9 +4,10 @@ import { useState } from "react";
 import {
   Plus, Pencil, Trash2, X,
   Bus, CheckCircle2, AlertCircle, Wrench, Calendar,
-  MapPin, Clock, Tag, Settings2, Hash, Ban,
+  MapPin, Clock, Tag, Settings2, Hash, Ban, ImageIcon,
 } from "lucide-react";
 import { useCounter } from "../context/counter-context";
+import { BusPhotoUpload } from "@/components/operator/BusPhotoUpload";
 import { BusService } from "../services/bus.service";
 import { ActiveBookingsService } from "../services/active-booking.service";
 import { SeatMapNAEditor } from "../components/seat-map";
@@ -388,6 +389,17 @@ function BusForm({ initial, operatorId, onSave, onCancel, loading }: BusFormProp
                 );
               })}
             </div>
+          </section>
+
+          {/* ── Photos ── */}
+          <section>
+            <SectionHeader icon={ImageIcon} title="Photos" hint="Shown to travelers in search" />
+            <BusPhotoUpload
+              operatorId={operatorId}
+              value={form.photos || []}
+              onChange={(photos) => set("photos", photos)}
+              disabled={loading}
+            />
           </section>
 
           {/* Error */}

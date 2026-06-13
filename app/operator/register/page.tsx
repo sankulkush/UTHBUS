@@ -8,10 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { BusIcon, ArrowLeft, AlertCircle, CheckCircle } from "lucide-react"
+import { BusIcon, ArrowLeft, AlertCircle, CheckCircle, ShieldCheck } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { PasswordInput } from "@/components/ui/password-input"
+import { KycDocInput } from "@/components/operator/kyc/KycDocInput"
+import { kycService } from "@/lib/compliance/kyc.service"
+import { DOC_TYPE_LABELS, validateComplianceFile } from "@/lib/compliance/types"
 
 export default function OperatorRegister() {
   const { register } = useOperatorAuth()
@@ -23,6 +26,14 @@ export default function OperatorRegister() {
     contactNumber: "",
     address: "",
     description: "",
+    licenseNumber: "",
+    panNumber: "",
+  })
+  // KYC documents — all three required at registration (companyCert/license/pan).
+  const [docs, setDocs] = useState<{ companyCert: File | null; license: File | null; pan: File | null }>({
+    companyCert: null,
+    license: null,
+    pan: null,
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -51,6 +62,29 @@ export default function OperatorRegister() {
       return false
     }
 
+    if (!formData.licenseNumber || !formData.panNumber) {
+      setError("Please enter your operator license and PAN/VAT numbers")
+      return false
+    }
+
+    // All three documents required, each within type/size limits.
+    for (const [key, label] of [
+      ["companyCert", DOC_TYPE_LABELS.companyCert],
+      ["license", DOC_TYPE_LABELS.license],
+      ["pan", DOC_TYPE_LABELS.pan],
+    ] as const) {
+      const file = docs[key]
+      if (!file) {
+        setError(`Please upload your ${label}`)
+        return false
+      }
+      const fileError = validateComplianceFile(file)
+      if (fileError) {
+        setError(`${label}: ${fileError}`)
+        return false
+      }
+    }
+
     return true
   }
 
@@ -66,18 +100,29 @@ export default function OperatorRegister() {
     setLoading(true)
 
     try {
-      await register(formData.email, formData.password, {
+      const uid = await register(formData.email, formData.password, {
         companyName: formData.companyName,
         contactNumber: formData.contactNumber,
         address: formData.address,
         description: formData.description,
         name: formData.companyName, // Use company name as the operator name
-        phoneNumber: formData.contactNumber
+        phoneNumber: formData.contactNumber,
+        licenseNumber: formData.licenseNumber,
+        panNumber: formData.panNumber,
       })
 
+      // Upload the three KYC documents under the new operator's uid. The account
+      // already exists at this point, so a later upload failure leaves a
+      // recoverable state (operator can re-upload from their dashboard).
+      await Promise.all([
+        kycService.uploadKycDoc(uid, "companyCert", docs.companyCert!),
+        kycService.uploadKycDoc(uid, "license", docs.license!),
+        kycService.uploadKycDoc(uid, "pan", docs.pan!),
+      ])
+
       setSuccess(true)
-      
-      // The auth context will handle the redirect to /operator/counter
+
+      // Account created + docs uploaded — head to the dashboard (KYC banner shows there).
       setTimeout(() => {
         router.push("/operator/counter")
       }, 2000)
@@ -120,9 +165,10 @@ export default function OperatorRegister() {
         <Card className="w-full max-w-md">
           <CardContent className="p-8 text-center">
             <CheckCircle className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
-            <h2 className="font-display text-2xl font-bold text-foreground mb-2">You&apos;re all set!</h2>
+            <h2 className="font-display text-2xl font-bold text-foreground mb-2">Account created!</h2>
             <p className="text-muted-foreground mb-4">
-              Your operator account has been created. Taking you to your dashboard…
+              Your documents are in for verification. We&apos;ll review them shortly — your buses go
+              live on search once you&apos;re approved. Taking you to your dashboard…
             </p>
             <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto" />
           </CardContent>
@@ -252,6 +298,35 @@ export default function OperatorRegister() {
                 </div>
               </div>
 
+              {/* License + PAN/VAT — paired on wider screens */}
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="licenseNumber">Operator License Number *</Label>
+                  <Input
+                    id="licenseNumber"
+                    name="licenseNumber"
+                    value={formData.licenseNumber}
+                    onChange={handleChange}
+                    required
+                    disabled={loading}
+                    placeholder="e.g. DoTM-2024-001"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="panNumber">PAN / VAT Number *</Label>
+                  <Input
+                    id="panNumber"
+                    name="panNumber"
+                    value={formData.panNumber}
+                    onChange={handleChange}
+                    required
+                    disabled={loading}
+                    placeholder="e.g. 301234567"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="description">Company Description</Label>
                 <Textarea
@@ -262,6 +337,44 @@ export default function OperatorRegister() {
                   rows={3}
                   disabled={loading}
                   placeholder="Brief description of your bus service"
+                />
+              </div>
+
+              {/* Verification documents — required for KYC. */}
+              <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
+                <div className="flex items-start gap-2">
+                  <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0 text-primary" />
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Verification documents</p>
+                    <p className="text-xs text-muted-foreground">
+                      Required to verify your company. Your buses go live on search once we approve these.
+                      PDF or image, max 5MB each.
+                    </p>
+                  </div>
+                </div>
+                <KycDocInput
+                  type="companyCert"
+                  label={DOC_TYPE_LABELS.companyCert}
+                  value={docs.companyCert}
+                  onChange={(file) => setDocs((d) => ({ ...d, companyCert: file }))}
+                  disabled={loading}
+                  required
+                />
+                <KycDocInput
+                  type="license"
+                  label={DOC_TYPE_LABELS.license}
+                  value={docs.license}
+                  onChange={(file) => setDocs((d) => ({ ...d, license: file }))}
+                  disabled={loading}
+                  required
+                />
+                <KycDocInput
+                  type="pan"
+                  label={DOC_TYPE_LABELS.pan}
+                  value={docs.pan}
+                  onChange={(file) => setDocs((d) => ({ ...d, pan: file }))}
+                  disabled={loading}
+                  required
                 />
               </div>
 

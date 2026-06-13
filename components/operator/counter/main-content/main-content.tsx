@@ -4,6 +4,7 @@ import React, { lazy, Suspense } from "react";
 import { Menu, Loader2 } from "lucide-react";
 import type { ActiveSection } from "../types/counter.types";
 import { BookTicketPage } from "../pages/book-ticket.page";
+import { KycStatusBanner } from "@/components/operator/kyc/KycStatusBanner";
 
 // Lazy-load heavier pages
 const DashboardPage = lazy(() => import("../pages/dashboard.page").then((m) => ({ default: m.DashboardPage })));
@@ -75,6 +76,8 @@ export function MainContent({ activeSection, onSectionChange, onToggleMobileSide
 
       {/* Page content */}
       <div className="flex-1 overflow-y-auto">
+        {/* KYC status — pinned above every section until the operator is approved */}
+        <KycStatusBanner />
         <Suspense fallback={<PageLoader />}>
           {renderPage()}
         </Suspense>
