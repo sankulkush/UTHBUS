@@ -76,8 +76,13 @@ export function Sidebar({
 
   const SidebarInner = () => (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-4 border-b border-border shrink-0">
+      {/* Header — collapsed: logo and toggle stack vertically so nothing clips in the 60px rail */}
+      <div
+        className={cn(
+          "flex items-center justify-between px-4 py-4 border-b border-border shrink-0",
+          collapsed && "flex-col gap-3 px-2"
+        )}
+      >
         {!collapsed && (
           <div className="flex items-center gap-2 min-w-0">
             {/* Drop the final brand logo at /public/placeholder-logo.png */}
@@ -99,11 +104,11 @@ export function Sidebar({
           <img
             src="/placeholder-logo.png"
             alt="UthBus"
-            className="w-8 h-8 rounded-lg object-contain mx-auto"
+            className="w-8 h-8 rounded-lg object-contain"
           />
         )}
         <button
-          onClick={collapsed ? onToggleCollapse : onToggleCollapse}
+          onClick={onToggleCollapse}
           className="hidden lg:flex w-7 h-7 rounded-md hover:bg-muted items-center justify-center text-muted-foreground hover:text-foreground transition-colors shrink-0"
         >
           {collapsed ? <Menu className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}

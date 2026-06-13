@@ -89,9 +89,9 @@ export default function SearchBar({
       {/* ── Desktop ── */}
       <div className="hidden md:block bg-card rounded-xl shadow-soft border border-border overflow-hidden">
         <form onSubmit={handleSubmit}>
-          <div className="flex items-center">
+          <div className="flex items-stretch">
             {/* From */}
-            <div className="flex-1 border-r border-border px-4 py-3">
+            <div className="flex-1 min-w-0 border-r border-border px-3 lg:px-4 py-3">
               <CitySelect
                 value={formData.from}
                 onChange={(v) => handleInputChange('from', v)}
@@ -101,7 +101,7 @@ export default function SearchBar({
             </div>
 
             {/* Swap */}
-            <div className="px-3 shrink-0">
+            <div className="flex items-center px-1.5 lg:px-2.5 shrink-0">
               <button
                 type="button"
                 onClick={swapLocations}
@@ -113,7 +113,7 @@ export default function SearchBar({
             </div>
 
             {/* To */}
-            <div className="flex-1 border-r border-border px-4 py-3">
+            <div className="flex-1 min-w-0 border-r border-border px-3 lg:px-4 py-3">
               <CitySelect
                 value={formData.to}
                 onChange={(v) => handleInputChange('to', v)}
@@ -123,35 +123,33 @@ export default function SearchBar({
             </div>
 
             {/* Date */}
-            <div className="flex-1 border-r border-border px-4 py-1">
+            <div className="flex-1 min-w-0 border-r border-border px-3 lg:px-4 py-1">
               <DatePicker
                 value={formData.date}
                 onChange={(v) => handleInputChange('date', v)}
               />
             </div>
 
-            {/* Search button */}
-            <div className="px-4 shrink-0">
-              <button
-                type="submit"
-                disabled={isLoading || !formData.from || !formData.to || !formData.date}
-                className="flex items-center gap-2 bg-primary hover:opacity-90 disabled:opacity-50 text-primary-foreground px-6 lg:px-8 py-4 rounded-lg font-semibold transition-all min-w-[120px] lg:min-w-[140px] justify-center text-sm uppercase tracking-wide"
-              >
-                {isLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-foreground border-t-transparent" />
-                    <span className="hidden lg:inline">Searching...</span>
-                    <span className="lg:hidden">...</span>
-                  </>
-                ) : (
-                  <>
-                    <Search className="w-4 h-4" />
-                    <span className="hidden lg:inline">Search Buses</span>
-                    <span className="lg:hidden">Search</span>
-                  </>
-                )}
-              </button>
-            </div>
+            {/* Search button — attached to the bar, full height */}
+            <button
+              type="submit"
+              disabled={isLoading || !formData.from || !formData.to || !formData.date}
+              className="shrink-0 self-stretch flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground px-5 lg:px-8 font-semibold transition-all min-w-[110px] lg:min-w-[150px] text-sm shadow-glow"
+            >
+              {isLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-foreground border-t-transparent" />
+                  <span className="hidden lg:inline">Searching…</span>
+                  <span className="lg:hidden">…</span>
+                </>
+              ) : (
+                <>
+                  <Search className="w-4 h-4" />
+                  <span className="hidden lg:inline">Find buses</span>
+                  <span className="lg:hidden">Search</span>
+                </>
+              )}
+            </button>
           </div>
         </form>
       </div>
@@ -185,7 +183,7 @@ export default function SearchBar({
             <div className="bg-card border border-border rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-hidden">
               {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-border">
-                <h2 className="text-base font-semibold text-foreground">Search for Buses</h2>
+                <h2 className="text-base font-semibold text-foreground font-display">Edit your trip</h2>
                 <button
                   onClick={() => setShowMobileModal(false)}
                   className="p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground"
@@ -228,7 +226,7 @@ export default function SearchBar({
                 </div>
 
                 <div className="border border-border rounded-xl px-4 py-3 bg-background">
-                  <p className="text-xs text-muted-foreground font-medium mb-1">Journey Date</p>
+                  <p className="text-xs text-muted-foreground font-medium mb-1">Date</p>
                   <DatePicker
                     value={formData.date}
                     onChange={(v) => handleInputChange('date', v)}
@@ -238,17 +236,17 @@ export default function SearchBar({
                 <button
                   type="submit"
                   disabled={isLoading || !formData.from || !formData.to || !formData.date}
-                  className="w-full flex items-center justify-center gap-2 bg-primary hover:opacity-90 disabled:opacity-50 text-primary-foreground px-6 py-4 rounded-xl font-semibold transition-all text-base"
+                  className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground px-6 py-4 rounded-xl font-semibold transition-all text-base shadow-glow"
                 >
                   {isLoading ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary-foreground border-t-transparent" />
-                      Searching...
+                      Searching…
                     </>
                   ) : (
                     <>
                       <Search className="w-5 h-5" />
-                      Search Buses
+                      Find buses
                     </>
                   )}
                 </button>

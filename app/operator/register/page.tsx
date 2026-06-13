@@ -116,15 +116,15 @@ export default function OperatorRegister() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-muted/30 pt-16 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardContent className="p-8 text-center">
-            <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-green-700 mb-2">Registration Successful!</h2>
-            <p className="text-gray-600 mb-4">
-              Your operator account has been created successfully. Redirecting to your dashboard...
+            <CheckCircle className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
+            <h2 className="font-display text-2xl font-bold text-foreground mb-2">You&apos;re all set!</h2>
+            <p className="text-muted-foreground mb-4">
+              Your operator account has been created. Taking you to your dashboard…
             </p>
-            <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto" />
+            <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto" />
           </CardContent>
         </Card>
       </div>
@@ -132,28 +132,37 @@ export default function OperatorRegister() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center space-x-2 text-2xl font-bold">
-            <span className="text-blue-600">uth</span>
-            <span className="text-red-600">bus</span>
+    <div className="min-h-screen bg-muted/30 bg-doodle pt-16">
+      <div className="max-w-md md:max-w-2xl mx-auto px-4 py-10">
+
+        {/* Back + title — icon-only back button sits left of the heading */}
+        <div className="flex items-center gap-3 mb-6">
+          <Link
+            href="/"
+            aria-label="Back to home"
+            title="Back to home"
+            className="shrink-0 w-9 h-9 rounded-full border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
           </Link>
-          <p className="text-gray-600 mt-2">Register as Bus Operator</p>
+          <div className="min-w-0">
+            <h1 className="font-display text-lg font-semibold text-foreground leading-tight">List your buses on UthBus</h1>
+            <p className="text-sm text-muted-foreground">Create your operator account in a couple of minutes.</p>
+          </div>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <BusIcon className="w-5 h-5" />
-              <span>Operator Registration</span>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <BusIcon className="w-5 h-5 text-primary" />
+              <span>Operator details</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded-md text-sm flex items-start space-x-2">
-                  <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <div className="bg-destructive/10 border border-destructive/30 text-destructive p-3 rounded-lg text-sm flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
                   <span>{error}</span>
                 </div>
               )}
@@ -172,32 +181,35 @@ export default function OperatorRegister() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Password *</Label>
-                <PasswordInput
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                  minLength={6}
-                  placeholder="At least 6 characters"
-                />
-              </div>
+              {/* Passwords — paired on wider screens */}
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password *</Label>
+                  <PasswordInput
+                    id="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    disabled={loading}
+                    minLength={6}
+                    placeholder="At least 6 characters"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password *</Label>
-                <PasswordInput
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  required
-                  disabled={loading}
-                  minLength={6}
-                  placeholder="Confirm your password"
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm Password *</Label>
+                  <PasswordInput
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    required
+                    disabled={loading}
+                    minLength={6}
+                    placeholder="Confirm your password"
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -213,28 +225,31 @@ export default function OperatorRegister() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="contactNumber">Contact Number</Label>
-                <Input
-                  id="contactNumber"
-                  name="contactNumber"
-                  value={formData.contactNumber}
-                  onChange={handleChange}
-                  disabled={loading}
-                  placeholder="+977-1234567890"
-                />
-              </div>
+              {/* Contact + address — paired on wider screens */}
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="contactNumber">Contact Number</Label>
+                  <Input
+                    id="contactNumber"
+                    name="contactNumber"
+                    value={formData.contactNumber}
+                    onChange={handleChange}
+                    disabled={loading}
+                    placeholder="+977-1234567890"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
-                <Input
-                  id="address"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  disabled={loading}
-                  placeholder="Company Address"
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="address">Address</Label>
+                  <Input
+                    id="address"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    disabled={loading}
+                    placeholder="Company Address"
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -252,9 +267,9 @@ export default function OperatorRegister() {
 
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Creating Account...</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                    <span>Creating Account…</span>
                   </div>
                 ) : (
                   "Create Account"
@@ -263,15 +278,8 @@ export default function OperatorRegister() {
             </form>
 
             <div className="mt-4 text-center">
-              <Link href="/operator/login" className="text-blue-600 hover:underline text-sm">
+              <Link href="/operator/login" className="text-primary hover:underline text-sm">
                 Already have an account? Sign in
-              </Link>
-            </div>
-
-            <div className="mt-4">
-              <Link href="/" className="inline-flex items-center text-gray-600 hover:text-gray-800 text-sm">
-                <ArrowLeft className="w-4 h-4 mr-1" />
-                Back to Home
               </Link>
             </div>
           </CardContent>

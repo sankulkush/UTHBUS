@@ -50,7 +50,7 @@ export default function AboutPage() {
             <BusIcon className="w-4 h-4" />
             About UthBus
           </div>
-          <h1 className="text-4xl sm:text-5xl font-bold text-foreground mb-4 leading-tight">
+          <h1 className="font-display text-4xl sm:text-5xl font-bold text-foreground mb-4 leading-tight">
             Connecting cities, <br />
             <span className="text-primary">one journey at a time</span>
           </h1>
@@ -66,7 +66,7 @@ export default function AboutPage() {
         <div className="max-w-4xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-6">
           {stats.map((stat) => (
             <div key={stat.label} className="text-center">
-              <p className="text-3xl font-bold text-primary">{stat.value}</p>
+              <p className="font-display text-3xl font-bold text-primary tabular-nums">{stat.value}</p>
               <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
             </div>
           ))}
@@ -76,7 +76,7 @@ export default function AboutPage() {
       {/* Our Story */}
       <section className="py-16 px-4">
         <div className="max-w-3xl mx-auto">
-          <h2 className="text-2xl font-bold text-foreground mb-4">Our Story</h2>
+          <h2 className="font-display text-2xl font-bold text-foreground mb-4">Our story</h2>
           <div className="space-y-4 text-muted-foreground leading-relaxed">
             <p>
               UthBus was founded with a single mission: make bus travel as seamless as
@@ -100,7 +100,7 @@ export default function AboutPage() {
       {/* Values */}
       <section className="py-16 px-4 bg-muted/30 border-y border-border">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold text-foreground mb-8 text-center">What We Stand For</h2>
+          <h2 className="font-display text-2xl font-bold text-foreground mb-8 text-center">What we stand for</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {values.map((v) => (
               <Card key={v.title} className="border-border">
@@ -123,12 +123,12 @@ export default function AboutPage() {
       <section className="py-16 px-4 text-center">
         <div className="max-w-xl mx-auto">
           <MapPinIcon className="w-10 h-10 text-primary mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-foreground mb-3">Ready to travel?</h2>
+          <h2 className="font-display text-2xl font-bold text-foreground mb-3">Ready to go somewhere?</h2>
           <p className="text-muted-foreground mb-6">
             Search hundreds of routes and book your seat in seconds.
           </p>
           <Button asChild size="lg">
-            <Link href="/">Search Buses</Link>
+            <Link href="/">Find a bus</Link>
           </Button>
         </div>
       </section>

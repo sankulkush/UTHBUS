@@ -12,6 +12,7 @@ const config: Config = {
     extend: {
       fontFamily: {
         sans: ["var(--font-inter)", "Inter", "system-ui", "-apple-system", "sans-serif"],
+        display: ["var(--font-display)", "var(--font-inter)", "system-ui", "sans-serif"],
       },
       colors: {
         background: "hsl(var(--background))",
@@ -74,6 +75,8 @@ const config: Config = {
         soft:    "0 1px 3px 0 rgb(0 0 0 / 0.06), 0 4px 12px -2px rgb(0 0 0 / 0.08)",
         "soft-md": "0 2px 6px 0 rgb(0 0 0 / 0.07), 0 8px 24px -4px rgb(0 0 0 / 0.10)",
         "soft-lg": "0 4px 12px 0 rgb(0 0 0 / 0.08), 0 16px 40px -8px rgb(0 0 0 / 0.12)",
+        glow: "0 8px 24px -6px hsl(var(--primary) / 0.45)",
+        "glow-lg": "0 12px 36px -6px hsl(var(--primary) / 0.55)",
       },
       keyframes: {
         "accordion-down": {

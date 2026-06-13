@@ -140,7 +140,7 @@ export default function ResultsList({
       <div className="lg:w-3/4">
         <div className="text-center py-12">
           <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-6 max-w-md mx-auto">
-            <p className="text-destructive font-medium mb-1">Error Loading Buses</p>
+            <p className="text-destructive font-medium mb-1">Something went wrong on our end</p>
             <p className="text-destructive/80 text-sm">{error}</p>
           </div>
         </div>
@@ -153,9 +153,9 @@ export default function ResultsList({
       <div className="lg:w-3/4">
         <div className="text-center py-12">
           <div className="bg-muted/50 border border-border rounded-xl p-6 max-w-md mx-auto">
-            <p className="text-foreground font-medium mb-1">No buses found</p>
+            <p className="text-foreground font-medium mb-1">No buses on this day yet</p>
             <p className="text-muted-foreground text-sm">
-              Try adjusting your search criteria or filters to find available buses.
+              Try a different date, or loosen the filters a little.
             </p>
           </div>
         </div>
@@ -187,13 +187,14 @@ export default function ResultsList({
       {/* Controls bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-card p-4 rounded-xl border border-border shadow-soft">
         <p className="text-sm text-muted-foreground">
-          <span className="font-medium text-foreground">{sortedBuses.length}</span> buses found
+          <span className="font-semibold text-foreground">{sortedBuses.length}</span>
+          {" "}{sortedBuses.length === 1 ? "bus" : "buses"} for this trip
           {filteredBuses.length !== buses.length && (
-            <span className="ml-1.5">(filtered from {buses.length})</span>
+            <span className="ml-1.5">— showing {filteredBuses.length} of {buses.length}</span>
           )}
           {searchDate && (
-            <span className="inline-flex items-center ml-2 px-2 py-0.5 text-xs bg-accent text-accent-foreground rounded-full">
-              {new Date(searchDate).toLocaleDateString()}
+            <span className="inline-flex items-center ml-2 px-2 py-0.5 text-xs font-medium bg-accent text-accent-foreground rounded-full">
+              {new Date(searchDate).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
             </span>
           )}
         </p>

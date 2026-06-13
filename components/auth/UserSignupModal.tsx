@@ -69,8 +69,8 @@ export default function UserSignupModal({ isOpen, onClose, onSwitchToLogin, onLo
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Create Account</DialogTitle>
-          <DialogDescription>Sign up to start booking your bus tickets</DialogDescription>
+          <DialogTitle>Create your account</DialogTitle>
+          <DialogDescription>Takes less than a minute — then you can book in a couple of taps.</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -81,7 +81,7 @@ export default function UserSignupModal({ isOpen, onClose, onSwitchToLogin, onLo
           )}
 
           <div className="space-y-1.5">
-            <Label htmlFor="fullName">Full Name *</Label>
+            <Label htmlFor="fullName">Full name *</Label>
             <Input id="fullName" type="text" required value={formData.fullName} onChange={set("fullName")} placeholder="Your full name" />
           </div>
 
@@ -91,7 +91,7 @@ export default function UserSignupModal({ isOpen, onClose, onSwitchToLogin, onLo
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="phoneNumber">Phone Number *</Label>
+            <Label htmlFor="phoneNumber">Phone number *</Label>
             <Input id="phoneNumber" type="tel" required value={formData.phoneNumber} onChange={set("phoneNumber")} placeholder="Your phone number" />
           </div>
 
@@ -101,13 +101,13 @@ export default function UserSignupModal({ isOpen, onClose, onSwitchToLogin, onLo
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="confirmPassword">Confirm Password *</Label>
+            <Label htmlFor="confirmPassword">Confirm password *</Label>
             <PasswordInput id="confirmPassword" required value={formData.confirmPassword} onChange={set("confirmPassword")} placeholder="Confirm your password" />
           </div>
 
           <div className="space-y-2.5">
             <Button type="submit" disabled={loading} className="w-full">
-              {loading ? "Creating Account…" : "Create Account"}
+              {loading ? "Creating your account…" : "Create account"}
             </Button>
             <Button type="button" variant="outline" onClick={handleGoogleSignup} disabled={loading} className="w-full">
               Continue with Google

@@ -350,17 +350,18 @@ export default function BookingsPage() {
           {filteredBookings.map((booking) => (
             <Card key={booking.id} className="hover:shadow-soft-md transition-shadow">
               <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-start space-x-4">
-                    <div className="bg-primary/10 p-3 rounded-lg">
+                {/* Stacks on mobile so the status chips never get squeezed off the card */}
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+                  <div className="flex items-start space-x-4 min-w-0">
+                    <div className="bg-primary/10 p-3 rounded-lg shrink-0">
                       <BusIcon className="w-6 h-6 text-primary" />
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-lg text-foreground">{booking.busName}</h3>
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-lg text-foreground truncate">{booking.busName}</h3>
                       <p className="text-sm text-muted-foreground mb-1">
                         {booking.from} → {booking.to}
                       </p>
-                      <div className="flex items-center gap-2 mt-1">
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary font-mono font-bold text-sm tracking-wider">
                           PNR · {booking.pnr || "—"}
                         </span>
@@ -370,8 +371,8 @@ export default function BookingsPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                  <div className="shrink-0 text-left sm:text-right">
+                    <div className="flex items-center justify-start sm:justify-end gap-1.5 flex-wrap">
                       <Badge className={getStatusColor(booking.status)}>
                         {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                       </Badge>
