@@ -5,10 +5,12 @@ import {
   ChevronDown, ChevronUp, Users, ImageIcon,
 } from 'lucide-react';
 import type { IBus } from '@/components/operator/counter/types/counter.types';
+import { VerifiedOperatorBadge } from '@/components/booking/VerifiedOperatorBadge';
+import { Lightbox } from '@/components/ui/Lightbox';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
-interface SeatCell { label: string; booked: boolean; selected: boolean }
+interface SeatCell { label: string; booked: boolean; selected: boolean; na: boolean }
 type SeatRow = (SeatCell | null)[];
 type TabId = 'amenities' | 'boarding' | 'dropping' | 'rest-stop' | 'reviews';
 
@@ -24,8 +26,10 @@ interface BusCardProps {
 // ── Seat layout ────────────────────────────────────────────────────────────────
 
 function buildLayout(bus: IBus, booked: string[], selected: string[]): SeatRow[] {
+  // Seats the operator marked N/A are blocked from booking on the user side too.
+  const na = bus.naSeats || [];
   const cell = (label: string): SeatCell => ({
-    label, booked: booked.includes(label), selected: selected.includes(label),
+    label, booked: booked.includes(label), selected: selected.includes(label), na: na.includes(label),
   });
   if (bus.type === 'Micro') {
     // 5 rows × 3 cols = 15 seats
@@ -101,6 +105,7 @@ export default function BusCard({ bus, onSelectSeats, bookedSeats, searchDate }:
   const [selected, setSelected]       = useState<string[]>([]);
   const [activeTab, setActiveTab]     = useState<TabId>('amenities');
   const [showDetails, setShowDetails] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const cardRef                       = useRef<HTMLDivElement>(null);
 
   const layout = useMemo(
@@ -109,7 +114,7 @@ export default function BusCard({ bus, onSelectSeats, bookedSeats, searchDate }:
   );
 
   const availableCount = useMemo(
-    () => layout.flat().filter((c): c is SeatCell => c !== null && !c.booked).length,
+    () => layout.flat().filter((c): c is SeatCell => c !== null && !c.booked && !c.na).length,
     [layout],
   );
 
@@ -145,8 +150,11 @@ export default function BusCard({ bus, onSelectSeats, bookedSeats, searchDate }:
   // ── Seat cell ─────────────────────────────────────────────────────────────
 
   const renderCell = (cell: SeatCell) => {
+    const unavailable = cell.booked || cell.na;
     let cls = 'w-[34px] h-[34px] rounded-lg text-[10px] font-semibold flex items-center justify-center border transition-all duration-100 select-none shadow-sm ';
-    if (cell.booked) {
+    if (cell.na) {
+      cls += 'bg-muted/40 border-dashed border-border/60 text-muted-foreground/40 cursor-not-allowed';
+    } else if (cell.booked) {
       cls += 'bg-muted/60 border-border/50 text-muted-foreground/35 cursor-not-allowed line-through';
     } else if (cell.selected) {
       cls += 'bg-primary border-primary text-primary-foreground cursor-pointer shadow-md ring-2 ring-primary/30 scale-105';
@@ -157,12 +165,12 @@ export default function BusCard({ bus, onSelectSeats, bookedSeats, searchDate }:
       <button
         key={cell.label}
         className={cls}
-        disabled={cell.booked}
+        disabled={unavailable}
         onClick={() => toggleSeat(cell.label)}
         type="button"
-        title={cell.booked ? `${cell.label} — Booked` : cell.label}
+        title={cell.na ? `${cell.label} — Not available` : cell.booked ? `${cell.label} — Booked` : cell.label}
       >
-        {cell.label}
+        {cell.na ? '×' : cell.label}
       </button>
     );
   };
@@ -188,6 +196,7 @@ export default function BusCard({ bus, onSelectSeats, bookedSeats, searchDate }:
                 <span className={`px-1.5 py-0.5 rounded-full text-xs font-medium ${getBusTypeColor(bus.type)}`}>
                   {bus.type}
                 </span>
+                <VerifiedOperatorBadge />
                 <Star className="w-3.5 h-3.5 fill-yellow-500 text-yellow-500" />
                 <span className="text-xs font-medium text-foreground">4.8</span>
               </div>
@@ -262,6 +271,7 @@ export default function BusCard({ bus, onSelectSeats, bookedSeats, searchDate }:
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${getBusTypeColor(bus.type)}`}>
                 {bus.type}
               </span>
+              <VerifiedOperatorBadge variant="full" />
               <div className="flex items-center gap-1 text-sm">
                 <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
                 <span className="font-medium">4.8</span>
@@ -405,12 +415,18 @@ export default function BusCard({ bus, onSelectSeats, bookedSeats, searchDate }:
                 <div className={`xl:block ${showDetails ? 'block' : 'hidden'}`}>
                   <h3 className="font-display font-bold text-lg text-foreground mb-3">{bus.name}</h3>
 
-                  <div className="flex gap-2.5 mb-4">
+                  <div className="flex gap-2.5 mb-4 overflow-x-auto pb-1">
                     {(bus.photos || []).length > 0
-                      ? bus.photos.slice(0, 2).map((src, i) => (
-                          <div key={i} className="w-32 h-[88px] rounded-xl overflow-hidden bg-muted border border-border shrink-0">
+                      ? bus.photos.map((src, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => setLightboxIndex(i)}
+                            className="w-32 h-[88px] rounded-xl overflow-hidden bg-muted border border-border shrink-0 cursor-zoom-in transition-transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-primary/40"
+                            aria-label={`View photo ${i + 1}`}
+                          >
                             <img src={src} alt="" className="w-full h-full object-cover" />
-                          </div>
+                          </button>
                         ))
                       : [0, 1].map((i) => (
                           <div key={i} className="w-32 h-[88px] rounded-xl bg-muted/40 border border-dashed border-border/60 flex flex-col items-center justify-center gap-1.5 shrink-0">
@@ -568,6 +584,13 @@ export default function BusCard({ bus, onSelectSeats, bookedSeats, searchDate }:
           </div>
         </div>
       )}
+
+      <Lightbox
+        images={bus.photos || []}
+        index={lightboxIndex}
+        onClose={() => setLightboxIndex(null)}
+        onIndexChange={setLightboxIndex}
+      />
     </div>
   );
 }
