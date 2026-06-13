@@ -19,36 +19,36 @@ export default function Footer() {
   const isOperatorLoggedIn = !!operator
 
   return (
-    <footer className="bg-slate-950 text-slate-300 py-12">
-      <div className="container mx-auto px-4">
+    <footer className="border-t border-border bg-card">
+      <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
           <div>
             <div className="text-xl font-extrabold mb-4 tracking-tight">
-              <span className="text-blue-400">uth</span>
+              <span className="text-blue-600 dark:text-blue-400">uth</span>
               <span className="text-primary">bus</span>
             </div>
-            <p className="text-slate-400 text-sm leading-relaxed">
-              Nepal&apos;s trusted bus booking platform. Travel safely and comfortably across the country.
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              Book a bus seat anywhere in Nepal in a couple of minutes — no counter queues, no phone calls.
             </p>
           </div>
 
           <div>
-            <h4 className="font-semibold mb-4 text-[11px] uppercase tracking-widest text-slate-600">
-              Quick Links
+            <h4 className="font-medium mb-4 text-xs uppercase tracking-wider text-muted-foreground/70">
+              Company
             </h4>
-            <ul className="space-y-2 text-slate-400 text-sm">
-              <li><Link href="/about" className="hover:text-slate-100 transition-colors">About Us</Link></li>
-              <li><Link href="/contact" className="hover:text-slate-100 transition-colors">Contact</Link></li>
-              <li><a href="#" className="hover:text-slate-100 transition-colors">Help</a></li>
-              <li><a href="#" className="hover:text-slate-100 transition-colors">Terms</a></li>
+            <ul className="space-y-2 text-muted-foreground text-sm">
+              <li><Link href="/about" className="hover:text-foreground transition-colors">About us</Link></li>
+              <li><Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link></li>
+              <li><a href="#" className="hover:text-foreground transition-colors">Help</a></li>
+              <li><a href="#" className="hover:text-foreground transition-colors">Terms</a></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-semibold mb-4 text-[11px] uppercase tracking-widest text-slate-600">
-              Popular Routes
+            <h4 className="font-medium mb-4 text-xs uppercase tracking-wider text-muted-foreground/70">
+              Popular routes
             </h4>
-            <ul className="space-y-2 text-slate-400 text-sm">
+            <ul className="space-y-2 text-muted-foreground text-sm">
               {[
                 { label: "Kathmandu – Pokhara",    href: "/kathmandu-to-pokhara-bus" },
                 { label: "Kathmandu – Itahari",    href: "/kathmandu-to-itahari-bus" },
@@ -57,7 +57,7 @@ export default function Footer() {
                 { label: "Biratnagar – Kathmandu", href: "/biratnagar-to-kathmandu-bus" },
               ].map((r) => (
                 <li key={r.href}>
-                  <Link href={r.href} className="hover:text-slate-100 transition-colors">{r.label}</Link>
+                  <Link href={r.href} className="hover:text-foreground transition-colors">{r.label}</Link>
                 </li>
               ))}
             </ul>
@@ -65,21 +65,21 @@ export default function Footer() {
 
           {!isUserLoggedIn && !isOperatorLoggedIn && (
             <div>
-              <h4 className="font-semibold mb-4 text-[11px] uppercase tracking-widest text-slate-600">
-                Operator Portal
+              <h4 className="font-medium mb-4 text-xs uppercase tracking-wider text-muted-foreground/70">
+                For operators
               </h4>
-              <ul className="space-y-2 text-slate-400 text-sm">
-                <li><Link href="/operator/login" className="hover:text-slate-100 transition-colors">Operator Login</Link></li>
-                <li><Link href="/operator/register" className="hover:text-slate-100 transition-colors">Register as Operator</Link></li>
+              <ul className="space-y-2 text-muted-foreground text-sm">
+                <li><Link href="/operator/login" className="hover:text-foreground transition-colors">Operator login</Link></li>
+                <li><Link href="/operator/register" className="hover:text-foreground transition-colors">List your buses</Link></li>
               </ul>
             </div>
           )}
 
           <div>
-            <h4 className="font-semibold mb-4 text-[11px] uppercase tracking-widest text-slate-600">
-              Contact
+            <h4 className="font-medium mb-4 text-xs uppercase tracking-wider text-muted-foreground/70">
+              Talk to us
             </h4>
-            <div className="space-y-2 text-slate-400 text-sm">
+            <div className="space-y-2 text-muted-foreground text-sm">
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 shrink-0" />
                 <span>+977 9810511415</span>
@@ -92,8 +92,9 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-slate-800 mt-8 pt-8 text-center text-slate-600 text-sm">
-          <p>&copy; 2025 UthBus. All rights reserved.</p>
+        <div className="border-t border-border mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-muted-foreground/70 text-sm">
+          <p>&copy; 2026 UthBus. All rights reserved.</p>
+          <p>Made in Nepal</p>
         </div>
       </div>
     </footer>

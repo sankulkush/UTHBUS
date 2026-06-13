@@ -89,13 +89,9 @@ function calcDuration(dep: string, arr: string) {
   return `${Math.floor(ms / 3_600_000)}h ${Math.floor((ms % 3_600_000) / 60_000)}m`;
 }
 
-function getBusTypeColor(type: string) {
-  switch (type) {
-    case 'AC Deluxe': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
-    case 'Micro':     return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
-    case 'Hiace':     return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300';
-    default:          return 'bg-muted text-muted-foreground';
-  }
+function getBusTypeColor(_type: string) {
+  // One quiet badge style for every bus type — the type name itself is the signal
+  return 'bg-secondary text-secondary-foreground border border-border/60';
 }
 
 // ── Component ──────────────────────────────────────────────────────────────────
@@ -200,7 +196,7 @@ export default function BusCard({ bus, onSelectSeats, bookedSeats, searchDate }:
               )}
             </div>
             <div className="text-right flex-shrink-0">
-              <div className="text-lg font-bold text-blue-600 dark:text-blue-400">रु {bus.price.toLocaleString()}</div>
+              <div className="font-display text-lg font-bold text-foreground tabular-nums">रु {bus.price.toLocaleString()}</div>
               {expanded
                 ? <ChevronUp className="w-4 h-4 ml-auto mt-1 text-muted-foreground" />
                 : <ChevronDown className="w-4 h-4 ml-auto mt-1 text-muted-foreground" />
@@ -210,7 +206,7 @@ export default function BusCard({ bus, onSelectSeats, bookedSeats, searchDate }:
 
           <div className="flex items-center justify-between mb-3">
             <div className="text-center flex-shrink-0">
-              <div className="text-base font-semibold text-foreground">{fmt12(bus.departureTime)}</div>
+              <div className="text-base font-semibold text-foreground tabular-nums">{fmt12(bus.departureTime)}</div>
               <div className="text-xs text-muted-foreground truncate">{bus.startPoint}</div>
             </div>
             <div className="flex flex-col items-center gap-1 flex-1 mx-2">
@@ -218,13 +214,13 @@ export default function BusCard({ bus, onSelectSeats, bookedSeats, searchDate }:
                 {calcDuration(bus.departureTime, bus.arrivalTime)}
               </div>
               <div className="w-full h-px bg-border relative max-w-[120px]">
-                <div className="absolute left-0 top-0 w-1.5 h-1.5 bg-green-500 rounded-full -translate-y-1/2" />
-                <div className="absolute right-0 top-0 w-1.5 h-1.5 bg-red-500 rounded-full -translate-y-1/2" />
+                <div className="absolute left-0 top-0 w-1.5 h-1.5 bg-emerald-500 rounded-full -translate-y-1/2" />
+                <div className="absolute right-0 top-0 w-1.5 h-1.5 bg-primary rounded-full -translate-y-1/2" />
               </div>
               <Clock className="w-3 h-3 text-muted-foreground" />
             </div>
             <div className="text-center flex-shrink-0">
-              <div className="text-base font-semibold text-foreground">{fmt12(bus.arrivalTime)}</div>
+              <div className="text-base font-semibold text-foreground tabular-nums">{fmt12(bus.arrivalTime)}</div>
               <div className="text-xs text-muted-foreground truncate">{bus.endPoint}</div>
             </div>
           </div>
@@ -249,10 +245,10 @@ export default function BusCard({ bus, onSelectSeats, bookedSeats, searchDate }:
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <div className="flex items-center gap-1">
               <Users className="w-3 h-3" />
-              <span>{availableCount} seats available</span>
+              <span>{availableCount} seats left</span>
             </div>
             <span className={`text-xs px-2 py-1 rounded-full font-medium ${expanded ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary'}`}>
-              {expanded ? 'Hide seats' : 'View seats'}
+              {expanded ? 'Hide seats' : 'Choose seats'}
             </span>
           </div>
         </div>
@@ -262,7 +258,7 @@ export default function BusCard({ bus, onSelectSeats, bookedSeats, searchDate }:
           {/* Left: name, meta, chips */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-3 flex-wrap">
-              <h3 className="text-xl font-semibold text-foreground">{bus.name}</h3>
+              <h3 className="font-display text-xl font-semibold text-foreground">{bus.name}</h3>
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${getBusTypeColor(bus.type)}`}>
                 {bus.type}
               </span>
@@ -280,7 +276,7 @@ export default function BusCard({ bus, onSelectSeats, bookedSeats, searchDate }:
               )}
               <div className="flex items-center gap-1">
                 <Users className="w-4 h-4" />
-                <span>{availableCount} seats</span>
+                <span>{availableCount} seats left</span>
               </div>
             </div>
 
@@ -305,7 +301,7 @@ export default function BusCard({ bus, onSelectSeats, bookedSeats, searchDate }:
           {/* Right: times + price */}
           <div className="flex items-center gap-8 flex-shrink-0 ml-6">
             <div className="text-center">
-              <div className="text-xl font-semibold text-foreground">{fmt12(bus.departureTime)}</div>
+              <div className="font-display text-xl font-semibold text-foreground tabular-nums">{fmt12(bus.departureTime)}</div>
               <div className="text-sm text-muted-foreground">{bus.startPoint}</div>
             </div>
 
@@ -318,15 +314,15 @@ export default function BusCard({ bus, onSelectSeats, bookedSeats, searchDate }:
             </div>
 
             <div className="text-center">
-              <div className="text-xl font-semibold text-foreground">{fmt12(bus.arrivalTime)}</div>
+              <div className="font-display text-xl font-semibold text-foreground tabular-nums">{fmt12(bus.arrivalTime)}</div>
               <div className="text-sm text-muted-foreground">{bus.endPoint}</div>
             </div>
 
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">रु {bus.price.toLocaleString()}</div>
+              <div className="font-display text-2xl font-bold text-foreground tabular-nums">रु {bus.price.toLocaleString()}</div>
               <div className="flex items-center gap-1 mt-2 justify-center">
-                <span className="text-sm text-primary">
-                  {expanded ? 'Hide seats' : 'View seats'}
+                <span className="text-sm font-medium text-primary">
+                  {expanded ? 'Hide seats' : 'Choose seats'}
                 </span>
                 {expanded
                   ? <ChevronUp className="w-4 h-4 text-primary" />
@@ -407,7 +403,7 @@ export default function BusCard({ bus, onSelectSeats, bookedSeats, searchDate }:
                 </button>
 
                 <div className={`xl:block ${showDetails ? 'block' : 'hidden'}`}>
-                  <h3 className="font-bold text-lg text-foreground mb-3">{bus.name}</h3>
+                  <h3 className="font-display font-bold text-lg text-foreground mb-3">{bus.name}</h3>
 
                   <div className="flex gap-2.5 mb-4">
                     {(bus.photos || []).length > 0
@@ -513,21 +509,21 @@ export default function BusCard({ bus, onSelectSeats, bookedSeats, searchDate }:
                   <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-bold shrink-0">
                     1
                   </span>
-                  Select seats
+                  Choose seats
                 </span>
                 <div className="w-6 h-px bg-border" />
                 <span className="flex items-center gap-1.5 text-muted-foreground">
                   <span className="w-5 h-5 rounded-full border-2 border-border flex items-center justify-center text-[10px] font-bold shrink-0">
                     2
                   </span>
-                  Passenger Info
+                  Passenger details
                 </span>
                 <div className="w-6 h-px bg-border" />
                 <span className="flex items-center gap-1.5 text-muted-foreground">
                   <span className="w-5 h-5 rounded-full border-2 border-border flex items-center justify-center text-[10px] font-bold shrink-0">
                     3
                   </span>
-                  Review &amp; Pay
+                  Review and pay
                 </span>
               </div>
 
@@ -563,9 +559,9 @@ export default function BusCard({ bus, onSelectSeats, bookedSeats, searchDate }:
                 <button
                   onClick={handleContinue}
                   disabled={selected.length === 0}
-                  className="shrink-0 px-5 py-2 rounded-lg text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] whitespace-nowrap"
+                  className="shrink-0 px-5 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.98] whitespace-nowrap"
                 >
-                  {selected.length === 0 ? 'Select a seat' : 'Continue'}
+                  {selected.length === 0 ? 'Pick a seat first' : 'Continue'}
                 </button>
               </div>
             </div>

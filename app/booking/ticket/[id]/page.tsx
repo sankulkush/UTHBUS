@@ -145,7 +145,7 @@ export default function TicketPage() {
             href="/"
             className="inline-block px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90 transition-opacity"
           >
-            Back to Home
+            Back to home
           </Link>
         </div>
       </div>
@@ -180,15 +180,15 @@ export default function TicketPage() {
             onClick={() => router.push("/")}
             className="no-print flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-5 transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" /> Back to Home
+            <ArrowLeft className="w-4 h-4" /> Back to home
           </button>
 
           {/* Confirmation banner */}
           <div className="no-print flex items-center gap-3 mb-5 p-4 bg-emerald-500/10 border border-emerald-500/25 rounded-xl">
             <CheckCircle2 className="w-7 h-7 text-emerald-500 shrink-0" />
             <div>
-              <p className="font-semibold text-foreground text-sm">Booking Confirmed!</p>
-              <p className="text-xs text-muted-foreground">Show this e-ticket to the conductor at the boarding point</p>
+              <p className="font-semibold text-foreground text-sm">You&apos;re booked!</p>
+              <p className="text-xs text-muted-foreground">Show this e-ticket to the conductor when you board.</p>
             </div>
           </div>
 
@@ -202,7 +202,7 @@ export default function TicketPage() {
             <div className="bg-primary px-5 py-4 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2 min-w-0">
                 <Bus className="w-5 h-5 text-primary-foreground/70 shrink-0" />
-                <span className="text-primary-foreground font-extrabold text-lg tracking-tight">
+                <span className="font-display text-primary-foreground font-bold text-lg tracking-tight">
                   <span className="opacity-75">uth</span>bus
                 </span>
                 <span className="text-primary-foreground/50 text-xs font-medium hidden sm:inline">· E-Ticket</span>
@@ -226,7 +226,7 @@ export default function TicketPage() {
             <div className="px-5 pt-5 pb-4 border-b border-border">
               {/* Bus name */}
               <div className="flex items-start justify-between gap-2 mb-4">
-                <p className="font-bold text-foreground text-base leading-tight">{booking.busName}</p>
+                <p className="font-display font-bold text-foreground text-base leading-tight">{booking.busName}</p>
                 <span className="shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
                   {booking.busType}
                 </span>
@@ -236,7 +236,7 @@ export default function TicketPage() {
               <div className="flex items-center gap-3">
                 {/* Departure */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-2xl font-bold text-foreground tabular-nums">{fmt12(booking.time)}</p>
+                  <p className="font-display text-2xl font-bold text-foreground tabular-nums">{fmt12(booking.time)}</p>
                   <p className="text-sm font-semibold text-foreground mt-0.5 truncate">{booking.from}</p>
                   <p className="text-xs text-muted-foreground">{formatDate(booking.date)}</p>
                 </div>
@@ -294,8 +294,8 @@ export default function TicketPage() {
 
             {/* Passenger information */}
             <div className="px-5 py-4 border-b border-border">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">
-                Passenger Information
+              <p className="text-xs font-medium text-muted-foreground mb-3">
+                Passenger
               </p>
               <div className="border border-border rounded-xl overflow-hidden">
                 {/* Name / phone header row */}
@@ -331,8 +331,8 @@ export default function TicketPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 border-b border-border">
               {/* Booking details */}
               <div className="px-5 py-4 sm:border-r border-b sm:border-b-0 border-border">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">
-                  Booking Details
+                <p className="text-xs font-medium text-muted-foreground mb-3">
+                  Booking details
                 </p>
                 <dl className="space-y-2 text-sm">
                   {[
@@ -359,8 +359,8 @@ export default function TicketPage() {
                   paid/pending_gateway branches; cancellation flow populates
                   refunded. */}
               <div className="px-5 py-4">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">
-                  Payment Details
+                <p className="text-xs font-medium text-muted-foreground mb-3">
+                  Payment
                 </p>
 
                 <PaymentBlock booking={booking} seats={seats} />
@@ -370,7 +370,7 @@ export default function TicketPage() {
             {/* Footer disclaimer */}
             <div className="px-5 py-3 bg-muted/30">
               <p className="text-[10px] text-muted-foreground text-center leading-relaxed">
-                This is a valid UthBus e-ticket. Please show this to the conductor/driver at the boarding point.
+                This is a valid UthBus e-ticket — just show it to the conductor or driver when you board.
                 Ticket subject to operator's terms and conditions.
               </p>
             </div>
@@ -380,8 +380,8 @@ export default function TicketPage() {
           <aside className="no-print lg:sticky lg:top-20">
             <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-soft">
               <div className="px-4 py-3 border-b border-border bg-muted/30">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                  Ticket Actions
+                <p className="text-xs font-medium text-muted-foreground">
+                  Your ticket
                 </p>
               </div>
               <div className="p-3 flex flex-col gap-2">
@@ -416,7 +416,7 @@ export default function TicketPage() {
               </div>
               <div className="px-4 py-3 border-t border-border bg-muted/20">
                 <p className="text-[10px] text-muted-foreground leading-relaxed">
-                  "Save PDF" opens the browser print dialog — choose "Save as PDF" as the destination.
+                  Tip: "Save PDF" opens your print dialog — pick "Save as PDF" as the destination.
                 </p>
               </div>
             </div>

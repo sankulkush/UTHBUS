@@ -61,7 +61,7 @@ export default function UserLoginModal({ isOpen, onClose, onSwitchToSignup, onLo
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Welcome back</DialogTitle>
-          <DialogDescription>Sign in to your account to continue</DialogDescription>
+          <DialogDescription>Good to see you again — sign in to continue.</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -93,7 +93,7 @@ export default function UserLoginModal({ isOpen, onClose, onSwitchToSignup, onLo
 
           <div className="space-y-2.5">
             <Button type="submit" disabled={loading} className="w-full">
-              {loading ? "Signing in…" : "Sign In"}
+              {loading ? "Signing in…" : "Sign in"}
             </Button>
             <Button type="button" variant="outline" onClick={handleGoogleLogin} disabled={loading} className="w-full">
               Continue with Google
@@ -101,9 +101,9 @@ export default function UserLoginModal({ isOpen, onClose, onSwitchToSignup, onLo
           </div>
 
           <p className="text-center text-sm text-muted-foreground">
-            Don&apos;t have an account?{" "}
+            New to UthBus?{" "}
             <button type="button" onClick={onSwitchToSignup} className="text-primary hover:underline font-medium">
-              Sign up here
+              Create one
             </button>
           </p>
         </form>

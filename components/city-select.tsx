@@ -106,7 +106,7 @@ export default function CitySelect({ value, onChange, placeholder, label }: City
       <div className="p-2">
         {filteredPopular.length > 0 && (
           <>
-            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5 px-2 pt-1">
+            <div className="text-xs font-medium text-muted-foreground mb-1.5 px-2 pt-1">
               Popular
             </div>
             {filteredPopular.map(city => (
@@ -131,8 +131,8 @@ export default function CitySelect({ value, onChange, placeholder, label }: City
         {filteredOther.length > 0 && (
           <>
             {filteredPopular.length > 0 && (
-              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5 px-2 mt-3">
-                Other Cities
+              <div className="text-xs font-medium text-muted-foreground mb-1.5 px-2 mt-3">
+                Other cities
               </div>
             )}
             {filteredOther.map(city => (
@@ -176,13 +176,13 @@ export default function CitySelect({ value, onChange, placeholder, label }: City
         </label>
       )}
       <div
-        className="flex items-center border border-border/60 rounded-lg px-3 py-3 bg-slate-100 dark:bg-slate-700/70 cursor-text hover:border-ring/60 transition-colors dark:border-slate-600/60"
+        className="flex items-center border border-border/60 rounded-lg px-3 py-3 bg-muted/70 cursor-text hover:border-ring/60 transition-colors"
         onClick={handleInputClick}
       >
         <input
           ref={inputRef}
           type="text"
-          className="flex-1 outline-none bg-transparent text-base font-medium text-foreground dark:text-slate-100 placeholder:text-muted-foreground/70 dark:placeholder:text-slate-400"
+          className="flex-1 min-w-0 outline-none bg-transparent text-base font-medium text-foreground placeholder:text-muted-foreground/70 truncate"
           value={displayValue}
           onChange={handleInputChange}
           placeholder={placeholder}
@@ -190,7 +190,7 @@ export default function CitySelect({ value, onChange, placeholder, label }: City
         {value && !isOpen && (
           <button
             type="button"
-            className="ml-2 text-muted-foreground hover:text-foreground transition-colors"
+            className="ml-2 shrink-0 text-muted-foreground hover:text-foreground transition-colors"
             onClick={handleClear}
           >
             <XIcon className="w-4 h-4" />
