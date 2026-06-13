@@ -523,6 +523,29 @@
     .dash .topGrid { grid-template-columns: 1fr; }
     .sprintCard .head { padding: 14px 16px; flex-wrap: wrap; }
   }
+  /* ===== Docs view · sticky sidebar feature index ===== */
+  .docsLayout { display: flex; align-items: flex-start; gap: 30px; }
+  .docMain { flex: 1 1 auto; min-width: 0; }
+  .docSidebar { flex: 0 0 222px; width: 222px; position: sticky; top: 60px; }
+  .docSidebarInner { padding: 18px 18px; max-height: calc(100vh - 80px); overflow-y: auto; }
+  .docSidebar .head { color: var(--red); font-size: 11.5px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 800; margin: 0 0 7px; }
+  .docSidebar ul { list-style: none; padding: 0; margin: 0; }
+  .docSidebar li { margin-bottom: 5px; font-size: 12.5px; line-height: 1.3; }
+  .docSidebar li a { color: var(--navy); text-decoration: none; border-bottom: none; }
+  .docSidebar li a:hover { color: var(--blue); }
+  .docSidebar li a b { color: var(--red); font-size: 9px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .docNavToggle { display: none; }
+
+  @media (max-width: 820px) {
+    .docsLayout { flex-direction: column; gap: 14px; }
+    .docSidebar { position: static; width: auto; flex-basis: auto; top: auto; }
+    .docSidebarInner { max-height: none; overflow: visible; }
+    .docNavToggle { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 10px; background: none; border: 0; padding: 0; cursor: pointer; font-family: inherit; color: var(--red); font-size: 12.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+    .docNavToggle .chev { transition: transform 0.2s ease; font-size: 11px; }
+    .docSidebar.open .docNavToggle .chev { transform: rotate(180deg); }
+    .docNavLinks { display: none; margin-top: 14px; }
+    .docSidebar.open .docNavLinks { display: block; }
+  }
 </style>
 </head>
 <body>
@@ -593,171 +616,20 @@
     </div>
   </section>
 
-  <!-- ============ HOW TO READ ============ -->
-  <section data-view="docs">
-    <p class="kicker">Read me first</p>
-    <h2>How this document is organised</h2>
-    <p class="lead">This document has three parts. Read in order.</p>
+  <!-- ============ DOCS LAYOUT · sidebar index + spec content ============ -->
+  <div class="docsLayout" id="docs" data-view="docs">
 
-    <ol>
-      <li><b>Context &amp; correction.</b> A short note clarifying the current state of the codebase, because the CEO's roadmap document understates what is already built.</li>
-      <li><b>Feature specifications (BA Docs).</b> One spec per feature across the three portals. Each spec is self-contained so the BA can pick up any single feature and write tickets without reading the rest. Every spec has the same shape: purpose &rarr; actors &rarr; user stories &rarr; functional requirements &rarr; what is built &rarr; what is pending &rarr; acceptance criteria &rarr; dependencies &rarr; risks.</li>
-      <li><b>MVP definition &amp; sprint plan.</b> What the smallest shippable version of UTHBUS actually is, then concrete two-week sprints for solo execution &mdash; you, doing everything. Six sprints to MVP, then a sketched post-MVP roadmap because anything planned past month four will be wrong.</li>
-    </ol>
-
-    <h3>Legend</h3>
-    <div class="legend">
-      <span class="pill s-ok">working</span>
-      <span class="pill s-part">partial</span>
-      <span class="pill s-bad">broken</span>
-      <span class="pill s-stub">stub</span>
-      <span class="pill s-new">not built</span>
-      <span class="prio p0">P0</span>
-      <span class="prio p1">P1</span>
-      <span class="prio p2">P2</span>
-      <span class="prio p3">P3</span>
-      <span class="role r-be">Backend</span>
-      <span class="role r-fe">Frontend</span>
-      <span class="role r-qa">QA</span>
-      <span class="role r-do">DevOps</span>
-    </div>
-
-    <div class="callout blue">
-      <b>Naming convention for BA tickets.</b> Each feature spec carries an ID like <code>USR-HOME</code>, <code>ADM-KYC</code>, <code>OPR-EARN</code>. Requirements inside a spec are <code>USR-HOME-R1</code>, <code>R2</code>, ... Use these IDs verbatim when filing Jira/Linear tickets so engineering, QA, and the BA stay in one taxonomy.
-    </div>
-  </section>
-
-  <!-- ============ CONTEXT & CORRECTION ============ -->
-  <section data-view="docs">
-    <p class="kicker">Correction to the CEO inventory</p>
-    <h2>What is actually in <code>main</code> today</h2>
-    <p class="lead">The CEO's inventory dated June 2026 calls out an "absent admin control tower." That is no longer true. Several things have shipped since that document was written. This section is the canonical starting point for the BA.</p>
-
-    <div class="callout ok">
-      <b>Admin portal exists.</b> Routes live under <code>app/admin/</code> with login, bus verification, and bookings oversight. <code>contexts/admin-auth-context.tsx</code> gates access. The portal is functional — what it is missing is <i>commerce</i> (commission, settlement, disputes) and <i>operator KYC documents</i>, not the portal itself.
-    </div>
-
-    <div class="callout">
-      <b>The CEO is right on three counts.</b> (1) The e-ticket at <code>app/booking/ticket/[id]/page.tsx:344</code> hard-codes <code>"Online (UPI)"</code> regardless of whether anything was paid — confirmed by direct file inspection. (2) Operators self-onboard and become Active immediately, without document verification. (3) No payment gateway, no money ledger.
-    </div>
-
-    <h3>What exists in code (verified)</h3>
-    <ul>
-      <li><b>User portal:</b> Homepage, search, booking flow (passenger details &rarr; review/pay &rarr; ticket), e-ticket with print/PDF/WhatsApp share, My Bookings, Profile, Google sign-in, six SEO route landing pages, stubs for Billing/Credits/Notifications/Refer-a-Friend.</li>
-      <li><b>Admin portal:</b> Login, bus verification queue (Pending / Approved / Rejected / Suspended) with Approve / Reject / Hold / Reactivate / Delete actions, platform-wide bookings list with search + status filter + cancel action.</li>
-      <li><b>Operator portal:</b> Registration + login, counter dashboard, walk-in counter booking, fleet management (add/edit/delete buses), bookings, trips, routes, seat layouts, reports, notifications, profile, settings.</li>
-      <li><b>Services:</b> <code>BusService</code>, <code>ActiveBookingsService</code>, three auth contexts (user / operator / admin), three API routes for token handling.</li>
-      <li><b>Data model:</b> <code>IBus</code>, <code>IActiveBooking</code>, <code>BusVerificationStatus</code> (<code>pending_verification</code> / <code>approved</code> / <code>rejected</code> / <code>suspended</code>), <code>BookingStatus</code>, plus user/operator/admin profile types.</li>
-    </ul>
-
-    <h3>What does not exist in code (the real gaps)</h3>
-    <ul>
-      <li><b>Payments.</b> No gateway integration. The "Confirm &amp; Pay" button writes the booking and lies on the ticket.</li>
-      <li><b>Operator KYC.</b> No document upload, no admin-side review of operator credentials. License field is collected but never validated.</li>
-      <li><b>Commission &amp; settlement.</b> No ledger, no commission capture, no settlement run, no statements.</li>
-      <li><b>Refunds &amp; cancellation policy.</b> Cancelling flips status only; no money flow, no time-based rules.</li>
-      <li><b>Photos.</b> Bus photos are a field, but there is no working upload pipeline.</li>
-      <li><b>Notifications.</b> Real notifications (email, SMS, WhatsApp, push) are not wired. The user-side notifications page is a stub.</li>
-      <li><b>Ratings &amp; reviews.</b> Not present.</li>
-      <li><b>Programmatic SEO.</b> Six hand-built route pages exist; no generator for more.</li>
-    </ul>
-
-    <p>Everything in the sprint plan rolls forward from this list, not from the CEO's "nothing exists" framing.</p>
-  </section>
-
-  <!-- ============ PHASE STRIP ============ -->
-  <section data-view="docs">
-    <p class="kicker">Plan at a glance</p>
-    <h2>Solo execution &middot; MVP in ~14 weeks, V1.0 in ~9 months</h2>
-    <p class="lead">Sprints are two weeks. Solo means no parallelism &mdash; the work that a team would split happens serially. The plan is detailed through MVP (Sprint 5) and sketched beyond it, because anything planned past four months for a one-person team is a fiction.</p>
-
-    <div class="phaseStrip">
-      <div class="pn">
-        <div class="lab">Phase 1 &middot; Sprints 0-2</div>
-        <div class="ti">MVP Foundations</div>
-        <div class="wk">Weeks 1-7</div>
-      </div>
-      <div class="pn">
-        <div class="lab">Phase 2 &middot; Sprints 3-5</div>
-        <div class="ti">MVP Commerce &rarr; SHIP</div>
-        <div class="wk">Weeks 8-15</div>
-      </div>
-      <div class="pn">
-        <div class="lab">Phase 3 &middot; Sprints 6-9</div>
-        <div class="ti">Post-MVP Trust &amp; Reach</div>
-        <div class="wk">Weeks 16-28</div>
-      </div>
-      <div class="pn">
-        <div class="lab">Phase 4 &middot; Sprints 10+</div>
-        <div class="ti">Scale (sketched)</div>
-        <div class="wk">Weeks 29+</div>
-      </div>
-    </div>
-
-    <div class="phaseRow">
-      <div class="phase">
-        <h4>Phase 1</h4>
-        <div class="pt">MVP Foundations</div>
-        <div class="pw">Sprints 0, 1, 2 &middot; 7 weeks</div>
-        <ul>
-          <li>Foundations: staging env, Sentry, security rules</li>
-          <li>Kill the "paid" lie on the e-ticket (1-hour win)</li>
-          <li>Hide stub pages and broken alerts</li>
-          <li>Operator KYC schema &amp; admin review</li>
-          <li>Verified badge on user surfaces</li>
-        </ul>
-      </div>
-      <div class="phase p1">
-        <h4>Phase 2 &mdash; MVP ships here</h4>
-        <div class="pt">MVP Commerce</div>
-        <div class="pw">Sprints 3, 4, 5 &middot; 8 weeks</div>
-        <ul>
-          <li>eSewa integration (one gateway only for MVP)</li>
-          <li>Cancellation policy + admin-triggered manual refund</li>
-          <li>Commission ledger (read-only is enough for MVP)</li>
-          <li>Operator earnings page</li>
-          <li><b>End of Sprint 5: MVP is live. Take first real bookings.</b></li>
-        </ul>
-      </div>
-      <div class="phase p2">
-        <h4>Phase 3 &middot; Post-MVP</h4>
-        <div class="pt">Trust &amp; Reach</div>
-        <div class="pw">Sprints 6, 7, 8, 9 &middot; 13 weeks</div>
-        <ul>
-          <li>Khalti + automated refund &amp; settlement run</li>
-          <li>Bus photo upload pipeline</li>
-          <li>Email + WhatsApp notifications</li>
-          <li>Ratings &amp; reviews after trip completion</li>
-        </ul>
-      </div>
-      <div class="phase p3">
-        <h4>Phase 4 &middot; Sketched only</h4>
-        <div class="pt">Scale</div>
-        <div class="pw">Sprints 10+ &middot; replan when you get there</div>
-        <ul>
-          <li>Programmatic SEO route pages</li>
-          <li>Card payments for tourists</li>
-          <li>Disputes module</li>
-          <li>PWA + Core Web Vitals</li>
-          <li><b>By here, hire someone. Solo doesn't scale past MVP+a bit.</b></li>
-        </ul>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ TOC ============ -->
-  <section id="docs" data-view="docs">
-    <p class="kicker">Index</p>
-    <h2>Feature specifications</h2>
-    <p class="lead">Twenty-six feature specs across three portals. Click to jump to any one.</p>
-
-    <div class="toc">
-      <div class="grid">
-        <div>
+    <!-- sidebar · feature index -->
+    <aside class="docSidebar">
+      <div class="docSidebarInner toc">
+        <button type="button" class="docNavToggle" aria-expanded="false" aria-controls="docNavLinks">
+          <span>Feature index</span><span class="chev">&#9662;</span>
+        </button>
+        <div class="docNavLinks" id="docNavLinks">
           <p class="head">User Portal</p>
           <ul>
-            <li><a href="#USR-HOME">USR-HOME &middot; Homepage &amp; Search Widget</a></li>
-            <li><a href="#USR-SEARCH">USR-SEARCH &middot; Search Results &amp; Filters</a></li>
+            <li><a href="#USR-HOME">USR-HOME &middot; Homepage &amp; Search</a></li>
+            <li><a href="#USR-SEARCH">USR-SEARCH &middot; Search &amp; Filters</a></li>
             <li><a href="#USR-SEAT">USR-SEAT &middot; Seat Selection</a></li>
             <li><a href="#USR-PAX">USR-PAX &middot; Passenger Details</a></li>
             <li><a href="#USR-PAY">USR-PAY &middot; Review &amp; Pay</a></li>
@@ -765,23 +637,31 @@
             <li><a href="#USR-MY">USR-MY &middot; My Bookings</a></li>
             <li><a href="#USR-AUTH">USR-AUTH &middot; Auth &amp; Profile</a></li>
           </ul>
-          <p class="head" style="margin-top:18px;">Operator Portal</p>
+          <p class="head" style="margin-top:16px;">Operator Portal</p>
           <ul>
             <li><a href="#OPR-AUTH">OPR-AUTH &middot; Registration, Login, KYC</a></li>
             <li><a href="#OPR-DASH">OPR-DASH &middot; Counter Dashboard</a></li>
             <li><a href="#OPR-FLEET">OPR-FLEET &middot; Fleet Management</a></li>
-            <li><a href="#OPR-COUNTER">OPR-COUNTER &middot; Walk-in Counter Booking</a></li>
+            <li><a href="#OPR-COUNTER">OPR-COUNTER &middot; Counter Booking</a></li>
             <li><a href="#OPR-BOOK">OPR-BOOK &middot; Bookings &amp; History</a></li>
             <li><a href="#OPR-TRIP">OPR-TRIP &middot; Trips &amp; Routes</a></li>
             <li><a href="#OPR-SEAT">OPR-SEAT &middot; Seat Layouts</a></li>
             <li><a href="#OPR-REPORT">OPR-REPORT &middot; Reports</a></li>
             <li><a href="#OPR-EARN">OPR-EARN &middot; Earnings &amp; Settlement</a></li>
+            <li><a href="#OPR-COMPLY">OPR-COMPLY &middot; Compliance Vault <b>new</b></a></li>
+            <li><a href="#OPR-RECON">OPR-RECON &middot; Daily Reconciliation <b>new</b></a></li>
+            <li><a href="#OPR-SHARE">OPR-SHARE &middot; Share Bus to Agent <b>new</b></a></li>
             <li><a href="#OPR-NOTIF">OPR-NOTIF &middot; Notifications</a></li>
             <li><a href="#OPR-PROFILE">OPR-PROFILE &middot; Profile &amp; Settings</a></li>
           </ul>
-        </div>
-        <div>
-          <p class="head">Admin Portal</p>
+          <p class="head" style="margin-top:16px;">Agent Portal <b>new</b></p>
+          <ul>
+            <li><a href="#AGT-AUTH">AGT-AUTH &middot; Account &amp; Light KYC</a></li>
+            <li><a href="#AGT-ACCESS">AGT-ACCESS &middot; Access &amp; Allocation</a></li>
+            <li><a href="#AGT-BOOK">AGT-BOOK &middot; Agent Booking</a></li>
+            <li><a href="#AGT-LEDGER">AGT-LEDGER &middot; Wallet &amp; Settlement</a></li>
+          </ul>
+          <p class="head" style="margin-top:16px;">Admin Portal</p>
           <ul>
             <li><a href="#ADM-AUTH">ADM-AUTH &middot; Admin Login</a></li>
             <li><a href="#ADM-KYC">ADM-KYC &middot; Operator KYC Review</a></li>
@@ -791,22 +671,32 @@
             <li><a href="#ADM-DISP">ADM-DISP &middot; Disputes &amp; Refunds</a></li>
             <li><a href="#ADM-PROMO">ADM-PROMO &middot; Promotions &amp; Pricing</a></li>
           </ul>
-          <p class="head" style="margin-top:18px;">Sprint Plan</p>
+          <p class="head" style="margin-top:16px;">Sprint Plan</p>
           <ul>
             <li><a href="#MVP">What is the MVP?</a></li>
             <li><a href="#SP-REALITY">Solo reality &amp; capacity</a></li>
-            <li><a href="#SP-0">Sprint 0 &middot; Foundations (1 wk)</a></li>
+            <li><a href="#SP-0">Sprint 0 &middot; Foundations</a></li>
             <li><a href="#SP-1">Sprint 1 &middot; Truthful Tickets</a></li>
-            <li><a href="#SP-2">Sprint 2 &middot; Operator KYC</a></li>
+            <li><a href="#SP-2">Sprint 2 &middot; KYC + Compliance Vault</a></li>
             <li><a href="#SP-3">Sprint 3 &middot; eSewa Payment</a></li>
             <li><a href="#SP-4">Sprint 4 &middot; Cancellation &amp; Refund</a></li>
-            <li><a href="#SP-5">Sprint 5 &middot; Commission Ledger &rarr; MVP</a></li>
-            <li><a href="#SP-POST">Post-MVP roadmap (sketched)</a></li>
+            <li><a href="#SP-5">Sprint 5 &middot; Commission Ledger</a></li>
+            <li><a href="#SP-6">Sprint 6 &middot; Reconciliation &rarr; MVP</a></li>
+            <li><a href="#SP-7">Sprint 7 &middot; Shared Inventory + Agents</a></li>
+            <li><a href="#SP-POST">Post-MVP roadmap</a></li>
           </ul>
         </div>
       </div>
-    </div>
-  </section>
+    </aside>
+
+    <!-- content · feature specifications -->
+    <div class="docMain">
+
+      <section data-view="docs" style="border-bottom:none; padding-bottom:0;">
+        <p class="kicker">Index</p>
+        <h2>Feature specifications</h2>
+        <p class="lead">Specs across the user, operator, admin, and (post-MVP) agent surfaces. Newly added specs from the operator-OS direction are tagged <b>new</b>. Jump from the index on the left.</p>
+      </section>
 
   <!-- ============ USER PORTAL ============ -->
   <section data-view="docs">
@@ -1856,6 +1746,285 @@
       </ul>
     </div>
 
+    <!-- OPR-COMPLY -->
+    <div class="doc" id="OPR-COMPLY">
+      <div class="docHead">
+        <div>
+          <div class="id">OPR-COMPLY <b>new</b></div>
+          <h3 class="ti">Compliance &amp; Document Vault</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-stub">foundation in Sprint 2</span>
+          <span class="prio p1">P1</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>Operator Portal &middot; Compliance</div>
+        <div><b>Primary file</b><code>operators/{uid}/kycDocs</code> + <code>buses/{id}/complianceDocs</code> (new)</div>
+        <div><b>Primary actor</b>Operator owner</div>
+        <div><b>Related</b>OPR-AUTH, ADM-KYC, OPR-FLEET</div>
+      </div>
+
+      <h4>Purpose</h4>
+      <p>Turn KYC from a one-time gate into a living document system. Every bus in Nepal carries a stack of expiring papers &mdash; registration (blue book), route permit, insurance, fitness certificate (DoTM), pollution/emission &mdash; plus per-driver licences. Nobody tracks the expiry dates, so operators get checkpoint fines or, worse, run uninsured. The vault is the natural big-brother of Sprint 2's KYC work: the <b>same expiry-aware document model</b>, surfaced as a vault the operator manages.</p>
+
+      <h4>User stories</h4>
+      <div class="story"><b>As an</b> operator owner <b>I want</b> all my company and per-bus documents in one place with their expiry dates <b>so that</b> I never get fined for an expired permit again.</div>
+      <div class="story"><b>As an</b> operator owner <b>I want</b> to be warned before a document expires <b>so that</b> I can renew it in time.</div>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span>Documents are typed (<code>companyCert / license / pan / routePermit / insurance / fitness / pollution</code>) and carry a nullable <code>expiresAt</code> and a <code>verificationStatus</code>. This schema ships in Sprint 2 &mdash; the vault is a UI layer on top, not a later migration.</span></li>
+        <li><span class="rid">R2</span><span>Company-level docs live under the operator; per-vehicle docs (permit, insurance, fitness, pollution) live under each bus.</span></li>
+        <li><span class="rid">R3</span><span>Vault view shows each document with a colour state: <b>valid</b> / <b>expiring soon</b> (&lt; 30 days) / <b>expired</b>. Operator can upload and replace from here.</span></li>
+        <li><span class="rid">R4</span><span>Dashboard banner summarises "N documents expire in the next 30 days" (P1). A nightly email alert is a P2 stretch reusing the Trigger Email path.</span></li>
+        <li><span class="rid">R5</span><span>An expired safety-critical document (insurance / fitness) may, in a later sprint, gate the bus out of user search the same way KYC does &mdash; not enforced at MVP, but the data supports it.</span></li>
+      </ul>
+
+      <h4>Acceptance criteria</h4>
+      <div class="ac">
+      <ul>
+        <li>An operator uploads an insurance certificate with an expiry date and sees it turn amber as it approaches, red once past.</li>
+        <li>No second data model was created &mdash; the vault reads the same documents the KYC review writes.</li>
+      </ul>
+      </div>
+    </div>
+
+    <!-- OPR-RECON -->
+    <div class="doc" id="OPR-RECON">
+      <div class="docHead">
+        <div>
+          <div class="id">OPR-RECON <b>new</b></div>
+          <h3 class="ti">Daily Reconciliation &mdash; "cash truth"</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-stub">Sprint 6 &middot; ships MVP</span>
+          <span class="prio p1">P1</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>Operator Portal &middot; Money</div>
+        <div><b>Primary file</b>reconciliation service (new) + <code>IActiveBooking.soldBy</code></div>
+        <div><b>Primary actor</b>Operator owner</div>
+        <div><b>Related</b>OPR-EARN, ADM-COMM, OPR-COUNTER, AGT-BOOK</div>
+      </div>
+
+      <h4>Purpose</h4>
+      <p>The #1 operator anxiety in Nepal is revenue leakage: the conductor collects cash on the bus, the counter clerk sells seats off-app, and the owner has no idea what the true load factor was. This is the feature that makes operators <i>pay</i>. Show the owner, every day: seats sold, <b>by whom</b>, versus the cash that should be in the drawer. The day an owner sees "you sold 38 seats, you have cash for 31," UTHBUS has hooked them.</p>
+
+      <h4>User stories</h4>
+      <div class="story"><b>As an</b> operator owner <b>I want</b> a daily sheet of seats sold split by channel against cash expected <b>so that</b> I can see leakage the same day instead of guessing.</div>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span>Every booking write path stamps <code>soldBy: { channel: "online" | "counter" | "agent", actorId }</code>. The <code>agent</code> value is reserved in Sprint 6 and goes live in Sprint 7 &mdash; this is the cheap agent-foundation seed.</span></li>
+        <li><span class="rid">R2</span><span>Counter staff can record cash taken and "close the drawer" for a shift (total cash handed up).</span></li>
+        <li><span class="rid">R3</span><span>Per operator / per day / per bus: seats sold split by channel, gross collected online (gateway-settled) vs cash expected at counter vs cash declared, with the <b>variance</b> highlighted.</span></li>
+        <li><span class="rid">R4</span><span>Admin sees the same per-operator reconciliation and can flag persistent variance.</span></li>
+      </ul>
+
+      <h4>Acceptance criteria</h4>
+      <div class="ac">
+      <ul>
+        <li>An owner opens the sheet for a date and sees the channel split, cash expected vs declared, and a signed variance.</li>
+        <li>Agent sales (once Sprint 7 lands) appear in the same sheet automatically via the <code>soldBy</code> tag &mdash; no new plumbing.</li>
+      </ul>
+      </div>
+    </div>
+
+    <!-- OPR-SHARE -->
+    <div class="doc" id="OPR-SHARE">
+      <div class="docHead">
+        <div>
+          <div class="id">OPR-SHARE <b>new</b></div>
+          <h3 class="ti">Share Bus to Agent (operator side)</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-stub">Sprint 7 &middot; post-MVP</span>
+          <span class="prio p1">P1</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>Operator Portal &middot; Distribution</div>
+        <div><b>Primary file</b><code>agentAccess</code> grant model (new)</div>
+        <div><b>Primary actor</b>Operator owner</div>
+        <div><b>Related</b>AGT-ACCESS, AGT-BOOK, OPR-FLEET, OPR-TRIP</div>
+      </div>
+
+      <h4>Purpose</h4>
+      <p>The operator's side of the agent relationship: grant an agent access to sell a bus / route / trip / the whole fleet, set the terms, and see exactly what each agent sold. This is what brings the people who oversell today <i>inside</i> the system &mdash; the shared-inventory promise is worthless if agents stay outside it.</p>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span>Operator creates an <code>agentAccess</code> grant to an existing agent account, scoped to <code>{bus | route | trip | whole fleet}</code>.</span></li>
+        <li><span class="rid">R2</span><span>Per grant: commission rate, credit limit, and permissions (can cancel? can set boarding points? max seats per booking).</span></li>
+        <li><span class="rid">R3</span><span>Allocation model per grant: <b>shared-pool</b> (default &mdash; agent draws the same live <code>seatLocks</code> as counters/web) or <b>block/quota</b> (operator carves out N seats per trip; unsold auto-release at a cutoff).</span></li>
+        <li><span class="rid">R4</span><span>Operator can revoke a grant at any time and sees per-agent sales against their buses (delegated trust &mdash; the operator vouches for and is liable for their agents).</span></li>
+      </ul>
+
+      <h4>Acceptance criteria</h4>
+      <div class="ac">
+      <ul>
+        <li>Operator shares a Kathmandu&ndash;Pokhara bus to a Pokhara agent at 8% commission with a 10-seat block; the agent can sell only those terms; the operator sees the sales.</li>
+      </ul>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ============ AGENT PORTAL ============ -->
+  <section data-view="docs">
+    <p class="kicker">Side four &middot; post-MVP</p>
+    <h2>Agent Portal &mdash; feature specifications <b style="font-size:.5em;vertical-align:middle;">new</b></h2>
+
+    <div class="portal">
+      <h3>Agent Portal</h3>
+      <p>Independent travel shops that sell many operators' seats. Modelled as a <b>fourth top-level principal</b> (own auth context, alongside user / operator / admin) with a <b>thin portal</b> that reuses the counter booking surface &mdash; roughly 20% new UI, 80% reused. Built in <b>Sprint 7</b>, after MVP. The agent is its own business, granted access by operators (many-to-many), never a child of one operator. Agent / conductor surfaces are the most mobile-first of all &mdash; they ship as role-aware screens in the one operator-side mobile app, not separate builds.</p>
+    </div>
+
+    <!-- AGT-AUTH -->
+    <div class="doc" id="AGT-AUTH">
+      <div class="docHead">
+        <div>
+          <div class="id">AGT-AUTH</div>
+          <h3 class="ti">Agent Account &amp; Light KYC</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-stub">Sprint 7</span>
+          <span class="prio p1">P1</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>Agent Portal &middot; Account</div>
+        <div><b>Primary file</b><code>agent-auth-context</code> (new)</div>
+        <div><b>Primary actor</b>Agent (travel shop owner)</div>
+        <div><b>Related</b>OPR-SHARE, ADM-KYC</div>
+      </div>
+
+      <h4>Purpose</h4>
+      <p>Stand up the agent as a top-level account: register, light KYC, log in to a thin shell that lists buses shared to them. Trust is <b>delegated</b> &mdash; operators vouch for their own agents by granting access, so the admin team does not have to KYC thousands of small shops. Admin keeps a blocklist for bad actors.</p>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span>Agent account: shop/company name, owner, phone, address, city, light KYC doc(s). Own auth context and role guard.</span></li>
+        <li><span class="rid">R2</span><span>An agent is many-to-many with operators &mdash; one login sells for every operator who has granted them access.</span></li>
+        <li><span class="rid">R3</span><span>Portal home = "buses shared with me" list, leading into the reused counter booking surface.</span></li>
+        <li><span class="rid">R4</span><span>Admin can suspend/blocklist an agent globally; operators can revoke individually.</span></li>
+      </ul>
+    </div>
+
+    <!-- AGT-ACCESS -->
+    <div class="doc" id="AGT-ACCESS">
+      <div class="docHead">
+        <div>
+          <div class="id">AGT-ACCESS</div>
+          <h3 class="ti">Access &amp; Seat Allocation</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-stub">Sprint 7</span>
+          <span class="prio p1">P1</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>Agent Portal &middot; Inventory</div>
+        <div><b>Primary file</b><code>agentAccess</code> grant + <code>seatLocks</code></div>
+        <div><b>Primary actor</b>Agent, Operator</div>
+        <div><b>Related</b>OPR-SHARE, USR-SEAT, AGT-BOOK</div>
+      </div>
+
+      <h4>Purpose</h4>
+      <p>The allocation engine that makes overselling structurally impossible. Two models, both real in Nepal: shared-pool (the destination) and block/quota (the migration path from today's paper trust). Both ride on the existing <code>seatLocks</code> shared-inventory collection.</p>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span><b>Shared-pool (default):</b> agent, operator counters, and web all draw from one live seat map. A seat sold by anyone is gone everywhere instantly.</span></li>
+        <li><span class="rid">R2</span><span><b>Block/quota (optional):</b> operator carves out N seats per trip for a specific agent; only that agent can sell them; unsold blocks auto-release to the pool at a configurable cutoff (e.g. 2h before departure).</span></li>
+        <li><span class="rid">R3</span><span>Allocation, commission, credit limit, and permissions all live on the per-grant <code>agentAccess</code> record (see OPR-SHARE).</span></li>
+      </ul>
+
+      <h4>Acceptance criteria</h4>
+      <div class="ac">
+      <ul>
+        <li>Agent books seat 12; it immediately shows booked on the operator counter and the public seat map.</li>
+        <li>A 10-seat block with 4 sold releases the remaining 6 to the pool at the cutoff.</li>
+      </ul>
+      </div>
+    </div>
+
+    <!-- AGT-BOOK -->
+    <div class="doc" id="AGT-BOOK">
+      <div class="docHead">
+        <div>
+          <div class="id">AGT-BOOK</div>
+          <h3 class="ti">Agent Booking</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-stub">Sprint 7</span>
+          <span class="prio p1">P1</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>Agent Portal &middot; Booking</div>
+        <div><b>Primary file</b>reuses OPR-COUNTER flow, scoped inventory</div>
+        <div><b>Primary actor</b>Agent</div>
+        <div><b>Related</b>OPR-COUNTER, AGT-ACCESS, OPR-RECON</div>
+      </div>
+
+      <h4>Purpose</h4>
+      <p>Let an agent sell seats. Deliberately <b>not a new booking UI</b> &mdash; it reuses the operator counter booking flow, scoped to the inventory shared with the agent.</p>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span>Agent books from the shared seat map for any bus/trip shared to them, within their permissions and credit limit.</span></li>
+        <li><span class="rid">R2</span><span>Every agent booking stamps <code>soldBy: { channel: "agent", actorId }</code> &mdash; the slot reserved in Sprint 6.</span></li>
+        <li><span class="rid">R3</span><span>Boarding/dropping points come from the operator's configured points (OPR-TRIP), not free text.</span></li>
+      </ul>
+    </div>
+
+    <!-- AGT-LEDGER -->
+    <div class="doc" id="AGT-LEDGER">
+      <div class="docHead">
+        <div>
+          <div class="id">AGT-LEDGER</div>
+          <h3 class="ti">Wallet, Commission &amp; Settlement</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-stub">Sprint 7</span>
+          <span class="prio p1">P1</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>Agent Portal &middot; Money</div>
+        <div><b>Primary file</b>agent wallet + reuses <code>ledgerEntries</code></div>
+        <div><b>Primary actor</b>Agent, Operator</div>
+        <div><b>Related</b>OPR-RECON, ADM-COMM, OPR-EARN</div>
+      </div>
+
+      <h4>Purpose</h4>
+      <p>Handle agent money the way Nepal actually works: prepaid/credit, not postpaid. The agent collects cash from the passenger and owes the operator minus commission; a wallet/credit limit protects the operator from an agent who sells and disappears.</p>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span>Agent has a prepaid wallet or credit limit; each booking draws it down; hitting the limit blocks selling until top-up.</span></li>
+        <li><span class="rid">R2</span><span>Agent commission is attributed via the <code>soldBy</code> tag and flows into the same <code>ledgerEntries</code> + reconciliation sheet &mdash; no new money rails.</span></li>
+        <li><span class="rid">R3</span><span>Agent settlement is manual at first (like operator settlement); automation is post-Sprint-7.</span></li>
+      </ul>
+
+      <h4>Acceptance criteria</h4>
+      <div class="ac">
+      <ul>
+        <li>An agent with a NPR 20,000 credit limit is blocked at booking 41 of NPR 500 seats until they top up; every sale shows in the operator's reconciliation and commission ledger.</li>
+      </ul>
+      </div>
+    </div>
+
   </section>
 
   <!-- ============ ADMIN PORTAL ============ -->
@@ -2302,6 +2471,9 @@
       <b>The single most important rule:</b> ship MVP in 14 weeks. If by week 10 you are still on Sprint 3, the answer is to cut Sprint 5's scope, not to push to week 18. The cost of slow MVP &gt; the cost of a smaller MVP.
     </div>
   </section>
+
+    </div><!-- /.docMain -->
+  </div><!-- /.docsLayout -->
 
   <!-- ============ INTERACTIVE SPRINT BOARD ============ -->
   <section id="sprints" data-view="sprints">
@@ -2818,12 +2990,13 @@
 <script>
 const DATA = {
   meta: {
-    lastUpdated: '2026-06-10',
+    lastUpdated: '2026-06-14',
     currentSprintId: 'SP-2',
     nextSprintId: 'SP-3',
   },
 
   activity: [
+    { when: '2026-06-14', what: '🧭 <b>Roadmap reorg — operator-OS thesis + agents on the map.</b> Strategic decision: UTHBUS is the operator&rsquo;s back office, not another ticketing storefront (Nepal&rsquo;s ticketing layer is saturated). Two product calls made: <b>(1) retention features fold into MVP</b> — Sprint&nbsp;2 KYC now also builds the <b>Compliance &amp; Document Vault</b> foundation (typed, expiry-aware docs), and a new <b>Sprint&nbsp;6 · Daily Reconciliation (&ldquo;cash truth&rdquo;)</b> becomes the sprint that ships MVP (v1.0). <b>(2) Agents are the first thing after MVP</b> — new <b>Sprint&nbsp;7 · Shared Inventory Engine + Agents</b>. Agents modelled as a 4th top-level principal (many-to-many with operators), reusing the counter booking surface. Cheap foundation seeded during MVP: every booking carries a <code>soldBy</code> channel tag, and agents draw from the existing <code>seatLocks</code> shared-inventory engine. Operator OS roadmap (compliance alerts, staff roster, parcel/courier, conductor app, GPS, regulator layer) captured as a post-MVP menu. Mobile app for operators/agents/conductors planned as one role-aware app. <b>Ship date moves out ~2 weeks for the folded retention scope.</b>' },
     { when: '2026-06-10', what: '<b>Post-v0.1 hotfix:</b> three missing composite indexes deployed to both projects. <code>(userId, bookingTime DESC)</code>, <code>(userId, status, bookingTime DESC)</code>, <code>(operatorId, status, bookingTime DESC)</code>. Fixes <i>"Error fetching user bookings: FirebaseError: The query requires an index"</i> on <code>uthbus.com/user/bookings</code>. Plus five backlog items logged from v0.1 user-testing — see Deferred panel.' },
     { when: '2026-06-10', what: '🚀 <b>Sprint 1 shipped — tagged v0.1 on main.</b> Truthful Tickets &amp; Payment Status Foundation: every booking carries an honest <code>paymentStatus</code>; the e-ticket renders by status; admin/operator/user views show the new payment pill; nightly cron auto-completes past-date bookings; 2-hour same-day cutoff; Pay Now modal stub ready for Sprint 3 (eSewa) plug-in. Mid-sprint UX fixes folded in. Cron requires a one-click Vercel redeploy of main to pick up <code>CRON_SECRET</code> (env-var changes don\'t flow to existing deploys). <b>Up next: Sprint 2 — Operator KYC end-to-end.</b>' },
     { when: '2026-06-10', what: '<b>Sprint 1 backend ops shipped to prod.</b> Firestore composite indexes deployed to both <code>uthbus-39a14</code> and <code>uthbus-prod</code>: <code>(paymentStatus, createdAt)</code> for future admin filtering and <code>(status, date)</code> for the nightly cron query. Backfill migration ran clean: dev = 5 docs updated + 6 skipped (already had the field), prod = 0 (empty, no real bookings yet). <code>CRON_SECRET</code> set in Vercel for both Preview and Production scopes.' },
@@ -3041,15 +3214,15 @@ const DATA = {
     // SPRINT 2
     // =================================================================
     {
-      id: 'SP-2', tag: 'Sprint 2', title: 'Operator KYC end-to-end',
-      goal: '"Verified operators" stops being a lie.',
-      duration: '2-3 weeks (~70 hrs)', priority: 'p0', version: 'v0.2-kyc',
+      id: 'SP-2', tag: 'Sprint 2', title: 'Operator KYC + Compliance Vault foundation',
+      goal: '"Verified operators" stops being a lie — and the doc model is built expiry-aware from day one.',
+      duration: '3 weeks (~80 hrs)', priority: 'p0', version: 'v0.2-kyc',
       groups: [
         { title: 'Week 1 · data + uploads', tasks: [
           { id: 'sp2-t1', title: 'Add kycStatus to OperatorProfile',
             desc: '<code>pending_verification | approved | rejected</code>. Default pending. Backfill existing operators to approved.', status: 'todo' },
-          { id: 'sp2-t2', title: 'Subcollection operators/{uid}/kycDocs/',
-            desc: 'Metadata: type (companyCert / license / pan), storagePath, uploadedAt.', status: 'todo' },
+          { id: 'sp2-t2', title: 'Subcollection operators/{uid}/kycDocs/ — built expiry-aware',
+            desc: 'Metadata: <code>docType</code> (companyCert / license / pan / routePermit / insurance / fitness / pollution), <code>storagePath</code>, <code>uploadedAt</code>, <code>expiresAt</code> (nullable), <code>verificationStatus</code>. <b>Same schema becomes the Compliance Vault</b> — design it once, expiry-aware, so OPR-COMPLY is a UI layer not a migration.', status: 'todo' },
           { id: 'sp2-t3', title: 'Firebase Storage rules + size/type limits',
             desc: 'Operator writes to <code>kyc/{uid}/*</code>; admin reads <code>kyc/*</code>. Max 5MB, PDFs/images only.', status: 'todo' },
           { id: 'sp2-t4', title: 'OPR-AUTH registration: three doc upload fields',
@@ -3069,13 +3242,21 @@ const DATA = {
           { id: 'sp2-t10', title: 'Audit log on KYC actions',
             desc: 'Record admin uid, operator uid, action, reason, timestamp. No UI yet.', status: 'todo' },
         ]},
+        { title: 'Week 3 · Compliance Vault foundation (OPR-COMPLY)', tasks: [
+          { id: 'sp2-t12', title: 'Operator-facing document vault view',
+            desc: 'A page where the operator sees all their docs (the KYC set + per-bus route permit / insurance / fitness / pollution), each with its <code>expiresAt</code> date and a colour state: valid / expiring-soon (&lt;30d) / expired. Upload + replace from here.', status: 'todo' },
+          { id: 'sp2-t13', title: 'Per-bus compliance docs on the bus model',
+            desc: 'Extend the bus doc (or a <code>buses/{id}/complianceDocs</code> subcollection) with route permit, insurance, fitness, pollution — same expiry-aware shape as kycDocs.', status: 'todo' },
+          { id: 'sp2-t14', title: 'Expiry surfacing (alert is a stretch)',
+            desc: 'P1: dashboard banner "2 documents expire in the next 30 days". P2 stretch: nightly check that emails the operator — reuse the Trigger Email path. The cron/alert can slip to a later sprint; the <b>data being expiry-aware must not</b>.', status: 'todo' },
+        ]},
         { title: 'Week 3 (buffer)', tasks: [
           { id: 'sp2-t11', title: 'End-to-end test with real operator',
-            desc: 'Walk a real (or test) operator through register → upload → approve → bus in search.', status: 'todo' },
+            desc: 'Walk a real (or test) operator through register → upload → approve → bus in search, and confirm their compliance docs + expiry states render in the vault.', status: 'todo' },
         ]},
       ],
-      cut: "No 2FA on admin. No audit log UI. No bulk approve. No \"request more info\" status. Don't migrate existing SEO route pages.",
-      exit: 'The "verified operators" promise is now backed by code. First real operator gets the badge.',
+      cut: "No 2FA on admin. No audit log UI. No bulk approve. No \"request more info\" status. Don't migrate existing SEO route pages. Compliance expiry email alert is P2 — only the expiry-aware data model is non-negotiable this sprint.",
+      exit: 'The "verified operators" promise is backed by code, first real operator gets the badge, and every document in the system carries an expiry the operator can see. <b>v0.2-kyc.</b>',
     },
 
     // =================================================================
@@ -3171,7 +3352,7 @@ const DATA = {
           { id: 'sp4-gcs', title: 'GCS daily Firestore backups (deferred from Sprint 0)',
             desc: 'Enable Blaze, configure scheduled export, verify weekly restore drill.',
             status: 'todo',
-            annot: '<b>Last chance before MVP launch.</b> Sprint 5 ships money — backups become non-negotiable. Get CEO/COO approval ahead of this sprint so Blaze enablement is not the blocker.' },
+            annot: '<b>Last chance before MVP launch.</b> Sprints 5-6 ship money + reconciliation — backups become non-negotiable before the Sprint 6 launch. Get CEO/COO approval ahead of this sprint so Blaze enablement is not the blocker.' },
         ]},
       ],
       cut: 'No automated gateway refund API. No partial-refund splits. No refund webhook. No reason-required field on cancel.',
@@ -3182,9 +3363,9 @@ const DATA = {
     // SPRINT 5 — MVP SHIPS
     // =================================================================
     {
-      id: 'SP-5', tag: 'Sprint 5', title: 'Commission Ledger → SHIP MVP',
-      goal: 'You know what each operator earned. Then ship.',
-      duration: '2-3 weeks (~70 hrs)', priority: 'p1', version: 'v1.0-mvp',
+      id: 'SP-5', tag: 'Sprint 5', title: 'Commission Ledger',
+      goal: 'You know what each operator earned. Feeds the reconciliation sheet next sprint.',
+      duration: '2 weeks (~55 hrs)', priority: 'p1', version: 'v0.5-ledger',
       groups: [
         { title: 'Week 1 · ledger', tasks: [
           { id: 'sp5-t1', title: 'Firestore ledgerEntries collection',
@@ -3207,28 +3388,116 @@ const DATA = {
           { id: 'sp5-t9', title: 'Payout fields on operator profile',
             desc: 'Bank / eSewa / Khalti — text fields you copy when transferring.', status: 'todo' },
         ]},
-        { title: 'Week 3 · MVP regression + ship', tasks: [
-          { id: 'sp5-t10', title: 'Full personal regression checklist',
-            desc: 'Cross-check every P0/P1 feature against requirement IDs.', status: 'todo' },
-          { id: 'sp5-t11', title: 'Onboard first operator end-to-end on prod',
-            desc: 'Register → upload KYC → approve → list one bus → live.', status: 'todo' },
-          { id: 'sp5-t12', title: 'Take one real booking yourself',
-            desc: 'Ride the bus if you can. Settle the operator manually that week.', status: 'todo' },
-          { id: 'sp5-t13', title: 'Post-mortem doc',
-            desc: 'What worked, what was harder than expected, what to fix first post-MVP.', status: 'todo' },
-          { id: 'sp5-t14', title: 'Production deploy. Announce. Take real bookings.',
-            desc: '<b>v1.0-mvp ships. First real money flows.</b>', status: 'todo' },
-        ]},
       ],
-      cut: 'No automated settlement run. No reconciliation report. No CSV export. No multi-currency. No per-route commission. No promo cost allocation.',
-      exit: '🚀 <b>MVP IS LIVE.</b> First verified operator. First real booking on prod. First settlement paid by you.',
+      cut: 'No automated settlement run. No CSV export. No multi-currency. No per-route commission. No promo cost allocation. <b>MVP does not ship here</b> — the reconciliation sheet (Sprint 6) is the last MVP piece.',
+      exit: 'Every paid booking writes a gross/commission/net ledger entry; operator and admin can each see balances. Numbers reconcile by hand on staging. <b>v0.5-ledger.</b>',
     },
 
     // =================================================================
-    // POST-MVP (sketched)
+    // SPRINT 6 — DAILY RECONCILIATION → MVP SHIPS
     // =================================================================
     {
-      id: 'SP-POST-6', tag: 'Sprint 6', title: 'Khalti as second payment',
+      id: 'SP-6', tag: 'Sprint 6', title: 'Daily Reconciliation ("cash truth") → SHIP MVP',
+      goal: 'The operator sees, every day: seats sold, by whom, vs cash that should be in the drawer. Then ship.',
+      duration: '2-3 weeks (~65 hrs)', priority: 'p1', version: 'v1.0-mvp',
+      groups: [
+        { title: 'Week 1 · attribution + capture (OPR-RECON)', tasks: [
+          { id: 'sp6r-t1', title: 'soldBy channel tag on every booking write path',
+            desc: 'Stamp <code>soldBy: { channel: "online" | "counter" | "agent", actorId }</code> on every booking (online checkout, counter booking; <code>"agent"</code> is reserved now and goes live in Sprint 7). <b>This is the cheap agent-foundation seed</b> — reconciliation needs it, and agents inherit it for free.', status: 'todo' },
+          { id: 'sp6r-t2', title: 'Counter cash capture / shift close',
+            desc: 'Counter clerk records cash taken per booking (already implied by pay-at-counter) and can "close the drawer" for a shift — total cash they are handing up.', status: 'todo' },
+          { id: 'sp6r-t3', title: 'Reconciliation aggregation service',
+            desc: 'Per operator, per day, per bus/trip: seats sold split by channel (online / counter), gross collected online (settled via gateway) vs cash expected at counter, vs cash declared. Surface the variance.', status: 'todo' },
+        ]},
+        { title: 'Week 2 · the sheet', tasks: [
+          { id: 'sp6r-t4', title: 'Operator daily reconciliation sheet',
+            desc: 'The hook screen: "You sold 38 seats — 24 online (settled), 14 counter (cash). Cash expected NPR 14,000. Declared NPR 12,500. Variance −1,500." Date picker, per-bus drill-down.', status: 'todo' },
+          { id: 'sp6r-t5', title: 'Admin reconciliation oversight',
+            desc: 'Admin can see the same per-operator reconciliation and flag persistent variance.', status: 'todo' },
+        ]},
+        { title: 'Week 3 · MVP regression + ship', tasks: [
+          { id: 'sp6r-t6', title: 'Full personal regression checklist',
+            desc: 'Cross-check every P0/P1 feature (KYC, vault, eSewa, refunds, ledger, reconciliation) against requirement IDs.', status: 'todo' },
+          { id: 'sp6r-t7', title: 'Onboard first operator end-to-end on prod',
+            desc: 'Register → upload KYC + compliance docs → approve → list one bus → live.', status: 'todo' },
+          { id: 'sp6r-t8', title: 'Take one real booking yourself',
+            desc: 'Ride the bus if you can. Settle the operator manually, reconciled against the sheet.', status: 'todo' },
+          { id: 'sp6r-t9', title: 'Post-mortem doc',
+            desc: 'What worked, what was harder than expected, what to fix first post-MVP. Artifact for your first hire.', status: 'todo' },
+          { id: 'sp6r-t10', title: 'Production deploy. Announce. Take real bookings.',
+            desc: '<b>v1.0-mvp ships. First real money flows.</b>', status: 'todo' },
+        ]},
+      ],
+      cut: 'No agent channel yet (Sprint 7 — the soldBy slot is reserved). No automated bank settlement. No CSV export (screenshots are fine at MVP volume). No predictive variance/fraud scoring.',
+      exit: '🚀 <b>MVP IS LIVE.</b> First verified operator, first real booking on prod, first settlement paid by you — and the operator can see their cash truth daily. The feature that makes operators stay.',
+    },
+
+    // =================================================================
+    // SPRINT 7 — SHARED INVENTORY + AGENTS (first thing after MVP)
+    // =================================================================
+    {
+      id: 'SP-7', tag: 'Sprint 7', title: 'Shared Inventory Engine + Agents',
+      goal: 'Bring agents inside the system so the people who oversell today draw from one live seat map.',
+      duration: '3-4 weeks (~95 hrs)', priority: 'p1', version: 'v1.1-agents',
+      groups: [
+        { title: 'Week 1 · the agent principal (AGT-AUTH)', tasks: [
+          { id: 'sp7-t1', title: 'Agent as a 4th top-level account type',
+            desc: 'New <code>agent-auth-context</code> alongside user/operator/admin. Agent account: company/shop name, owner, phone, address, city, light KYC. Agent is its own business — <b>not</b> a child of any operator.', status: 'todo' },
+          { id: 'sp7-t2', title: 'Agent registration + thin portal shell',
+            desc: 'Login → "buses shared with me" list → (reused) counter booking surface → my sales + wallet. ~20% new UI, 80% reused from OPR-COUNTER.', status: 'todo' },
+          { id: 'sp7-t3', title: 'Delegated trust onboarding',
+            desc: 'Operators vouch for their own agents by granting access (operator is liable). Admin keeps a blocklist for bad actors — no per-agent admin KYC queue (does not scale).', status: 'todo' },
+        ]},
+        { title: 'Week 2 · access + allocation (AGT-ACCESS / OPR-SHARE)', tasks: [
+          { id: 'sp7-t4', title: 'AgentAccess grant model',
+            desc: 'Operator shares <code>{bus | route | trip | whole fleet}</code> to an agent, with commission rate, credit limit, and permissions (can cancel? set boarding points? max seats?).', status: 'todo' },
+          { id: 'sp7-t5', title: 'Allocation: shared-pool (default) + block/quota',
+            desc: 'Default shared-pool — agent draws from the same <code>seatLocks</code> as counters and web, in real time (kills overselling). Optional block allocation: operator carves out N seats per trip for one agent (the migration path from today&rsquo;s paper trust). Unsold blocks auto-release to the pool at a cutoff.', status: 'todo' },
+          { id: 'sp7-t6', title: 'Operator "share + see what they sold" view (OPR-SHARE)',
+            desc: 'Operator grants/revokes access and sees each agent&rsquo;s sales against their buses.', status: 'todo' },
+        ]},
+        { title: 'Week 3 · agent booking + money (AGT-BOOK / AGT-LEDGER)', tasks: [
+          { id: 'sp7-t7', title: 'Agent booking reuses counter, scoped inventory',
+            desc: 'Agent books from the shared seat map; every booking stamps <code>soldBy: { channel: "agent", actorId }</code> — the slot reserved in Sprint 6.', status: 'todo' },
+          { id: 'sp7-t8', title: 'Agent wallet / credit ledger',
+            desc: 'Prepaid wallet or credit limit; each booking draws it down; hitting the limit blocks selling until top-up. Protects the operator from an agent who sells and disappears.', status: 'todo' },
+          { id: 'sp7-t9', title: 'Commission attribution → reconciliation + ADM-COMM',
+            desc: 'Agent commission flows into the same ledger + reconciliation sheet via the <code>soldBy</code> tag. No new money rails — reuse Sprint 5/6 plumbing.', status: 'todo' },
+        ]},
+      ],
+      cut: 'No agent-to-agent transfers. No automated agent payouts (manual, like operator settlement). No multi-operator agent dashboards beyond the shared-buses list. Mobile agent app is the same role-aware app, not a separate build.',
+      exit: 'An agent in another city logs in, sees buses shared to them, sells from the live shared seat map, and the seat is gone everywhere instantly. Overselling between counters/agents/web is structurally impossible. <b>v1.1-agents.</b>',
+    },
+
+    // =================================================================
+    // POST-MVP (sketched — menu, not a plan)
+    // =================================================================
+    {
+      id: 'SP-OPEROS', tag: 'Operator OS', title: 'Operator OS & field expansion (menu)',
+      goal: 'The "top-to-bottom, everything digitalized" backlog. Pull the one operators ask for loudest.',
+      duration: 'TBD · pull one at a time', priority: 'p2',
+      groups: [{ title: 'Menu, not a plan', tasks: [
+        { id: 'opos-t1', title: 'OPR-STAFF · Staff & duty roster',
+          desc: 'Drivers, conductors, helpers, counter clerks. Rosters, attendance, who drove which trip, salary basis. Replaces the owner&rsquo;s WhatsApp chaos.', status: 'todo' },
+        { id: 'opos-t2', title: 'CON-APP · Conductor on-bus app',
+          desc: 'Scan ticket QR to mark boarded, see the live manifest, sell empty seats en route (updates the owner&rsquo;s cash sheet). Closes the leakage loop from the bus.', status: 'todo' },
+        { id: 'opos-t3', title: 'CON-MANIFEST · Digital passenger manifest',
+          desc: 'One-tap manifest (name, seat, boarding point, emergency contact) for police checkposts + insurance. Safety feature regulators love.', status: 'todo' },
+        { id: 'opos-t4', title: 'DRV-LOG · Driver trip log',
+          desc: 'Trip start/end, odometer, fuel fill, incident/SOS. Feeds maintenance + cost-per-km.', status: 'todo' },
+        { id: 'opos-t5', title: 'OPR-PARCEL · Parcel & courier',
+          desc: 'Buses carry cargo between cities — real daily cash revenue, 100% undigitized today. Book → track → collect-at-counter. Could be its own product; operators would adopt UTHBUS for this alone.', status: 'todo' },
+        { id: 'opos-t6', title: 'OPR-TRACK / USR-TRACK · Live GPS tracking',
+          desc: 'Conductor phone as a GPS beacon. Passengers track "where&rsquo;s my bus", owner audits routes. Most-requested passenger feature in every Nepal transport survey.', status: 'todo' },
+        { id: 'opos-t7', title: 'OPR-AGENTNET · Sub-agent commission network',
+          desc: 'Builds on Sprint 7 agents: agent ledgers, tiered commissions, distribution analytics. Own the operator&rsquo;s distribution, not just their counter.', status: 'todo' },
+        { id: 'opos-t8', title: 'GOV layer (sketched, B2G) · route+fare registry, palo slots, ridership data',
+          desc: 'GOV-ROUTE (standardized routes + govt fare ceilings), GOV-PALO (committee slot/"palo" allocation), GOV-DATA (anonymized ridership/demand for DoTM, municipalities, EV-transition planning). The eventual government story.', status: 'todo' },
+      ]}],
+      exit: 'This is the moat — operations data nobody else owns. Sequence it from real operator demand after agents land.',
+    },
+    {
+      id: 'SP-POST-6', tag: 'Sprint 8', title: 'Khalti as second payment',
       goal: 'If eSewa is < 70% of intended payments.',
       duration: '~2 weeks', priority: 'p2',
       groups: [{ title: 'Tasks', tasks: [
@@ -3241,7 +3510,7 @@ const DATA = {
       exit: "If eSewa converts well, this is low-priority. Don't build it preemptively.",
     },
     {
-      id: 'SP-POST-7', tag: 'Sprint 7', title: 'Bus photo upload pipeline',
+      id: 'SP-POST-7', tag: 'Sprint 9', title: 'Bus photo upload pipeline',
       goal: 'When operators ask for it or conversion is hurting.',
       duration: '~3 weeks', priority: 'p2',
       groups: [{ title: 'Tasks', tasks: [
@@ -3255,7 +3524,7 @@ const DATA = {
       exit: 'Until then: four brand-tier placeholder images per bus type.',
     },
     {
-      id: 'SP-POST-8', tag: 'Sprint 8', title: 'Email + WhatsApp notifications',
+      id: 'SP-POST-8', tag: 'Sprint 10', title: 'Email + WhatsApp notifications',
       goal: 'When manual WhatsApp from your phone stops scaling.',
       duration: '~2-3 weeks', priority: 'p2',
       groups: [{ title: 'Tasks', tasks: [
@@ -3272,7 +3541,7 @@ const DATA = {
       exit: 'Until then: Google Form + WhatsApp Business number checked 3x/day handles 5-10 bookings/day.',
     },
     {
-      id: 'SP-POST-9', tag: 'Sprint 9', title: 'Ratings & Reviews',
+      id: 'SP-POST-9', tag: 'Sprint 11', title: 'Ratings & Reviews',
       goal: 'When you have your first 50+ completed bookings.',
       duration: '~2 weeks', priority: 'p2',
       groups: [{ title: 'Tasks', tasks: [
@@ -3284,7 +3553,7 @@ const DATA = {
       ]}],
     },
     {
-      id: 'SP-POST-PERF', tag: 'Sprint 10', title: 'Performance & rendering modernisation',
+      id: 'SP-POST-PERF', tag: 'Sprint 12', title: 'Performance & rendering modernisation',
       goal: 'The app feels instant. No spinner on every click. Public pages render server-side.',
       duration: '~2-3 weeks', priority: 'p2',
       groups: [
@@ -3328,11 +3597,11 @@ const DATA = {
             status: 'todo' },
         ]},
       ],
-      cut: 'No PWA / offline (that\'s sp10-t6 in Sprint 11+). No service worker. No edge runtime migration. No React Compiler trial. No CDN re-shuffle.',
+      cut: 'No PWA / offline (that\'s sp10-t6 in Sprint 13+). No service worker. No edge runtime migration. No React Compiler trial. No CDN re-shuffle.',
       exit: 'Admin pages feel "instant" — no spinner between actions. Public SEO pages render server-side (Lighthouse perf &gt; 85, LCP &lt; 2.5s). Initial JS bundle measurably smaller. The win is qualitative more than numeric — clicks should respond, not load.',
     },
     {
-      id: 'SP-POST-10', tag: 'Sprint 11+', title: 'Everything else — replan',
+      id: 'SP-POST-10', tag: 'Sprint 13+', title: 'Everything else — replan',
       goal: 'Order depends on what hurts. Replan from MVP data.',
       duration: 'TBD', priority: 'p2',
       groups: [{ title: 'Menu, not a plan', tasks: [
@@ -3613,5 +3882,26 @@ const DATA = {
   </div>
 </footer>
 
+<script>
+// Docs sidebar · mobile collapse toggle
+(function () {
+  var sb = document.querySelector('.docSidebar');
+  var btn = sb && sb.querySelector('.docNavToggle');
+  if (!btn) return;
+  btn.addEventListener('click', function () {
+    var open = sb.classList.toggle('open');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  // On mobile, close the drawer once a section is chosen.
+  sb.querySelectorAll('.docNavLinks a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      if (window.matchMedia('(max-width: 820px)').matches) {
+        sb.classList.remove('open');
+        btn.setAttribute('aria-expanded', 'false');
+      }
+    });
+  });
+})();
+</script>
 </body>
 </html>
