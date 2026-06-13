@@ -19,6 +19,23 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/admins/$(request.auth.token.email)).data.isAdmin == true;
     }
 
+    // Server-side enforcement of the 2-hour booking cutoff (Sprint 2, mirrors
+    // lib/booking-cutoff.ts). Departure date ("YYYY-MM-DD") + time ("HH:MM") are
+    // wall-clock Asia/Kathmandu, which has a FIXED +5:45 offset and no DST — so
+    // departureUTC = date+time − 5h45m. Bookable iff departure is > 2h after the
+    // server's request time. Malformed/short values pass through (permissive,
+    // matching the client). Applied only to online user bookings — counter
+    // walk-ins and admin are exempt so operators can still sell last-minute.
+    function departureBookable(dateStr, timeStr) {
+      return !(dateStr is string && timeStr is string
+               && dateStr.size() == 10 && timeStr.size() >= 5)
+        || (timestamp.date(int(dateStr[0:4]), int(dateStr[5:7]), int(dateStr[8:10]))
+              + duration.value(int(timeStr[0:2]), 'h')
+              + duration.value(int(timeStr[3:5]), 'm')
+              - duration.value(5, 'h') - duration.value(45, 'm'))
+            > request.time + duration.value(2, 'h');
+    }
+
     // ─── users/{uid} ─────────────────────────────────────────────────────────
     // A user can only read/write their own profile. Admins can read/update.
     match /users/{uid} {
@@ -65,13 +82,14 @@ service cloud.firestore {
         && request.resource.data.verificationStatus == "pending_verification";
 
       allow update: if
-        // Operator updates their own bus, but cannot change verificationStatus
-        // or operatorId, and cannot change status to/from "Active" themselves.
+        // Operator updates their own bus, but cannot change verificationStatus,
+        // operatorKycStatus, or operatorId, and cannot self-approve.
         (isSignedIn()
           && resource.data.operatorId == request.auth.uid
           && request.resource.data.operatorId == resource.data.operatorId
-          && request.resource.data.verificationStatus == resource.data.verificationStatus)
-        // Admin can change anything.
+          && request.resource.data.verificationStatus == resource.data.verificationStatus
+          && request.resource.data.operatorKycStatus == resource.data.operatorKycStatus)
+        // Admin can change anything (incl. flipping operatorKycStatus on KYC review).
         || isAdmin();
 
       allow delete: if isAdmin();
@@ -93,9 +111,10 @@ service cloud.firestore {
       );
 
       allow create: if isSignedIn() && (
-        // User booking for themselves
-        request.resource.data.userId == request.auth.uid
-        // Operator walk-in booking (no userId)
+        // User booking for themselves — subject to the 2-hour departure cutoff.
+        (request.resource.data.userId == request.auth.uid
+          && departureBookable(request.resource.data.date, request.resource.data.time))
+        // Operator walk-in booking (no userId) — exempt from cutoff (counter sells last-minute).
         || (request.resource.data.operatorId == request.auth.uid
             && !("userId" in request.resource.data))
         || isAdmin()
@@ -138,6 +157,8 @@ service cloud.firestore {
         && request.resource.data.seatNumber is string
         && request.resource.data.bookingId is string
         && request.resource.data.operatorId is string
+        // Seats the operator marked N/A can never be locked/booked — by anyone.
+        && !(request.resource.data.seatNumber in get(/databases/$(database)/documents/buses/$(request.resource.data.busId)).data.get("naSeats", []))
         // The activeBooking referenced must exist after the transaction and
         // must match the seatLock's busId/date.
         && getAfter(/databases/$(database)/documents/activeBookings/$(request.resource.data.bookingId)).data.busId == request.resource.data.busId
@@ -160,6 +181,25 @@ service cloud.firestore {
         || resource.data.operatorId == request.auth.uid
         || isAdmin()
       );
+    }
+
+    // ─── adminAuditLog/{logId} ───────────────────────────────────────────────
+    // Append-only admin action log (KYC approve/reject, Sprint 2). Admin-only;
+    // entries are immutable once written. No UI this sprint — write path only.
+    match /adminAuditLog/{logId} {
+      allow read:   if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    // ─── mail/{mailId} ───────────────────────────────────────────────────────
+    // Outbox for the Firebase "Trigger Email" extension. The admin writes a
+    // document here on KYC approve/reject and the extension sends it. The
+    // extension's service account reads/updates delivery state out-of-band.
+    match /mail/{mailId} {
+      allow create: if isAdmin();
+      allow read:   if isAdmin();
+      allow update, delete: if false;
     }
 
     // ─── Default deny ────────────────────────────────────────────────────────

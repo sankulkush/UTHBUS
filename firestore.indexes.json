@@ -41,6 +41,14 @@
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "bookingTime", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "operators",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "kycStatus", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

@@ -1,9 +1,10 @@
 // lib/firebase.ts
-export { 
-  auth, 
-  googleProvider, 
-  firestore, 
+export {
+  auth,
+  googleProvider,
+  firestore,
+  storage,
   app,
   isFirebaseConfigured,
-  isPreviewEnvironment 
+  isPreviewEnvironment
 } from "@/firebaseConfig"
