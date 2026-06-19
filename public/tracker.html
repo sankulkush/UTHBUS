@@ -678,7 +678,7 @@
             <li><a href="#SP-0">Sprint 0 &middot; Foundations</a></li>
             <li><a href="#SP-1">Sprint 1 &middot; Truthful Tickets</a></li>
             <li><a href="#SP-2">Sprint 2 &middot; KYC + Compliance Vault</a></li>
-            <li><a href="#SP-3">Sprint 3 &middot; eSewa Payment</a></li>
+            <li><a href="#SP-3">Sprint 3 &middot; Fonepay Payment</a></li>
             <li><a href="#SP-4">Sprint 4 &middot; Cancellation &amp; Refund</a></li>
             <li><a href="#SP-5">Sprint 5 &middot; Commission Ledger</a></li>
             <li><a href="#SP-6">Sprint 6 &middot; Reconciliation &rarr; MVP</a></li>
@@ -1008,17 +1008,17 @@
       </div>
 
       <h4>User stories</h4>
-      <div class="story"><b>As a</b> traveler <b>I want</b> to see the full fare breakdown, apply a promo, and pay with eSewa, Khalti, or card <b>so that</b> I have a real, trustworthy transaction.</div>
+      <div class="story"><b>As a</b> traveler <b>I want</b> to see the full fare breakdown, apply a promo, and pay with Fonepay <b>so that</b> I have a real, trustworthy transaction.</div>
       <div class="story"><b>As a</b> traveler whose payment fails <b>I want</b> a clear retry path and my seats still held <b>so that</b> I don't lose my place.</div>
 
       <h4>Functional requirements</h4>
       <ul class="reqList">
         <li><span class="rid">R1</span><span>Fare breakdown line items: base fare &times; seats, service fee (if any), discount (promo), total.</span></li>
         <li><span class="rid">R2</span><span>Promo code field validates against the promotions service (see ADM-PROMO). Today only <code>WELCOME50</code> is hard-coded &mdash; remove the hard-code and check against backend.</span></li>
-        <li><span class="rid">R3</span><span>Payment method selector: eSewa, Khalti, Card (Stripe or equivalent), Pay at Counter (operator-allowed only).</span></li>
-        <li><span class="rid">R4</span><span>"Confirm &amp; Pay" initiates a payment intent and redirects to the gateway. Booking is written with <code>status = "Pending"</code> at intent creation, flipped to <code>Confirmed</code> only on webhook success.</span></li>
+        <li><span class="rid">R3</span><span>Payment method selector: Fonepay (QR) and Pay at Counter (operator-allowed only). Khalti / card are post-MVP.</span></li>
+        <li><span class="rid">R4</span><span>"Confirm &amp; Pay" creates a payment intent and presents the Fonepay QR in-page (no redirect). Booking is written with <code>status = "Pending"</code> at intent creation, flipped to <code>Confirmed</code> only on <b>server-verified</b> payment success (status-check API, not the websocket alone).</span></li>
         <li><span class="rid">R5</span><span>Failed payments: booking remains <code>Pending</code> for a TTL (e.g. 15 min) with retry. After TTL it auto-cancels and releases seats.</span></li>
-        <li><span class="rid">R6</span><span>Webhook handler must be idempotent &mdash; the same gateway event arriving twice must not double-book or double-charge.</span></li>
+        <li><span class="rid">R6</span><span>Payment-status verification must be idempotent (keyed on PRN) &mdash; the same payment resolving twice (socket + poll + manual refresh) must not double-book or double-charge.</span></li>
         <li><span class="rid">R7</span><span>"Pay at Counter" path (where allowed by the operator) writes the booking with <code>paymentStatus = "unpaid_pending_counter"</code> and renders a clearly different ticket (see USR-TICKET).</span></li>
       </ul>
 
@@ -1034,10 +1034,10 @@
       <h4>Pending</h4>
       <ul class="pendList">
         <li><span class="pTag"><span class="prio p0">P0</span></span><span>Stop writing <code>Confirmed</code> without payment. Introduce <code>paymentStatus</code> on the booking model: <code>unpaid_pending_counter | pending_gateway | paid | failed | refunded</code>.</span></li>
-        <li><span class="pTag"><span class="prio p0">P0</span></span><span>Integrate eSewa.</span></li>
-        <li><span class="pTag"><span class="prio p0">P0</span></span><span>Integrate Khalti.</span></li>
+        <li><span class="pTag"><span class="prio p0">P0</span></span><span>Integrate Fonepay (MVP gateway).</span></li>
+        <li><span class="pTag"><span class="prio p1">P1</span></span><span>Integrate Khalti (post-MVP second gateway).</span></li>
         <li><span class="pTag"><span class="prio p1">P1</span></span><span>Integrate card payments for tourists (Stripe or local card gateway).</span></li>
-        <li><span class="pTag"><span class="prio p1">P1</span></span><span>Payment intent model + webhook handlers (idempotent).</span></li>
+        <li><span class="pTag"><span class="prio p1">P1</span></span><span>Payment intent model + status verification (idempotent, keyed on PRN).</span></li>
         <li><span class="pTag"><span class="prio p1">P1</span></span><span>Replace hard-coded promo with promotions service driven by ADM-PROMO.</span></li>
         <li><span class="pTag"><span class="prio p2">P2</span></span><span>"Pay at Counter" path with operator opt-in.</span></li>
       </ul>
@@ -1054,7 +1054,7 @@
 
       <h4>Dependencies</h4>
       <ul>
-        <li>Merchant accounts: eSewa, Khalti, card gateway. <b>Procurement is a CTO-side blocker, not engineering &mdash; start now.</b></li>
+        <li>Merchant accounts: Fonepay (MVP), then Khalti, card gateway. <b>Procurement is a CTO-side blocker, not engineering &mdash; start now.</b></li>
         <li>Settlement ledger (ADM-COMM) for downstream reconciliation.</li>
       </ul>
 
@@ -2362,15 +2362,15 @@
     <p class="lead">"MVP" is one of the most abused words in product. For UTHBUS, here is the only definition that matters: <b>the smallest version of the platform that can take real money from a real traveler, give them a truthful ticket, and pay the real operator their share.</b> Everything else is post-MVP.</p>
 
     <div class="callout ok">
-      <b>MVP in one sentence:</b> A verified Nepali operator lists one bus &rarr; a real traveler finds it on uthbus.com &rarr; pays via eSewa &rarr; receives a ticket that is true &rarr; rides the bus &rarr; you, as platform, can show what you owe that operator and settle them. Anything not needed to make that loop work end-to-end is post-MVP.
+      <b>MVP in one sentence:</b> A verified Nepali operator lists one bus &rarr; a real traveler finds it on uthbus.com &rarr; pays via Fonepay &rarr; receives a ticket that is true &rarr; rides the bus &rarr; you, as platform, can show what you owe that operator and settle them. Anything not needed to make that loop work end-to-end is post-MVP.
     </div>
 
     <h3>What is IN the MVP</h3>
     <ul>
       <li><b>Honest e-ticket.</b> Payment Mode rendered from real data, never hard-coded.</li>
       <li><b>Operator KYC.</b> Documents uploaded, admin approves, verified badge shows. "Verified operators" becomes true in software.</li>
-      <li><b>One payment method: eSewa.</b> Most common in Nepal, simplest sandbox, fastest to ship. Khalti, cards, wallet &mdash; later.</li>
-      <li><b>Cancellation policy + manual refund.</b> Policy enforced in UI; refund triggered by you from admin (manual eSewa refund through their dashboard). Automated refund is post-MVP.</li>
+      <li><b>One payment method: Fonepay.</b> QR that any bank/wallet app in Nepal can scan, one gateway, fastest to ship. eSewa, Khalti, cards &mdash; later.</li>
+      <li><b>Cancellation policy + manual refund.</b> Policy enforced in UI; refund triggered by you from admin (manual refund through the Fonepay merchant portal). Automated refund is post-MVP.</li>
       <li><b>Commission ledger (read-only).</b> Every paid booking writes a ledger entry with gross / commission / net. Operator can see what they are owed. Actual payout happens outside the system (you bank-transfer them weekly). Automated settlement run is post-MVP.</li>
       <li><b>Admin can step into a booking.</b> Already built. Add reason fields, that is enough.</li>
     </ul>
@@ -2464,7 +2464,7 @@
       <li><b>Cut before you stretch.</b> If a sprint is slipping, cut from this sprint, do not push the next sprint's date.</li>
       <li><b>Don't refactor on the critical path to MVP.</b> Ugly working code &gt; pretty broken code. Refactor in Sprint 6+.</li>
       <li><b>Ship to staging every Friday, even if the goal isn't fully done.</b> Avoids week-long branches that rot.</li>
-      <li><b>Write down one decision per week.</b> "Why I chose eSewa first" &mdash; one paragraph. Future you and the first hire will thank present you.</li>
+      <li><b>Write down one decision per week.</b> "Why I chose Fonepay first" &mdash; one paragraph. Future you and the first hire will thank present you.</li>
     </ol>
 
     <div class="callout blue">
@@ -2543,7 +2543,7 @@
           <div>
             <ul>
               <li>Add <code>paymentStatus</code> to <code>IActiveBooking</code>: <code>unpaid_pending_counter | pending_gateway | paid | failed | refunded</code>. Default <code>unpaid_pending_counter</code>.</li>
-              <li>Add nullable <code>paymentMode</code> (eSewa / Khalti / Card / Cash / Counter) and <code>paymentTxnId</code> fields.</li>
+              <li>Add nullable <code>paymentMode</code> (Fonepay / Khalti / Card / Cash / Counter) and <code>paymentTxnId</code> fields.</li>
               <li>Write a one-off Firestore migration script that backfills all existing bookings to <code>unpaid_pending_counter</code>. Run on staging first, verify, then prod.</li>
               <li>Add helpers in <code>ActiveBookingsService</code> to read/write payment fields atomically with status.</li>
               <li>Add Firestore composite index on <code>(paymentStatus, createdAt)</code> for admin filtering later.</li>
@@ -2564,9 +2564,9 @@
         </div>
         <div class="lane">
           <div class="who"><b>Cut from this sprint</b></div>
-          <div>Don't start eSewa yet. Don't touch KYC schema (Sprint 2). Don't build the admin payment-status filter (Sprint 5). QR code on ticket can wait.</div>
+          <div>Don't start Fonepay yet. Don't touch KYC schema (Sprint 2). Don't build the admin payment-status filter (Sprint 5). QR code on ticket can wait.</div>
         </div>
-        <div class="sf"><b>Sprint exit:</b> <code>v0.1</code>. No production ticket shows "Paid" unless a paymentMode and paymentTxnId are present. The data foundation for eSewa is laid.</div>
+        <div class="sf"><b>Sprint exit:</b> <code>v0.1</code>. No production ticket shows "Paid" unless a paymentMode and paymentTxnId are present. The data foundation for Fonepay is laid.</div>
       </div>
     </div>
 
@@ -2623,48 +2623,47 @@
     <div class="sprint" id="SP-3">
       <div class="sh p1">
         <span class="tag">Sprint 3</span>
-        <span class="ti">eSewa Payment (one gateway only)</span>
+        <span class="ti">Fonepay Payment (one gateway only)</span>
         <span class="go">Goal: a real traveler can pay real money &middot; 2-3 weeks (~75 hrs)</span>
       </div>
       <div class="body">
         <div class="lane">
           <div class="who"><b>The one goal</b></div>
-          <div>Booking flow ends with a real eSewa transaction. Booking only flips to Confirmed on successful callback. The "Paid via eSewa" variant of the e-ticket renders with the real txn id.</div>
+          <div>Booking flow ends with a real Fonepay transaction. The user scans a Fonepay dynamic QR in-page (no redirect away from uthbus.com), pays from any bank/wallet app on the Fonepay network, and the booking only flips to Confirmed once we have <b>server-verified</b> the payment. The "Paid via Fonepay" variant of the e-ticket renders with the real reference (PRN + Fonepay trace id).</div>
         </div>
         <div class="lane">
           <div class="who"><b>Pre-sprint (do before week 1)</b></div>
           <div>
             <ul>
-              <li><b>Get eSewa merchant credentials.</b> This can take days to a week with their team. <b>Start now</b>, not on day 1 of the sprint. Sandbox creds first, prod later.</li>
-              <li>Read eSewa v2 ePay documentation cover to cover. Especially: signature scheme, callback URL format, transaction status verification endpoint.</li>
-              <li>Write down on paper: who initiates, who redirects, what callback carries, how to verify.</li>
+              <li><b>Get Fonepay merchant onboarding.</b> Onboarding runs through Fonepay / a member bank and can take a week or more &mdash; <b>start now</b>, not on day 1. You need: <code>merchantCode</code>, API <code>username</code>/<code>password</code>, and the <b>shared secret key</b> used to sign requests. Sandbox/UAT creds first, prod later.</li>
+              <li>Read the Fonepay Dynamic QR / merchant API docs cover to cover. Especially: the <b>HMAC-SHA512 <code>dataValidation</code> signature</b> field order, the QR-download request, the websocket vs status-check options, and the status-verification response shape.</li>
+              <li>Write down on paper: who generates the PRN, what the signed request carries, how payment status arrives (websocket + status API), and how you verify before trusting it.</li>
             </ul>
           </div>
         </div>
         <div class="lane">
-          <div class="who"><b>Week 1 &middot; intent + initiate</b></div>
+          <div class="who"><b>Week 1 &middot; intent + QR generation</b></div>
           <div>
             <ul>
-              <li>Add Firestore collection <code>paymentIntents</code>: <code>{id, bookingId, gateway: "esewa", amount, status: "initiated|success|failed", gatewayTxnId, createdAt, updatedAt}</code>.</li>
-              <li>Update booking write path: on "Confirm &amp; Pay", create paymentIntent + write booking with <code>paymentStatus = "pending_gateway"</code>. Do NOT mark Confirmed yet.</li>
+              <li>Add Firestore collection <code>paymentIntents</code>: <code>{id, bookingId, gateway: "fonepay", prn, amount, status: "initiated|success|failed", fonepayTraceId, createdAt, updatedAt}</code>. The <code>prn</code> (product reference number, unique per attempt) is your idempotency key.</li>
+              <li>Update booking write path: on "Confirm &amp; Pay", create the paymentIntent (generate PRN) + write the booking with <code>paymentStatus = "pending_gateway"</code>. Do NOT mark Confirmed yet.</li>
               <li>Add seat-hold record: hold the seats for 15 min tied to the paymentIntent id. Expired holds release the seats.</li>
-              <li>Build the eSewa initiate handler: take amount, build signed payload, redirect to eSewa.</li>
-              <li>Test in eSewa sandbox: can you reach the eSewa page from your local app?</li>
+              <li>Build the Fonepay <b>QR-generate handler</b> (server-side): build the signed payload (HMAC-SHA512 <code>dataValidation</code> over amount/prn/merchantCode/remarks using the secret), call Fonepay's dynamic-QR endpoint, get back the <code>qrMessage</code> + the payment-status websocket URL. <b>The secret never touches the browser.</b></li>
+              <li>Front-end: render the returned QR in-page with amount, a countdown, and "scan with any mobile-banking or wallet app". Test in Fonepay sandbox: does a scan reach the payment screen?</li>
             </ul>
           </div>
         </div>
         <div class="lane">
-          <div class="who"><b>Week 2 &middot; callback + idempotency</b></div>
+          <div class="who"><b>Week 2 &middot; status verification + idempotency</b></div>
           <div>
             <ul>
-              <li>Build the eSewa success callback handler (in <code>app/api/</code> or Cloud Function).</li>
-              <li><b>Signature verification first.</b> Reject any callback that doesn't verify, log to Sentry. This is your security-critical path.</li>
-              <li>Verify the transaction with eSewa's status API as a second check (don't trust the callback alone &mdash; users can replay/forge).</li>
-              <li>Update paymentIntent &rarr; success, update booking &rarr; <code>paymentStatus="paid"</code>, <code>paymentMode="eSewa"</code>, <code>paymentTxnId=&lt;refid&gt;</code>, <code>status="Confirmed"</code>. All in one Firestore transaction.</li>
-              <li>Idempotency: if the same gateway txn id arrives twice (it will, eSewa sometimes retries), the second call is a no-op. Test by replaying manually.</li>
-              <li>Build the failure callback handler. Mark intent failed, release seat hold, leave booking flippable to "Pay at Counter" fallback.</li>
-              <li>Front-end: update <code>app/booking/review-pay/page.tsx</code> &mdash; remove the auto-confirm path entirely. Add eSewa as the only paid option. Add "Pay at Counter" as the second option (writes Pending-Counter immediately).</li>
-              <li>"Payment pending" screen for the case where the user is redirected back but the callback hasn't arrived yet. Poll the paymentIntent status, max 60s, then show retry.</li>
+              <li>Subscribe to Fonepay's <b>payment-status websocket</b> for live "paid / failed" on the open QR (so the screen updates the instant they pay).</li>
+              <li><b>Never trust the socket alone.</b> On a "paid" signal, call Fonepay's <b>status-check API</b> (signed by PRN) server-side and validate the response hash. This is your security-critical path &mdash; the socket is a hint, the status API is the truth.</li>
+              <li>Add a poll fallback: if the socket drops, poll the status-check API every few seconds (cap ~3 min), then offer retry. Covers the user who pays after the socket closed.</li>
+              <li>On verified success: update paymentIntent &rarr; success, update booking &rarr; <code>paymentStatus="paid"</code>, <code>paymentMode="Fonepay"</code>, <code>paymentTxnId=&lt;fonepay trace id&gt;</code>, <code>status="Confirmed"</code>. All in one Firestore transaction.</li>
+              <li>Idempotency keyed on PRN: a status check (socket retry, poll, and manual refresh can all fire) that resolves an already-<code>success</code> intent is a no-op. Test by replaying manually.</li>
+              <li>Failure / expiry path: mark intent failed, release the seat hold, leave the booking flippable to the "Pay at Counter" fallback.</li>
+              <li>Front-end: update <code>app/booking/review-pay/page.tsx</code> &mdash; remove the auto-confirm path entirely. Add Fonepay (QR) as the only paid option. Add "Pay at Counter" as the second option (writes Pending-Counter immediately).</li>
             </ul>
           </div>
         </div>
@@ -2672,18 +2671,18 @@
           <div class="who"><b>Week 3 (buffer + production)</b></div>
           <div>
             <ul>
-              <li>Migrate to eSewa production credentials.</li>
+              <li>Migrate to Fonepay production merchant credentials.</li>
               <li>Take one real booking through (yourself, NPR 100, refund manually after).</li>
-              <li>Add Sentry alert: any callback that fails signature verification pages you.</li>
-              <li>Add a Cloud Function scheduled job: expire any paymentIntent stuck in "initiated" for &gt;15 min (releases held seats).</li>
+              <li>Add Sentry alert: any status response that fails hash validation, or a socket "paid" that the status API does not confirm, pages you.</li>
+              <li>Add a Cloud Function scheduled job: expire any paymentIntent stuck in "initiated" for &gt;15 min (releases held seats); reconcile any "initiated" intent against the status API before expiring, so a late payment isn't lost.</li>
             </ul>
           </div>
         </div>
         <div class="lane">
           <div class="who"><b>Cut from this sprint</b></div>
-          <div><b>No Khalti.</b> No card / Stripe. No refund automation (cancellation policy is just text on the ticket page for now). No "Pay at Counter" operator opt-in flag (allow it for everyone in MVP). No promo engine.</div>
+          <div><b>No eSewa, no Khalti.</b> No card / Stripe. No refund automation (cancellation policy is just text on the ticket page for now). No "Pay at Counter" operator opt-in flag (allow it for everyone in MVP). No promo engine.</div>
         </div>
-        <div class="sf"><b>Sprint exit:</b> <code>v0.3-payments</code>. One real eSewa transaction has cleared on production. Idempotency verified by replay. <b>This is the hardest sprint &mdash; budget the buffer.</b></div>
+        <div class="sf"><b>Sprint exit:</b> <code>v0.3-payments</code>. One real Fonepay transaction has cleared on production, server-verified via the status API (not just the socket). Idempotency verified by replay. <b>This is the hardest sprint &mdash; budget the buffer.</b></div>
       </div>
     </div>
 
@@ -2697,11 +2696,11 @@
       <div class="body">
         <div class="lane">
           <div class="who"><b>The one goal</b></div>
-          <div>A user with a paid booking can cancel through the app, see what refund they will get, and you have a single admin queue showing every pending refund. You process the refund in eSewa's portal yourself, then click "Mark refunded" &mdash; the system handles the rest.</div>
+          <div>A user with a paid booking can cancel through the app, see what refund they will get, and you have a single admin queue showing every pending refund. You process the refund in Fonepay's merchant portal yourself, then click "Mark refunded" &mdash; the system handles the rest.</div>
         </div>
         <div class="lane">
           <div class="who"><b>Why manual</b></div>
-          <div>Automating eSewa refund through their API takes another sprint and they are flaky in the sandbox. At MVP volumes (1-20 refunds a week), you logging into eSewa and pressing refund is faster, cheaper, and more reliable. Automation goes in post-MVP.</div>
+          <div>Automating Fonepay refund through their API takes another sprint. At MVP volumes (1-20 refunds a week), you logging into the Fonepay merchant portal and pressing refund is faster, cheaper, and more reliable. Automation goes in post-MVP.</div>
         </div>
         <div class="lane">
           <div class="who"><b>Week 1 &middot; policy + cancel UX</b></div>
@@ -2720,7 +2719,7 @@
           <div>
             <ul>
               <li>New admin page <code>/admin/refunds</code>: list bookings with <code>refundStatus = "pending"</code>. Show: PNR, user, operator, original amount, refund amount, paymentTxnId, booked date, cancel date.</li>
-              <li>"Mark refunded" action: opens a dialog asking for refund reference (the txn id from eSewa's portal after you process it), then writes <code>refundStatus = "processed"</code> + <code>refundTxnId</code> + <code>refundProcessedAt</code> + admin uid.</li>
+              <li>"Mark refunded" action: opens a dialog asking for refund reference (the txn id from Fonepay's portal after you process it), then writes <code>refundStatus = "processed"</code> + <code>refundTxnId</code> + <code>refundProcessedAt</code> + admin uid.</li>
               <li>Email user on refund processed (Firebase "Trigger Email" extension again).</li>
               <li>Add a small dashboard card on the admin index: "X refunds pending".</li>
               <li>USR-MY refund-status display: show "Refund pending" / "Refunded on &lt;date&gt; (ref: &lt;txnId&gt;)".</li>
@@ -2809,21 +2808,21 @@
       <div class="sh p2">
         <span class="tag">Sprint 6</span>
         <span class="ti">Khalti as second payment</span>
-        <span class="go">If MVP shows eSewa is &lt; 70% of intended payments &middot; ~2 weeks</span>
+        <span class="go">If MVP shows Fonepay is &lt; 70% of intended payments &middot; ~2 weeks</span>
       </div>
       <div class="body">
         <div class="lane">
           <div class="who"><b>Tasks</b></div>
           <div>
             <ul>
-              <li>Mirror the eSewa pattern: initiate, callback, signature, idempotency. The architecture is already there.</li>
+              <li>Mirror the Fonepay pattern: signed initiate, server-side status verification, idempotency. The architecture is already there.</li>
               <li>Add Khalti as a payment method in USR-PAY.</li>
               <li>Test sandbox + production.</li>
               <li>Track via ledger which gateway each payment came through.</li>
             </ul>
           </div>
         </div>
-        <div class="sf"><b>Why second:</b> if eSewa converts well, this is a low-priority add. Don't build it preemptively.</div>
+        <div class="sf"><b>Why second:</b> if Fonepay converts well, this is a low-priority add. Don't build it preemptively.</div>
       </div>
     </div>
 
@@ -2933,7 +2932,7 @@
 
     <h3>Assumptions baked into the plan</h3>
     <ul>
-      <li>eSewa merchant credentials are procured by end of Sprint 2. <b>Start the application now</b> &mdash; their team takes days to a week to respond. Sandbox first; production once Sprint 3 is ready.</li>
+      <li>Fonepay merchant onboarding is procured by end of Sprint 2. <b>Start onboarding now</b> &mdash; it runs through Fonepay / a member bank and takes a week or more. Sandbox/UAT first; production once Sprint 3 is ready.</li>
       <li>You can dedicate ~25-30 productive engineering hours per week. If real life (illness, family, a Diwali week) eats into that, slide sprint boundaries &mdash; do not stretch the goal.</li>
       <li>By end of Sprint 2 you have a real candidate first operator already in conversation, so KYC has a real subject to test on. Operator acquisition is its own workstream and not in this doc.</li>
       <li>You will not pull yourself toward the mobile app, loyalty features, or programmatic SEO until MVP is shipped. Write the next idea down, put it in this doc's post-MVP menu, then close the tab.</li>
@@ -2942,7 +2941,7 @@
 
     <h3>Risks</h3>
     <div class="risk"><span class="n">1</span><span><b>You are the single point of failure.</b> Sick week = sprint slip. Mitigation: keep sprints to one goal so a one-week slip costs one feature, not the whole plan. Tag every prod deploy with a version so you can roll back without thinking.</span></div>
-    <div class="risk"><span class="n">2</span><span><b>eSewa sandbox is flaky.</b> Their docs are out of date in places, and callback IPs sometimes drift. Mitigation: budget a full week of buffer in Sprint 3 specifically for "things eSewa-shaped don't work". Have a backup plan to ship "Pay at Counter only" if eSewa slips by &gt; 3 weeks.</span></div>
+    <div class="risk"><span class="n">2</span><span><b>Fonepay integration has rough edges.</b> The QR + websocket/status-API flow has sparse docs and the sandbox can be inconsistent. Mitigation: budget a full week of buffer in Sprint 3 specifically for "things Fonepay-shaped don't work", and always reconcile against the status API rather than trusting the socket. Have a backup plan to ship "Pay at Counter only" if Fonepay slips by &gt; 3 weeks.</span></div>
     <div class="risk"><span class="n">3</span><span><b>Scope creep on yourself.</b> Solo devs are notorious for "while I'm in here, I'll also fix&hellip;". Mitigation: write the temptation down in the post-MVP menu, do not action it. Re-read the MVP definition every Monday.</span></div>
     <div class="risk"><span class="n">4</span><span><b>No code review.</b> No second pair of eyes on payment / ledger code, which is where bugs are most expensive. Mitigation: write tests for the money paths (compute commission, refund reversal, idempotency). Also: re-read your own PR the next morning before merging &mdash; the gap of a night helps a lot.</span></div>
     <div class="risk"><span class="n">5</span><span><b>Data migrations on production with no team backup.</b> If a backfill goes wrong on prod data, recovery is on you alone. Mitigation: Sprint 0 sets up daily Firestore exports for a reason. Every migration runs on staging twice before prod, and never on a Friday afternoon.</span></div>
@@ -2972,7 +2971,7 @@
     </ul>
 
     <div class="callout blue">
-      <b>One-line summary.</b> Ship eSewa-only, manually-settled, KYC-verified MVP in 14 weeks. Then take real bookings, see what hurts, and use the post-MVP menu as a guide &mdash; not a contract. By Sprint 6 or 7, hire someone.
+      <b>One-line summary.</b> Ship Fonepay-only, manually-settled, KYC-verified MVP in 14 weeks. Then take real bookings, see what hurts, and use the post-MVP menu as a guide &mdash; not a contract. By Sprint 6 or 7, hire someone.
     </div>
   </section>
 
@@ -2996,6 +2995,7 @@ const DATA = {
   },
 
   activity: [
+    { when: '2026-06-18', what: '💳 <b>Payment-gateway decision — Fonepay only for MVP, eSewa dropped.</b> Sprint&nbsp;3 is now <b>Fonepay Payment</b> (one gateway). Fonepay is not a rename of the old eSewa plan: it is a <b>dynamic-QR</b> flow (in-page QR, no redirect), signed with <b>HMAC-SHA512</b>, with payment status arriving over a websocket and <b>server-verified via the status-check API</b> (the socket is a hint, the status API is the truth) — PRN is the idempotency key. Sprint&nbsp;3 (plan + interactive board), the MVP doctrine, risks, refund flow, and the USR-PAY spec were rewritten accordingly; the <code>PaymentMode</code> union now leads with <code>"Fonepay"</code> (eSewa removed). Khalti/card stay post-MVP. PayNowModal &ldquo;coming soon&rdquo; copy and the marketing route-page payment lines updated to Fonepay. Historical changelog entries left as-shipped.' },
     { when: '2026-06-14', what: '🛠️ <b>Sprint 2 built end-to-end + pulled-forward scope — live on preview (uthbus-39a14).</b> <b>Operator KYC:</b> <code>kycStatus</code> on the operator model; typed, expiry-aware compliance doc model (<code>lib/compliance/types.ts</code>, <code>getDocExpiryState</code>) so the Vault is a later UI layer, not a migration; Firebase Storage wired for the first time (<code>kyc/{uid}/*</code>); registration captures license/PAN + three required uploads; dashboard KYC banner (re-upload on reject + shows submitted docs); admin review page (<code>app/admin/operators</code>) with inline doc previews + approve/reject; search gated on a denormalised <code>operatorKycStatus</code> (atomic <code>writeBatch</code>, no Cloud Function); <code>VerifiedOperatorBadge</code> on search + e-ticket; approve/reject email via the Trigger Email extension over Gmail SMTP (Brevo dropped — OTP failed in Nepal); <code>adminAuditLog</code> on every action. <b>Pulled forward now that Blaze + Storage are on:</b> bus listing photos (multi-upload ≤500KB, <code>Lightbox</code> viewer, fixed the 2-photo search cap); server-side 2-hour booking-cutoff enforced in <code>firestore.rules</code> via server time + Nepal&rsquo;s fixed +5:45 offset (no function, booking txn untouched); NA-seat blocking on the user side <i>and</i> in the <code>seatLocks</code> rule; nightly <b>GCS Firestore backup</b> Cloud Function (code complete, deploy pending bucket + IAM). <b>Admin depth:</b> operator KYC surfaced + enforced on the buses page, operator suspend/reactivate (<code>accountStatus</code> + denormalised <code>operatorActive</code> + login block), operator→buses/bookings cross-links, and an <b>audit-log viewer</b> (<code>app/admin/audit</code>). File limits set to 300KB (docs) / 500KB (photos). Rules + indexes + storage deployed to preview; backfill ran (5 operators + 9 buses → approved). <b>Remaining:</b> prod promotion (Storage + extension + deploy + backfill on uthbus-prod), functions deploy (bucket + IAM), and revisiting the tight 300KB doc cap. Compliance Vault UI (OPR-COMPLY) intentionally left for a later pass — only its data model shipped.' },
     { when: '2026-06-14', what: '🧭 <b>Roadmap reorg — operator-OS thesis + agents on the map.</b> Strategic decision: UTHBUS is the operator&rsquo;s back office, not another ticketing storefront (Nepal&rsquo;s ticketing layer is saturated). Two product calls made: <b>(1) retention features fold into MVP</b> — Sprint&nbsp;2 KYC now also builds the <b>Compliance &amp; Document Vault</b> foundation (typed, expiry-aware docs), and a new <b>Sprint&nbsp;6 · Daily Reconciliation (&ldquo;cash truth&rdquo;)</b> becomes the sprint that ships MVP (v1.0). <b>(2) Agents are the first thing after MVP</b> — new <b>Sprint&nbsp;7 · Shared Inventory Engine + Agents</b>. Agents modelled as a 4th top-level principal (many-to-many with operators), reusing the counter booking surface. Cheap foundation seeded during MVP: every booking carries a <code>soldBy</code> channel tag, and agents draw from the existing <code>seatLocks</code> shared-inventory engine. Operator OS roadmap (compliance alerts, staff roster, parcel/courier, conductor app, GPS, regulator layer) captured as a post-MVP menu. Mobile app for operators/agents/conductors planned as one role-aware app. <b>Ship date moves out ~2 weeks for the folded retention scope.</b>' },
     { when: '2026-06-10', what: '<b>Post-v0.1 hotfix:</b> three missing composite indexes deployed to both projects. <code>(userId, bookingTime DESC)</code>, <code>(userId, status, bookingTime DESC)</code>, <code>(operatorId, status, bookingTime DESC)</code>. Fixes <i>"Error fetching user bookings: FirebaseError: The query requires an index"</i> on <code>uthbus.com/user/bookings</code>. Plus five backlog items logged from v0.1 user-testing — see Deferred panel.' },
@@ -3153,7 +3153,7 @@ const DATA = {
             status: 'done',
             annot: 'Lives in <code>components/operator/counter/services/active-booking.service.ts</code> as an exported union type, with <code>DEFAULT_PAYMENT_STATUS</code> for callers.' },
           { id: 'sp1-t2', title: 'Add nullable paymentMode and paymentTxnId fields',
-            desc: '<code>paymentMode</code>: eSewa / Khalti / Card / Cash / Counter. Added <code>paidAt</code> timestamp too.',
+            desc: '<code>paymentMode</code>: Fonepay / Khalti / Card / Cash / Counter. Added <code>paidAt</code> timestamp too.',
             status: 'done' },
           { id: 'sp1-t3', title: 'Firestore migration: backfill existing bookings',
             desc: '<code>scripts/backfill-payment-status.mjs</code> — idempotent, skips already-migrated docs.',
@@ -3162,7 +3162,7 @@ const DATA = {
           { id: 'sp1-t4', title: 'Atomic payment-field helpers in ActiveBookingsService',
             desc: '<code>markPaid(id, mode, txnId)</code> · <code>markPaymentFailed(id)</code> · <code>markRefunded(id)</code>. Each writes a coherent set of payment fields atomically.',
             status: 'done',
-            annot: 'Sprint 3 eSewa callback will call <code>markPaid</code>; Sprint 4 admin refund queue will call <code>markRefunded</code>.' },
+            annot: 'Sprint 3 Fonepay verification will call <code>markPaid</code>; Sprint 4 admin refund queue will call <code>markRefunded</code>.' },
           { id: 'sp1-t5', title: 'Firestore composite index on (paymentStatus, createdAt)',
             desc: 'Declared in <code>firestore.indexes.json</code> alongside a second index for the cron query (<code>status</code>, <code>date</code>).',
             status: 'done',
@@ -3196,7 +3196,7 @@ const DATA = {
             status: 'done',
             annot: 'Helper at <code>lib/booking-cutoff.ts</code>. Reads "now" in Asia/Kathmandu so it works correctly regardless of where Vercel runs the request. <b>Limitation:</b> enforced client-side; a determined attacker could bypass via direct Firebase SDK calls. Server-side enforcement deferred to a future Cloud Function sprint.' },
           { id: 'sp1-h2', title: 'Pay Now option (stub for Sprint 3)',
-            desc: 'PayNowModal lists eSewa, Khalti, Card as visibly-disabled "Coming Sprint 3" buttons + an info-tinted "Pay at counter (current option)" panel.',
+            desc: 'PayNowModal lists Fonepay (Coming Sprint 3), Khalti, Card as visibly-disabled buttons + an info-tinted "Pay at counter (current option)" panel.',
             status: 'done',
             annot: 'Surfaced from My Bookings (any unpaid/failed/pending-gateway booking) AND the e-ticket on all three unpaid variants. Sprint 3 will replace the disabled gateway buttons with real initiate handlers.' },
           { id: 'sp1-h3', title: 'PaymentStatusBadge visual alignment',
@@ -3207,8 +3207,8 @@ const DATA = {
             status: 'done' },
         ]},
       ],
-      cut: 'No eSewa yet. No KYC schema (Sprint 2). No admin payment-status filter (Sprint 5). QR code on ticket can wait.',
-      exit: 'No production ticket shows "Paid" unless paymentMode and paymentTxnId are present. The data foundation for eSewa is laid.',
+      cut: 'No Fonepay yet. No KYC schema (Sprint 2). No admin payment-status filter (Sprint 5). QR code on ticket can wait.',
+      exit: 'No production ticket shows "Paid" unless paymentMode and paymentTxnId are present. The data foundation for Fonepay is laid.',
     },
 
     // =================================================================
@@ -3285,58 +3285,60 @@ const DATA = {
     // SPRINT 3
     // =================================================================
     {
-      id: 'SP-3', tag: 'Sprint 3', title: 'eSewa Payment (one gateway only)',
+      id: 'SP-3', tag: 'Sprint 3', title: 'Fonepay Payment (one gateway only)',
       goal: 'A real traveler can pay real money.',
       duration: '2-3 weeks (~75 hrs)', priority: 'p1', version: 'v0.3-payments',
       groups: [
         { title: 'Pre-sprint (start now)', tasks: [
-          { id: 'sp3-t1', title: 'Get eSewa merchant credentials',
-            desc: 'Sandbox first; prod once Sprint 3 is ready. eSewa team takes days to a week.',
+          { id: 'sp3-t1', title: 'Get Fonepay merchant onboarding + creds',
+            desc: 'merchantCode, API username/password, shared secret key. Sandbox/UAT first; prod once ready. Onboarding (via Fonepay / a member bank) takes a week or more.',
             status: 'todo',
-            annot: '<b>Start the application now</b> — this is the longest external dependency on the entire MVP roadmap.' },
-          { id: 'sp3-t2', title: 'Read eSewa v2 ePay docs cover to cover',
-            desc: 'Signature scheme, callback URL format, transaction status verification.', status: 'todo' },
+            annot: '<b>Start onboarding now</b> — this is the longest external dependency on the entire MVP roadmap.' },
+          { id: 'sp3-t2', title: 'Read Fonepay Dynamic QR / merchant API docs cover to cover',
+            desc: 'HMAC-SHA512 <code>dataValidation</code> field order, QR-download request, websocket vs status-check, status-verification response.', status: 'todo' },
           { id: 'sp3-t3', title: 'Diagram the flow on paper',
-            desc: 'Who initiates, who redirects, what callback carries, how to verify.', status: 'todo' },
+            desc: 'Who generates the PRN, what the signed request carries, how status arrives (socket + status API), how you verify before trusting it.', status: 'todo' },
         ]},
-        { title: 'Week 1 · intent + initiate', tasks: [
+        { title: 'Week 1 · intent + QR generation', tasks: [
           { id: 'sp3-t4', title: 'Firestore paymentIntents collection',
-            desc: '<code>{id, bookingId, gateway, amount, status, gatewayTxnId, createdAt, updatedAt}</code>.', status: 'todo' },
+            desc: '<code>{id, bookingId, gateway:"fonepay", prn, amount, status, fonepayTraceId, createdAt, updatedAt}</code>. PRN is the idempotency key.', status: 'todo' },
           { id: 'sp3-t5', title: 'Update booking write path',
-            desc: 'On Confirm&Pay: create paymentIntent + write booking with <code>paymentStatus="pending_gateway"</code>. Do NOT confirm yet.', status: 'todo' },
+            desc: 'On Confirm&Pay: generate PRN, create paymentIntent + write booking with <code>paymentStatus="pending_gateway"</code>. Do NOT confirm yet.', status: 'todo' },
           { id: 'sp3-t6', title: 'Seat-hold record (15 min TTL)',
             desc: 'Hold tied to paymentIntent id. Expired holds release seats.', status: 'todo' },
-          { id: 'sp3-t7', title: 'eSewa initiate handler',
-            desc: 'Take amount, build signed payload, redirect to eSewa.', status: 'todo' },
-          { id: 'sp3-t8', title: 'Sandbox smoke test', desc: 'Reach the eSewa page from local app.', status: 'todo' },
+          { id: 'sp3-t7', title: 'Fonepay QR-generate handler (server-side)',
+            desc: 'Build signed HMAC-SHA512 payload, call dynamic-QR endpoint, return qrMessage + status websocket URL. Secret never reaches the browser.', status: 'todo' },
+          { id: 'sp3-t8', title: 'In-page QR render + sandbox smoke test',
+            desc: 'Render QR with amount + countdown. Confirm a scan reaches the Fonepay payment screen.', status: 'todo' },
         ]},
-        { title: 'Week 2 · callback + idempotency', tasks: [
-          { id: 'sp3-t9', title: 'eSewa success callback handler',
-            desc: 'In <code>app/api/</code> or Cloud Function.', status: 'todo' },
-          { id: 'sp3-t10', title: 'Signature verification (security-critical)',
-            desc: 'Reject any callback that does not verify; log to Sentry.', status: 'todo' },
-          { id: 'sp3-t11', title: 'Verify transaction via eSewa status API',
-            desc: "Second check — don't trust callback alone (replay/forge risk).", status: 'todo' },
-          { id: 'sp3-t12', title: 'Atomic flip on success',
-            desc: 'paymentIntent → success, booking → paid/confirmed, in one Firestore transaction.', status: 'todo' },
-          { id: 'sp3-t13', title: 'Idempotency on duplicate callbacks',
-            desc: 'Same gateway txn id arriving twice is a no-op. Test by replaying manually.', status: 'todo' },
-          { id: 'sp3-t14', title: 'Failure callback handler',
+        { title: 'Week 2 · status verification + idempotency', tasks: [
+          { id: 'sp3-t9', title: 'Subscribe to Fonepay payment-status websocket',
+            desc: 'Live "paid / failed" on the open QR so the screen updates the instant they pay.', status: 'todo' },
+          { id: 'sp3-t10', title: 'Server-side status verification (security-critical)',
+            desc: 'On "paid", call the status-check API (signed by PRN) and validate the response hash. Socket is a hint; status API is the truth.', status: 'todo' },
+          { id: 'sp3-t11', title: 'Poll fallback if socket drops',
+            desc: 'Poll status-check API every few seconds (cap ~3 min), then retry. Covers payment after the socket closed.', status: 'todo' },
+          { id: 'sp3-t12', title: 'Atomic flip on verified success',
+            desc: 'paymentIntent → success, booking → paid/confirmed (<code>paymentMode="Fonepay"</code>), in one Firestore transaction.', status: 'todo' },
+          { id: 'sp3-t13', title: 'Idempotency keyed on PRN',
+            desc: 'A status check resolving an already-success intent is a no-op. Test by replaying manually.', status: 'todo' },
+          { id: 'sp3-t14', title: 'Failure / expiry path',
             desc: 'Mark intent failed, release seat hold, leave booking flippable to Pay-at-Counter.', status: 'todo' },
           { id: 'sp3-t15', title: 'Front-end review-pay page rewrite',
-            desc: 'Remove auto-confirm path. eSewa as paid option. Pay-at-Counter as second.', status: 'todo' },
-          { id: 'sp3-t16', title: '"Payment pending" screen',
-            desc: 'Poll paymentIntent status, max 60s, then show retry.', status: 'todo' },
+            desc: 'Remove auto-confirm path. Fonepay (QR) as paid option. Pay-at-Counter as second.', status: 'todo' },
+          { id: 'sp3-t16', title: 'QR / "waiting for payment" screen',
+            desc: 'Render QR + live status from socket, poll fallback, then show retry.', status: 'todo' },
         ]},
         { title: 'Week 3 (buffer + production)', tasks: [
-          { id: 'sp3-t17', title: 'Migrate to eSewa prod creds', desc: '', status: 'todo' },
+          { id: 'sp3-t17', title: 'Migrate to Fonepay prod creds', desc: '', status: 'todo' },
           { id: 'sp3-t18', title: 'Take one real booking (yourself, NPR 100, refund after)', desc: '', status: 'todo' },
-          { id: 'sp3-t19', title: 'Sentry alert on signature-verification failures', desc: 'Pages you.', status: 'todo' },
-          { id: 'sp3-t20', title: 'Scheduled job: expire stuck paymentIntents (>15min)', desc: 'Releases held seats.', status: 'todo' },
+          { id: 'sp3-t19', title: 'Sentry alert on hash-validation failures', desc: 'A socket "paid" the status API does not confirm, or a bad response hash, pages you.', status: 'todo' },
+          { id: 'sp3-t20', title: 'Scheduled job: expire stuck paymentIntents (>15min)',
+            desc: 'Reconcile "initiated" intents against the status API before expiring, so a late payment is not lost. Releases held seats.', status: 'todo' },
         ]},
       ],
-      cut: 'No Khalti. No card/Stripe. No refund automation. No Pay-at-Counter opt-in flag. No promo engine.',
-      exit: 'One real eSewa transaction has cleared on production. Idempotency verified by replay. <b>This is the hardest sprint.</b>',
+      cut: 'No eSewa. No Khalti. No card/Stripe. No refund automation. No Pay-at-Counter opt-in flag. No promo engine.',
+      exit: 'One real Fonepay transaction has cleared on production, server-verified via the status API (not just the socket). Idempotency verified by replay. <b>This is the hardest sprint.</b>',
     },
 
     // =================================================================
@@ -3363,7 +3365,7 @@ const DATA = {
           { id: 'sp4-t6', title: 'Admin /admin/refunds page',
             desc: 'List bookings with pending refund. PNR, user, operator, amount, txnId, dates.', status: 'todo' },
           { id: 'sp4-t7', title: 'Mark refunded action',
-            desc: 'Dialog asks for refund reference (txn id from eSewa portal). Writes processed status + admin uid.', status: 'todo' },
+            desc: 'Dialog asks for refund reference (txn id from Fonepay portal). Writes processed status + admin uid.', status: 'todo' },
           { id: 'sp4-t8', title: 'Email user on refund processed',
             desc: 'Firebase Trigger Email extension.', status: 'todo' },
           { id: 'sp4-t9', title: 'Admin dashboard card: refunds pending count', desc: '', status: 'todo' },
@@ -3439,7 +3441,7 @@ const DATA = {
         ]},
         { title: 'Week 3 · MVP regression + ship', tasks: [
           { id: 'sp6r-t6', title: 'Full personal regression checklist',
-            desc: 'Cross-check every P0/P1 feature (KYC, vault, eSewa, refunds, ledger, reconciliation) against requirement IDs.', status: 'todo' },
+            desc: 'Cross-check every P0/P1 feature (KYC, vault, Fonepay, refunds, ledger, reconciliation) against requirement IDs.', status: 'todo' },
           { id: 'sp6r-t7', title: 'Onboard first operator end-to-end on prod',
             desc: 'Register → upload KYC + compliance docs → approve → list one bus → live.', status: 'todo' },
           { id: 'sp6r-t8', title: 'Take one real booking yourself',
@@ -3520,16 +3522,16 @@ const DATA = {
     },
     {
       id: 'SP-POST-6', tag: 'Sprint 8', title: 'Khalti as second payment',
-      goal: 'If eSewa is < 70% of intended payments.',
+      goal: 'If Fonepay is < 70% of intended payments.',
       duration: '~2 weeks', priority: 'p2',
       groups: [{ title: 'Tasks', tasks: [
-        { id: 'sp6-t1', title: 'Mirror the eSewa pattern',
-          desc: 'Initiate, callback, signature, idempotency. Architecture is already there.', status: 'todo' },
+        { id: 'sp6-t1', title: 'Mirror the Fonepay pattern',
+          desc: 'Signed initiate, server-side status verification, idempotency. Architecture is already there.', status: 'todo' },
         { id: 'sp6-t2', title: 'Add Khalti as a payment method in USR-PAY', desc: '', status: 'todo' },
         { id: 'sp6-t3', title: 'Test sandbox + production', desc: '', status: 'todo' },
         { id: 'sp6-t4', title: 'Track via ledger which gateway each payment came through', desc: '', status: 'todo' },
       ]}],
-      exit: "If eSewa converts well, this is low-priority. Don't build it preemptively.",
+      exit: "If Fonepay converts well, this is low-priority. Don't build it preemptively.",
     },
     {
       id: 'SP-POST-7', tag: 'Sprint 9', title: 'Bus photo upload pipeline',

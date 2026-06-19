@@ -81,7 +81,7 @@ const whyUthbus = [
   {
     icon: CreditCardIcon,
     title: "Secure online payment",
-    desc: "Pay with eSewa, Khalti, or card. Your seat is confirmed instantly — no counter, no cash, no queue.",
+    desc: "Pay with Fonepay — scan the QR from any bank or wallet app. Your seat is confirmed instantly — no counter, no cash, no queue.",
   },
   {
     icon: ClockIcon,
