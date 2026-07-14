@@ -15,22 +15,29 @@ interface CitySelectProps {
 export default function CitySelect({ value, onChange, placeholder, label }: CitySelectProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState(value)
+  // Until the user actually types, show the full city list — opening a field
+  // that already holds "Kathmandu" must not filter the dropdown down to one row.
+  const [hasTyped, setHasTyped] = useState(false)
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 })
   const containerRef = useRef<HTMLDivElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const popularCities = getPopularCities()
+  const effectiveQuery = hasTyped ? searchQuery : ""
   const filteredCities = nepalCities
-    .filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    .filter(c => c.name.toLowerCase().includes(effectiveQuery.toLowerCase()))
     .sort((a, b) => a.name.localeCompare(b.name))
   const filteredPopular = popularCities
-    .filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    .filter(c => c.name.toLowerCase().includes(effectiveQuery.toLowerCase()))
     .sort((a, b) => a.name.localeCompare(b.name))
   const filteredOther = filteredCities.filter(c => !c.popular)
 
   useEffect(() => {
-    if (!isOpen) setSearchQuery(value)
+    if (!isOpen) {
+      setSearchQuery(value)
+      setHasTyped(false)
+    }
   }, [value, isOpen])
 
   useEffect(() => {
@@ -66,6 +73,8 @@ export default function CitySelect({ value, onChange, placeholder, label }: City
         width: rect.width,
       })
       inputRef.current?.focus()
+      // Pre-select existing text so typing replaces it instead of appending
+      inputRef.current?.select()
     }
   }, [isOpen])
 
@@ -81,11 +90,13 @@ export default function CitySelect({ value, onChange, placeholder, label }: City
   const handleInputClick = () => setIsOpen(true)
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value)
+    setHasTyped(true)
     setIsOpen(true)
   }
   const handleClear = () => {
     onChange("")
     setSearchQuery("")
+    setHasTyped(false)
     setIsOpen(true)
   }
   const handleCitySelect = (cityName: string) => {
