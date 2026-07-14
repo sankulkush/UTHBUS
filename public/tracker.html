@@ -645,6 +645,7 @@
             <li><a href="#OPR-COUNTER">OPR-COUNTER &middot; Counter Booking</a></li>
             <li><a href="#OPR-BOOK">OPR-BOOK &middot; Bookings &amp; History</a></li>
             <li><a href="#OPR-TRIP">OPR-TRIP &middot; Trips &amp; Routes</a></li>
+            <li><a href="#OPR-STOPS">OPR-STOPS &middot; Stops &amp; Mid-route Boarding <b>new</b></a></li>
             <li><a href="#OPR-SEAT">OPR-SEAT &middot; Seat Layouts</a></li>
             <li><a href="#OPR-REPORT">OPR-REPORT &middot; Reports</a></li>
             <li><a href="#OPR-EARN">OPR-EARN &middot; Earnings &amp; Settlement</a></li>
@@ -678,11 +679,12 @@
             <li><a href="#SP-0">Sprint 0 &middot; Foundations</a></li>
             <li><a href="#SP-1">Sprint 1 &middot; Truthful Tickets</a></li>
             <li><a href="#SP-2">Sprint 2 &middot; KYC + Compliance Vault</a></li>
-            <li><a href="#SP-3">Sprint 3 &middot; Fonepay Payment</a></li>
-            <li><a href="#SP-4">Sprint 4 &middot; Cancellation &amp; Refund</a></li>
-            <li><a href="#SP-5">Sprint 5 &middot; Commission Ledger</a></li>
-            <li><a href="#SP-6">Sprint 6 &middot; Reconciliation &rarr; MVP</a></li>
-            <li><a href="#SP-7">Sprint 7 &middot; Shared Inventory + Agents</a></li>
+            <li><a href="#SP-ROUTES">Sprint 3 &middot; Routes &amp; Mid-route Boarding <b>new</b></a></li>
+            <li><a href="#SP-3">Sprint 4 &middot; Fonepay Payment</a></li>
+            <li><a href="#SP-4">Sprint 5 &middot; Cancellation &amp; Refund</a></li>
+            <li><a href="#SP-5">Sprint 6 &middot; Commission Ledger</a></li>
+            <li><a href="#SP-6">Sprint 7 &middot; Reconciliation &rarr; MVP</a></li>
+            <li><a href="#SP-7">Sprint 8 &middot; Shared Inventory + Agents</a></li>
             <li><a href="#SP-POST">Post-MVP roadmap</a></li>
           </ul>
         </div>
@@ -821,6 +823,7 @@
         <li><span class="rid">R4</span><span>Filters must update results without full page reload (client-side state).</span></li>
         <li><span class="rid">R5</span><span>"No buses found" empty state must offer adjacent-date suggestions (&plusmn;1, &plusmn;2 days).</span></li>
         <li><span class="rid">R6</span><span>Buses unavailable on the requested date (via <code>unavailableDates</code>) must be filtered out at query time, not at render time.</span></li>
+        <li><span class="rid">R7</span><span><b>Mid-route segments must match.</b> A search for Itahari &rarr; Kathmandu must return the Biratnagar &rarr; Kathmandu bus that passes through Itahari, showing the departure time <i>at Itahari</i> and the Itahari&ndash;Kathmandu fare &mdash; not the origin time and full-route fare. See OPR-STOPS for the model.</span></li>
       </ul>
 
       <h4>Currently built</h4>
@@ -834,6 +837,7 @@
 
       <h4>Pending</h4>
       <ul class="pendList">
+        <li><span class="pTag"><span class="prio p0">P0</span></span><span><b>Segment matching (R7) &mdash; Sprint 3.</b> Today <code>searchAllBuses()</code> matches <code>startPoint</code>/<code>endPoint</code> exactly, so every pass-through city returns zero results. Moves to a single <code>array-contains</code> query on the denormalised <code>searchKeys</code> field (OPR-STOPS R2).</span></li>
         <li><span class="pTag"><span class="prio p0">P0</span></span><span>Verify that the query filters out non-approved buses. Today the search may surface unverified operators &mdash; check <code>BusService.searchAllBuses()</code> and add a Firestore composite index on <code>(verificationStatus, status, fromCity, toCity)</code>.</span></li>
         <li><span class="pTag"><span class="prio p1">P1</span></span><span>"Seats remaining" should compute from <code>capacity - bookedSeats(date)</code>, not from a static field. Today this number may be wrong on busy buses.</span></li>
         <li><span class="pTag"><span class="prio p2">P2</span></span><span>Adjacent-date "no results" suggestions (R5).</span></li>
@@ -1515,7 +1519,7 @@
 
       <h4>Functional requirements</h4>
       <ul class="reqList">
-        <li><span class="rid">R1</span><span>A route is From-City &rarr; To-City with named boarding and dropping points.</span></li>
+        <li><span class="rid">R1</span><span>A route is an <b>ordered chain of stops</b> &mdash; origin, intermediate stops, destination &mdash; each with its own arrival time, boarding/dropping points, and fare-from-origin. (Superseded the old "From-City &rarr; To-City" definition in Sprint 3 &mdash; see OPR-STOPS.)</span></li>
         <li><span class="rid">R2</span><span>A trip is a (bus, route, date, departure-time) tuple with a fare.</span></li>
         <li><span class="rid">R3</span><span>Operator can set recurring trips (e.g. daily, M-F) which generate concrete dated trips ahead.</span></li>
         <li><span class="rid">R4</span><span>A trip can be cancelled with a reason; all affected bookings are automatically refunded.</span></li>
@@ -1534,6 +1538,68 @@
         <li><span class="pTag"><span class="prio p1">P1</span></span><span>Confirm the model distinguishes <i>schedule</i> (recurring) from <i>trip</i> (concrete dated instance). Today the boundary is blurry.</span></li>
         <li><span class="pTag"><span class="prio p1">P1</span></span><span>Trip cancellation with cascade refund.</span></li>
         <li><span class="pTag"><span class="prio p2">P2</span></span><span>Per-date pricing override.</span></li>
+      </ul>
+    </div>
+
+    <!-- OPR-STOPS -->
+    <div class="doc" id="OPR-STOPS">
+      <div class="docHead">
+        <div>
+          <div class="id">OPR-STOPS <b>new</b></div>
+          <h3 class="ti">Route Stops &amp; Mid-route Boarding</h3>
+        </div>
+        <div class="right">
+          <span class="pill s-stub">Sprint 3 &middot; next up</span>
+          <span class="prio p0">P0</span>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div><b>Module</b>Cross-cutting &middot; Network model (operator-owned data)</div>
+        <div><b>Primary file</b><code>IBus.stops[]</code> + <code>searchKeys</code> (bus doc) &middot; <code>places</code> collection (new)</div>
+        <div><b>Primary actor</b>Operator owner (defines) &middot; traveler (books) &middot; admin (curates places)</div>
+        <div><b>Related</b>OPR-TRIP, USR-SEARCH, USR-SEAT, USR-PAX, OPR-COUNTER, ADM-BUS, OPR-RECON</div>
+      </div>
+
+      <h4>Purpose</h4>
+      <p>Today a route is two endpoints, so the platform is blind to <b>most of the demand on any long route</b>. A Biratnagar&ndash;Kathmandu night bus picks up passengers in Itahari, Lahan, Bardibas, Hetauda, Narayangarh &mdash; on the east&ndash;west highway those mid-route boardings are often the majority of the manifest, and today none of them can even <i>find</i> the bus on uthbus.com. This spec makes the route an <b>ordered chain of stops</b>, each stop searchable, priced, and bookable &mdash; the model every serious platform converged on (redBus's boarding/dropping-point network, FlixBus's stop-sequence trips, railway stage fares).</p>
+      <p><b>Phasing decision:</b> inventory is deliberately split. <b>Phase A (this sprint):</b> a sold seat blocks the whole trip &mdash; structurally oversell-proof, zero change to the <code>seatLocks</code> engine, matches what operators do on paper today. <b>Phase B (post-MVP card):</b> segment-level inventory, where a seat that empties in Itahari is resold Itahari&rarr;Kathmandu &mdash; the redBus/FlixBus revenue unlock, and the hardest concurrency in the product. Phase A's whole-trip lock is just the (0, last) segment, so Phase B is additive, not a migration.</p>
+
+      <h4>User stories</h4>
+      <div class="story"><b>As a</b> traveler in Itahari <b>I want</b> to search Itahari &rarr; Kathmandu and see every bus that passes through <b>so that</b> I can book a seat instead of phoning counters or flagging buses on the highway.</div>
+      <div class="story"><b>As an</b> operator owner <b>I want</b> to define my route's stops, times, and stage fares once <b>so that</b> mid-route seats &mdash; most of my manifest &mdash; sell through the platform and show up in my reconciliation sheet.</div>
+      <div class="story"><b>As a</b> counter clerk <b>I want</b> to book a walk-in from any stop to any later stop at the right fare <b>so that</b> the seat map stays the single source of truth.</div>
+      <div class="story"><b>As an</b> admin <b>I want</b> one canonical list of places with aliases <b>so that</b> "Narayangarh", "Bharatpur", and "Chitwan" don't fragment into three unsearchable spellings.</div>
+
+      <h4>Functional requirements</h4>
+      <ul class="reqList">
+        <li><span class="rid">R1</span><span><b>Stop chain on the bus doc.</b> <code>stops: [{ name, order, time, dayOffset, fareFromOrigin, boardingPoints[], droppingPoints[] }]</code>. <code>dayOffset</code> (0/1) handles overnight routes &mdash; Biratnagar 16:30 reaches Kathmandu 05:30 <i>next day</i>. <code>startPoint</code>/<code>endPoint</code> remain as <code>stops[0]</code>/<code>stops[last]</code> for back-compat; legacy buses migrate as 2-stop routes with zero behaviour change.</span></li>
+        <li><span class="rid">R2</span><span><b>Denormalised <code>searchKeys</code>.</b> Every ordered stop pair precomputed as <code>"From_To"</code> strings (&le;12 stops &rarr; &le;66 keys), so segment search is a single Firestore <code>array-contains</code> query &mdash; the same denormalise-don't-join pattern as <code>operatorKycStatus</code>. Firestore cannot express "array contains A and B, and A comes before B"; precomputing the pairs is the idiomatic substitute.</span></li>
+        <li><span class="rid">R3</span><span><b>Stage fares.</b> Default segment fare = <code>fareFromOrigin[to] &minus; fareFromOrigin[from]</code> (one number per stop, matching the fare charts operators already keep). An optional <code>fareOverrides: { "From_To": amount }</code> map wins when the operator's real chart doesn't decompose that way. Validation warns when <code>fareFromOrigin</code> isn't non-decreasing along the chain.</span></li>
+        <li><span class="rid">R4</span><span><b>Places registry.</b> Admin-curated <code>places</code> collection (name, district, aliases). Operator stop pickers and the user search autocomplete both read it; alias normalisation happens before key matching. Operators can request additions; free-text stop names are not allowed (they would silently break search matching).</span></li>
+        <li><span class="rid">R5</span><span><b>Bookings speak segments.</b> Every booking stamps <code>from</code>/<code>to</code> (the actual segment), <code>fromStopIndex</code>/<code>toStopIndex</code>, the chosen per-stop <code>boardingPoint</code>/<code>droppingPoint</code>, and the segment fare as <code>amount</code>. E-ticket shows "Board at Itahari &middot; Halgada Chowk &middot; ~17:45".</span></li>
+        <li><span class="rid">R6</span><span><b>Phase A inventory.</b> A sold seat blocks the entire trip (the existing <code>seatLocks</code> id <code>busId_date_seat</code> is untouched). Never oversells; at worst under-sells &mdash; exactly today's paper behaviour. Segment-level reselling is Phase B, a separate post-MVP card.</span></li>
+        <li><span class="rid">R7</span><span><b>Time is local to the boarding stop.</b> Search results, the 2-hour booking cutoff (<code>lib/booking-cutoff.ts</code> + the Firestore rules mirror), and the ticket all use the passenger's boarding-stop time (with <code>dayOffset</code>), never the origin departure.</span></li>
+        <li><span class="rid">R8</span><span><b>Manifest by stop.</b> Operator's per-trip passenger list groups by boarding stop in chain order &mdash; who gets on where. Feeds reconciliation (OPR-RECON) and the future conductor app.</span></li>
+      </ul>
+
+      <h4>Acceptance criteria</h4>
+      <div class="ac">
+      <ul>
+        <li>Searching Itahari &rarr; Kathmandu returns the Biratnagar &rarr; Kathmandu bus showing 17:45 (Itahari's time) and NPR 1,300 (Itahari&rsquo;s stage fare), not 16:30 / NPR 1,500; completing the booking yields a ticket that names the Itahari boarding point.</li>
+        <li>Booking any segment removes that seat from availability for <i>every</i> other segment of that trip and date (Phase A whole-trip lock), verified with two concurrent bookers.</li>
+        <li>After migration, every legacy bus behaves identically as a 2-stop route: same search results, same fare, same booking flow.</li>
+        <li>A counter clerk can book Lahan &rarr; Hetauda on the same seat map the web user sees.</li>
+      </ul>
+      </div>
+
+      <h4>Edge cases &amp; risks</h4>
+      <ul>
+        <li>Overnight time math: every "is this stop's departure in the past" check must apply <code>dayOffset</code> or day-2 stops on tonight's bus look already-departed.</li>
+        <li>Alias collisions ("Chitwan" the district vs Narayangarh/Bharatpur the stop) &mdash; the places registry is the single arbiter; search normalises before matching.</li>
+        <li><code>from == to</code> and reversed pairs must be rejected at both form and query level (keys are ordered, so reversed pairs simply don't match).</li>
+        <li>Fare charts that don't decompose into origin-diffs (rare promotions) &mdash; covered by <code>fareOverrides</code>, not by abandoning the simple model.</li>
+        <li>The migration touches every bus doc and the top of the funnel &mdash; run on preview with both bus shapes side by side before prod (see Risks &sect;11).</li>
       </ul>
     </div>
 
@@ -1662,7 +1728,7 @@
 
       <h4>Pending</h4>
       <ul class="pendList">
-        <li><span class="pTag"><span class="prio p0">P0</span></span><span>All of R1-R5. Built in Sprint 5 alongside ADM-COMM.</span></li>
+        <li><span class="pTag"><span class="prio p0">P0</span></span><span>All of R1-R5. Built in Sprint 6 alongside ADM-COMM.</span></li>
       </ul>
 
       <h4>Acceptance criteria</h4>
@@ -1799,7 +1865,7 @@
           <h3 class="ti">Daily Reconciliation &mdash; "cash truth"</h3>
         </div>
         <div class="right">
-          <span class="pill s-stub">Sprint 6 &middot; ships MVP</span>
+          <span class="pill s-stub">Sprint 7 &middot; ships MVP</span>
           <span class="prio p1">P1</span>
         </div>
       </div>
@@ -1819,7 +1885,7 @@
 
       <h4>Functional requirements</h4>
       <ul class="reqList">
-        <li><span class="rid">R1</span><span>Every booking write path stamps <code>soldBy: { channel: "online" | "counter" | "agent", actorId }</code>. The <code>agent</code> value is reserved in Sprint 6 and goes live in Sprint 7 &mdash; this is the cheap agent-foundation seed.</span></li>
+        <li><span class="rid">R1</span><span>Every booking write path stamps <code>soldBy: { channel: "online" | "counter" | "agent", actorId }</code>. The <code>agent</code> value is reserved in Sprint 7 and goes live in Sprint 8 &mdash; this is the cheap agent-foundation seed.</span></li>
         <li><span class="rid">R2</span><span>Counter staff can record cash taken and "close the drawer" for a shift (total cash handed up).</span></li>
         <li><span class="rid">R3</span><span>Per operator / per day / per bus: seats sold split by channel, gross collected online (gateway-settled) vs cash expected at counter vs cash declared, with the <b>variance</b> highlighted.</span></li>
         <li><span class="rid">R4</span><span>Admin sees the same per-operator reconciliation and can flag persistent variance.</span></li>
@@ -1829,7 +1895,7 @@
       <div class="ac">
       <ul>
         <li>An owner opens the sheet for a date and sees the channel split, cash expected vs declared, and a signed variance.</li>
-        <li>Agent sales (once Sprint 7 lands) appear in the same sheet automatically via the <code>soldBy</code> tag &mdash; no new plumbing.</li>
+        <li>Agent sales (once Sprint 8 lands) appear in the same sheet automatically via the <code>soldBy</code> tag &mdash; no new plumbing.</li>
       </ul>
       </div>
     </div>
@@ -1842,7 +1908,7 @@
           <h3 class="ti">Share Bus to Agent (operator side)</h3>
         </div>
         <div class="right">
-          <span class="pill s-stub">Sprint 7 &middot; post-MVP</span>
+          <span class="pill s-stub">Sprint 8 &middot; post-MVP</span>
           <span class="prio p1">P1</span>
         </div>
       </div>
@@ -1882,7 +1948,7 @@
 
     <div class="portal">
       <h3>Agent Portal</h3>
-      <p>Independent travel shops that sell many operators' seats. Modelled as a <b>fourth top-level principal</b> (own auth context, alongside user / operator / admin) with a <b>thin portal</b> that reuses the counter booking surface &mdash; roughly 20% new UI, 80% reused. Built in <b>Sprint 7</b>, after MVP. The agent is its own business, granted access by operators (many-to-many), never a child of one operator. Agent / conductor surfaces are the most mobile-first of all &mdash; they ship as role-aware screens in the one operator-side mobile app, not separate builds.</p>
+      <p>Independent travel shops that sell many operators' seats. Modelled as a <b>fourth top-level principal</b> (own auth context, alongside user / operator / admin) with a <b>thin portal</b> that reuses the counter booking surface &mdash; roughly 20% new UI, 80% reused. Built in <b>Sprint 8</b>, after MVP. The agent is its own business, granted access by operators (many-to-many), never a child of one operator. Agent / conductor surfaces are the most mobile-first of all &mdash; they ship as role-aware screens in the one operator-side mobile app, not separate builds.</p>
     </div>
 
     <!-- AGT-AUTH -->
@@ -1893,7 +1959,7 @@
           <h3 class="ti">Agent Account &amp; Light KYC</h3>
         </div>
         <div class="right">
-          <span class="pill s-stub">Sprint 7</span>
+          <span class="pill s-stub">Sprint 8</span>
           <span class="prio p1">P1</span>
         </div>
       </div>
@@ -1925,7 +1991,7 @@
           <h3 class="ti">Access &amp; Seat Allocation</h3>
         </div>
         <div class="right">
-          <span class="pill s-stub">Sprint 7</span>
+          <span class="pill s-stub">Sprint 8</span>
           <span class="prio p1">P1</span>
         </div>
       </div>
@@ -1964,7 +2030,7 @@
           <h3 class="ti">Agent Booking</h3>
         </div>
         <div class="right">
-          <span class="pill s-stub">Sprint 7</span>
+          <span class="pill s-stub">Sprint 8</span>
           <span class="prio p1">P1</span>
         </div>
       </div>
@@ -1982,7 +2048,7 @@
       <h4>Functional requirements</h4>
       <ul class="reqList">
         <li><span class="rid">R1</span><span>Agent books from the shared seat map for any bus/trip shared to them, within their permissions and credit limit.</span></li>
-        <li><span class="rid">R2</span><span>Every agent booking stamps <code>soldBy: { channel: "agent", actorId }</code> &mdash; the slot reserved in Sprint 6.</span></li>
+        <li><span class="rid">R2</span><span>Every agent booking stamps <code>soldBy: { channel: "agent", actorId }</code> &mdash; the slot reserved in Sprint 7.</span></li>
         <li><span class="rid">R3</span><span>Boarding/dropping points come from the operator's configured points (OPR-TRIP), not free text.</span></li>
       </ul>
     </div>
@@ -1995,7 +2061,7 @@
           <h3 class="ti">Wallet, Commission &amp; Settlement</h3>
         </div>
         <div class="right">
-          <span class="pill s-stub">Sprint 7</span>
+          <span class="pill s-stub">Sprint 8</span>
           <span class="prio p1">P1</span>
         </div>
       </div>
@@ -2014,7 +2080,7 @@
       <ul class="reqList">
         <li><span class="rid">R1</span><span>Agent has a prepaid wallet or credit limit; each booking draws it down; hitting the limit blocks selling until top-up.</span></li>
         <li><span class="rid">R2</span><span>Agent commission is attributed via the <code>soldBy</code> tag and flows into the same <code>ledgerEntries</code> + reconciliation sheet &mdash; no new money rails.</span></li>
-        <li><span class="rid">R3</span><span>Agent settlement is manual at first (like operator settlement); automation is post-Sprint-7.</span></li>
+        <li><span class="rid">R3</span><span>Agent settlement is manual at first (like operator settlement); automation is post-Sprint-8.</span></li>
       </ul>
 
       <h4>Acceptance criteria</h4>
@@ -2255,7 +2321,7 @@
 
       <h4>Pending</h4>
       <ul class="pendList">
-        <li><span class="pTag"><span class="prio p0">P0</span></span><span>Entire module &mdash; built in Sprint 5.</span></li>
+        <li><span class="pTag"><span class="prio p0">P0</span></span><span>Entire module &mdash; built in Sprint 6.</span></li>
       </ul>
 
       <h4>Acceptance criteria</h4>
@@ -2307,7 +2373,7 @@
 
       <h4>Pending</h4>
       <ul class="pendList">
-        <li><span class="pTag"><span class="prio p1">P1</span></span><span>Entire module &mdash; built in Sprint 7-8.</span></li>
+        <li><span class="pTag"><span class="prio p1">P1</span></span><span>Entire module &mdash; built in Sprint 8-9.</span></li>
       </ul>
     </div>
 
@@ -2369,6 +2435,7 @@
     <ul>
       <li><b>Honest e-ticket.</b> Payment Mode rendered from real data, never hard-coded.</li>
       <li><b>Operator KYC.</b> Documents uploaded, admin approves, verified badge shows. "Verified operators" becomes true in software.</li>
+      <li><b>Mid-route boarding (added 2026-07-12).</b> A route is an ordered chain of stops, each searchable, stage-priced, and bookable &mdash; a passenger in Itahari can find and book the Biratnagar&ndash;Kathmandu bus. Whole-trip seat lock only (Phase A); segment-level reselling is post-MVP. See OPR-STOPS.</li>
       <li><b>One payment method: Fonepay.</b> QR that any bank/wallet app in Nepal can scan, one gateway, fastest to ship. eSewa, Khalti, cards &mdash; later.</li>
       <li><b>Cancellation policy + manual refund.</b> Policy enforced in UI; refund triggered by you from admin (manual refund through the Fonepay merchant portal). Automated refund is post-MVP.</li>
       <li><b>Commission ledger (read-only).</b> Every paid booking writes a ledger entry with gross / commission / net. Operator can see what they are owed. Actual payout happens outside the system (you bank-transfer them weekly). Automated settlement run is post-MVP.</li>
@@ -2462,13 +2529,13 @@
       <li><b>If a thing can be done manually, do it manually first.</b> Refunds, settlements, KYC review, notifications &mdash; manual is fine for MVP. Automate only after volume justifies it.</li>
       <li><b>Never start two sprints' worth of work at once.</b> "I'll just also&hellip;" is the solo killer.</li>
       <li><b>Cut before you stretch.</b> If a sprint is slipping, cut from this sprint, do not push the next sprint's date.</li>
-      <li><b>Don't refactor on the critical path to MVP.</b> Ugly working code &gt; pretty broken code. Refactor in Sprint 6+.</li>
+      <li><b>Don't refactor on the critical path to MVP.</b> Ugly working code &gt; pretty broken code. Refactor in Sprint 7+.</li>
       <li><b>Ship to staging every Friday, even if the goal isn't fully done.</b> Avoids week-long branches that rot.</li>
       <li><b>Write down one decision per week.</b> "Why I chose Fonepay first" &mdash; one paragraph. Future you and the first hire will thank present you.</li>
     </ol>
 
     <div class="callout blue">
-      <b>The single most important rule:</b> ship MVP in 14 weeks. If by week 10 you are still on Sprint 3, the answer is to cut Sprint 5's scope, not to push to week 18. The cost of slow MVP &gt; the cost of a smaller MVP.
+      <b>The single most important rule:</b> ship MVP in ~17 weeks (14 + the folded retention scope + the routes sprint). If by week 12 you are still on Sprint 4 (payments), the answer is to cut Sprint 6's scope, not to push the date again. The cost of slow MVP &gt; the cost of a smaller MVP.
     </div>
   </section>
 
@@ -2932,7 +2999,7 @@
 
     <h3>Assumptions baked into the plan</h3>
     <ul>
-      <li>Fonepay merchant onboarding is procured by end of Sprint 2. <b>Start onboarding now</b> &mdash; it runs through Fonepay / a member bank and takes a week or more. Sandbox/UAT first; production once Sprint 3 is ready.</li>
+      <li>Fonepay merchant onboarding is procured during Sprint 3 (routes). <b>Start onboarding now</b> &mdash; it runs through Fonepay / a member bank and takes a week or more, which is exactly why the routes sprint goes first: the paperwork clock runs in parallel with route-model engineering. Sandbox/UAT first; production once Sprint 4 is ready.</li>
       <li>You can dedicate ~25-30 productive engineering hours per week. If real life (illness, family, a Diwali week) eats into that, slide sprint boundaries &mdash; do not stretch the goal.</li>
       <li>By end of Sprint 2 you have a real candidate first operator already in conversation, so KYC has a real subject to test on. Operator acquisition is its own workstream and not in this doc.</li>
       <li>You will not pull yourself toward the mobile app, loyalty features, or programmatic SEO until MVP is shipped. Write the next idea down, put it in this doc's post-MVP menu, then close the tab.</li>
@@ -2941,15 +3008,16 @@
 
     <h3>Risks</h3>
     <div class="risk"><span class="n">1</span><span><b>You are the single point of failure.</b> Sick week = sprint slip. Mitigation: keep sprints to one goal so a one-week slip costs one feature, not the whole plan. Tag every prod deploy with a version so you can roll back without thinking.</span></div>
-    <div class="risk"><span class="n">2</span><span><b>Fonepay integration has rough edges.</b> The QR + websocket/status-API flow has sparse docs and the sandbox can be inconsistent. Mitigation: budget a full week of buffer in Sprint 3 specifically for "things Fonepay-shaped don't work", and always reconcile against the status API rather than trusting the socket. Have a backup plan to ship "Pay at Counter only" if Fonepay slips by &gt; 3 weeks.</span></div>
+    <div class="risk"><span class="n">2</span><span><b>Fonepay integration has rough edges.</b> The QR + websocket/status-API flow has sparse docs and the sandbox can be inconsistent. Mitigation: budget a full week of buffer in Sprint 4 specifically for "things Fonepay-shaped don't work", and always reconcile against the status API rather than trusting the socket. Have a backup plan to ship "Pay at Counter only" if Fonepay slips by &gt; 3 weeks.</span></div>
     <div class="risk"><span class="n">3</span><span><b>Scope creep on yourself.</b> Solo devs are notorious for "while I'm in here, I'll also fix&hellip;". Mitigation: write the temptation down in the post-MVP menu, do not action it. Re-read the MVP definition every Monday.</span></div>
     <div class="risk"><span class="n">4</span><span><b>No code review.</b> No second pair of eyes on payment / ledger code, which is where bugs are most expensive. Mitigation: write tests for the money paths (compute commission, refund reversal, idempotency). Also: re-read your own PR the next morning before merging &mdash; the gap of a night helps a lot.</span></div>
     <div class="risk"><span class="n">5</span><span><b>Data migrations on production with no team backup.</b> If a backfill goes wrong on prod data, recovery is on you alone. Mitigation: Sprint 0 sets up daily Firestore exports for a reason. Every migration runs on staging twice before prod, and never on a Friday afternoon.</span></div>
-    <div class="risk"><span class="n">6</span><span><b>Webhook reliability + idempotency.</b> Money flows depend on webhook delivery and not double-processing. Build retry and idempotency from Sprint 3 day one, not as a "we'll harden later" item.</span></div>
+    <div class="risk"><span class="n">6</span><span><b>Webhook reliability + idempotency.</b> Money flows depend on webhook delivery and not double-processing. Build retry and idempotency from Sprint 4 day one, not as a "we'll harden later" item.</span></div>
     <div class="risk"><span class="n">7</span><span><b>Operator supply.</b> The plan assumes a real operator is ready to be your first verified KYC by end of Sprint 2. If not, the verification flow tests on synthetic data and the first MVP transaction slips. Run operator acquisition in parallel.</span></div>
     <div class="risk"><span class="n">8</span><span><b>Burnout.</b> Solo at 25-30 productive hours for 14 weeks straight is doable; at 50 hours, you crash by week 8. Protect the 30-hour ceiling. Take a real day off each week. The plan respects that already.</span></div>
     <div class="risk"><span class="n">9</span><span><b>Security rules per new collection.</b> Every new Firestore collection (paymentIntents, ledgerEntries, kycDocs) needs explicit rules. Solo means no one reminds you. Put it on the per-sprint definition of done.</span></div>
     <div class="risk"><span class="n">10</span><span><b>You take the first booking and break it under load.</b> Unlikely at MVP traffic, but the day a route goes viral, payment + seat-hold + ledger writes all spike. Mitigation: build the booking write inside a Firestore transaction (already implied above). Add a Sentry "transaction failed" alert.</span></div>
+    <div class="risk"><span class="n">11</span><span><b>The stops migration touches every bus doc and the top of the funnel.</b> Search, seat selection, booking write, counter, and ticket all read the route shape; a bad backfill breaks discovery for every bus at once. Mitigation: legacy buses become exact-equivalent 2-stop routes (idempotent script, like the paymentStatus backfill); run preview with legacy and multi-stop buses side by side through the full regression before prod; keep <code>startPoint</code>/<code>endPoint</code> populated so old queries and rules keep working during the cutover.</span></div>
   </section>
 
   <!-- ============ GLOSSARY ============ -->
@@ -2971,7 +3039,7 @@
     </ul>
 
     <div class="callout blue">
-      <b>One-line summary.</b> Ship Fonepay-only, manually-settled, KYC-verified MVP in 14 weeks. Then take real bookings, see what hurts, and use the post-MVP menu as a guide &mdash; not a contract. By Sprint 6 or 7, hire someone.
+      <b>One-line summary.</b> Ship a Fonepay-only, manually-settled, KYC-verified, mid-route-capable MVP in ~17 weeks. Then take real bookings, see what hurts, and use the post-MVP menu as a guide &mdash; not a contract. By Sprint 7 or 8, hire someone.
     </div>
   </section>
 
@@ -2989,12 +3057,15 @@
 <script>
 const DATA = {
   meta: {
-    lastUpdated: '2026-06-14',
+    lastUpdated: '2026-07-13',
     currentSprintId: 'SP-2',
-    nextSprintId: 'SP-3',
+    nextSprintId: 'SP-ROUTES',
   },
 
   activity: [
+    { when: '2026-07-13', what: '📄 <b>KYC docs now optional at registration — zero-friction operator signup.</b> An operator can create an account with just email/password/company name; documents and license/PAN numbers can all come later. A new <b>Documents section in the operator sidebar</b> (<code>documents.page.tsx</code>) is the persistent home for docs: per-document cards (view / upload / replace, uploads immediately), a status card per KYC state, and the union rule — a rejected operator re-enters the review queue automatically once all three docs exist again (fix one doc without re-uploading the other two). The dashboard <code>KycStatusBanner</code> is a slim status notice that deep-links there ("Get verified — upload your documents" when no docs; hidden on the Documents section itself). This doubles as the first slice of the Compliance Vault UI — sp2-t12 done for company docs; per-bus docs + expiry colours stay deferred. Admin side: the <b>Approve button is disabled until documents exist</b>, so the verified badge can never be granted on an empty file. Also fixed the register-page copy that claimed a 5MB limit (real cap is 300KB — see sp2-c7). No rules/schema change: uploads always went through the same owner-write path; the KYC gate on traveler search is untouched.' },
+    { when: '2026-07-13', what: '🏁 <b>Sprint 2 close-out defined + city dropdown shipped.</b> Sprint 2 status honestied-up for the wrap: the <b>Compliance Vault UI</b> (sp2-t12/13/14) and the <b>GCS backup deploy</b> (sp2-t18) are now formally <i>deferred</i> (the vault\'s expiry-aware data model and the backup function code both shipped — what\'s parked is UI and infra, not modelling), and a concrete <b>Close-out group (sp2-c1…c7)</b> lists everything between here and <code>v0.2-kyc</code>: push the never-pushed <code>sprint-2</code> branch + clean merge with main (verified: zero content drift since the branch point), E2E KYC walk on preview, prod console prep (Storage + Trigger Email on uthbus-prod), Firebase deploy + backfill on prod, merge → prod deploy → smoke → tag, rotate the stopgap Gmail app password, and the 300KB doc-cap decision before a real operator uploads phone photos. <b>Also shipped today, ahead of Sprint 3:</b> the city dropdown fix — <code>nepalCities</code> grew 26 → 61 with the highway towns mid-route boarding needs (Lahan, Bardibas, Mugling, Kohalpur…; Narayangarh + Bhairahawa added as Popular), and <code>CitySelect</code> now shows the <b>full list on open</b> (filters only once you type, pre-selects existing text). Operator add-bus form, homepage search, and the search bar all inherit it — operator and traveler now pick from the identical list, which is what keeps <code>startPoint</code>/<code>endPoint</code> matching at search time. (<code>my-buses.page.tsx</code> confirmed dead code — nothing imports it.)' },
+    { when: '2026-07-12', what: '🛣️ <b>Route-model decision — mid-route boarding becomes Sprint 3; every later sprint shifts +1.</b> Today a route is two endpoints (<code>startPoint</code>/<code>endPoint</code>), so a Biratnagar→Kathmandu bus is invisible to a passenger searching from Itahari, Lahan, Bardibas, Hetauda, or Narayangarh — on long east–west routes those mid-route boardings are most of the real manifest. Decision: a route becomes an <b>ordered chain of stops</b> on the bus doc (per-stop times incl. overnight <code>dayOffset</code>, per-stop boarding/dropping points, <code>fareFromOrigin</code> stage fares + <code>fareOverrides</code>), with a denormalised <code>searchKeys</code> array (<code>"Itahari_Kathmandu"</code>, …) so segment search stays one Firestore <code>array-contains</code> query — the same denormalise-don\'t-join pattern as the KYC gating. Bookings stamp their segment; the 2-hour cutoff moves to the <i>boarding stop\'s</i> time. <b>Inventory is Phase A: a sold seat blocks the whole trip</b> — oversell-proof and zero <code>seatLocks</code> change; Phase B (segment-level reselling of freed seats, the redBus/FlixBus revenue trick) is parked as its own post-MVP card. This is how redBus, FlixBus, and every stage-fare rail system model routes — endpoint-only was the anomaly. New spec <b>OPR-STOPS</b>; new <b>Sprint 3 · Routes, Stops &amp; Mid-route Boarding</b> (v0.3-routes). Fonepay → Sprint 4, Refunds → 5, Ledger → 6, Reconciliation/MVP → 7, Agents → 8; post-MVP menu renumbered accordingly. Fonepay merchant onboarding (the longest external dependency) runs in parallel during the routes sprint, so part of the calendar cost is absorbed; MVP target moves out ~2-3 weeks — priced in deliberately, because retrofitting segments under live paid bookings would cost far more.' },
     { when: '2026-06-18', what: '💳 <b>Payment-gateway decision — Fonepay only for MVP, eSewa dropped.</b> Sprint&nbsp;3 is now <b>Fonepay Payment</b> (one gateway). Fonepay is not a rename of the old eSewa plan: it is a <b>dynamic-QR</b> flow (in-page QR, no redirect), signed with <b>HMAC-SHA512</b>, with payment status arriving over a websocket and <b>server-verified via the status-check API</b> (the socket is a hint, the status API is the truth) — PRN is the idempotency key. Sprint&nbsp;3 (plan + interactive board), the MVP doctrine, risks, refund flow, and the USR-PAY spec were rewritten accordingly; the <code>PaymentMode</code> union now leads with <code>"Fonepay"</code> (eSewa removed). Khalti/card stay post-MVP. PayNowModal &ldquo;coming soon&rdquo; copy and the marketing route-page payment lines updated to Fonepay. Historical changelog entries left as-shipped.' },
     { when: '2026-06-14', what: '🛠️ <b>Sprint 2 built end-to-end + pulled-forward scope — live on preview (uthbus-39a14).</b> <b>Operator KYC:</b> <code>kycStatus</code> on the operator model; typed, expiry-aware compliance doc model (<code>lib/compliance/types.ts</code>, <code>getDocExpiryState</code>) so the Vault is a later UI layer, not a migration; Firebase Storage wired for the first time (<code>kyc/{uid}/*</code>); registration captures license/PAN + three required uploads; dashboard KYC banner (re-upload on reject + shows submitted docs); admin review page (<code>app/admin/operators</code>) with inline doc previews + approve/reject; search gated on a denormalised <code>operatorKycStatus</code> (atomic <code>writeBatch</code>, no Cloud Function); <code>VerifiedOperatorBadge</code> on search + e-ticket; approve/reject email via the Trigger Email extension over Gmail SMTP (Brevo dropped — OTP failed in Nepal); <code>adminAuditLog</code> on every action. <b>Pulled forward now that Blaze + Storage are on:</b> bus listing photos (multi-upload ≤500KB, <code>Lightbox</code> viewer, fixed the 2-photo search cap); server-side 2-hour booking-cutoff enforced in <code>firestore.rules</code> via server time + Nepal&rsquo;s fixed +5:45 offset (no function, booking txn untouched); NA-seat blocking on the user side <i>and</i> in the <code>seatLocks</code> rule; nightly <b>GCS Firestore backup</b> Cloud Function (code complete, deploy pending bucket + IAM). <b>Admin depth:</b> operator KYC surfaced + enforced on the buses page, operator suspend/reactivate (<code>accountStatus</code> + denormalised <code>operatorActive</code> + login block), operator→buses/bookings cross-links, and an <b>audit-log viewer</b> (<code>app/admin/audit</code>). File limits set to 300KB (docs) / 500KB (photos). Rules + indexes + storage deployed to preview; backfill ran (5 operators + 9 buses → approved). <b>Remaining:</b> prod promotion (Storage + extension + deploy + backfill on uthbus-prod), functions deploy (bucket + IAM), and revisiting the tight 300KB doc cap. Compliance Vault UI (OPR-COMPLY) intentionally left for a later pass — only its data model shipped.' },
     { when: '2026-06-14', what: '🧭 <b>Roadmap reorg — operator-OS thesis + agents on the map.</b> Strategic decision: UTHBUS is the operator&rsquo;s back office, not another ticketing storefront (Nepal&rsquo;s ticketing layer is saturated). Two product calls made: <b>(1) retention features fold into MVP</b> — Sprint&nbsp;2 KYC now also builds the <b>Compliance &amp; Document Vault</b> foundation (typed, expiry-aware docs), and a new <b>Sprint&nbsp;6 · Daily Reconciliation (&ldquo;cash truth&rdquo;)</b> becomes the sprint that ships MVP (v1.0). <b>(2) Agents are the first thing after MVP</b> — new <b>Sprint&nbsp;7 · Shared Inventory Engine + Agents</b>. Agents modelled as a 4th top-level principal (many-to-many with operators), reusing the counter booking surface. Cheap foundation seeded during MVP: every booking carries a <code>soldBy</code> channel tag, and agents draw from the existing <code>seatLocks</code> shared-inventory engine. Operator OS roadmap (compliance alerts, staff roster, parcel/courier, conductor app, GPS, regulator layer) captured as a post-MVP menu. Mobile app for operators/agents/conductors planned as one role-aware app. <b>Ship date moves out ~2 weeks for the folded retention scope.</b>' },
@@ -3032,18 +3103,18 @@ const DATA = {
   ],
 
   deferred: [
-    { title: 'Replace browser <code>alert()</code> with toast/dialog UI everywhere', target: 'Sprint 2 (quick UX pass)', why: 'My Bookings cancellation, error messages, and a few other paths still use native <code>window.alert()</code> popups. They feel like 1998. shadcn <code>&lt;Toaster /&gt;</code> is already mounted in the app — wire <code>toast({ title, description, variant })</code> for the success/error paths and replace the cancel confirm with a shadcn <code>&lt;AlertDialog&gt;</code>.' },
+    { title: 'Replace browser <code>alert()</code> with toast/dialog UI everywhere', target: 'Sprint 3 (fold into the routes UI pass)', why: 'My Bookings cancellation, error messages, and a few other paths still use native <code>window.alert()</code> popups. They feel like 1998. shadcn <code>&lt;Toaster /&gt;</code> is already mounted in the app — wire <code>toast({ title, description, variant })</code> for the success/error paths and replace the cancel confirm with a shadcn <code>&lt;AlertDialog&gt;</code>.' },
     { title: '✅ DONE (Sprint 2) — NA seats now blocked on the user side', target: 'Shipped 2026-06-14', why: 'Operator-marked N/A seats render unavailable in user seat-selection AND are rejected server-side: the <code>seatLocks</code> create rule refuses any seat listed in the bus\'s <code>naSeats</code>, so they can\'t be booked even via the raw SDK. (Solved directly off the bus\'s <code>naSeats</code> array — no <code>lockReason</code> field needed.)' },
-    { title: 'Operator seat management + payment-status override', target: 'Sprint 2 enhancement', why: 'Operator should be able to (a) toggle individual seats between booked / confirmed / unavailable from their counter seat-map, and (b) change paymentStatus on any booking they own (e.g. flip a pay-at-counter booking to paid once cash is received). Both already have the data model behind them — <code>seatLocks</code> + the <code>markPaid</code>/<code>markPaymentFailed</code> helpers from Sprint 1 — just needs the UI.' },
-    { title: 'Seatmap layout mismatches actual seat count', target: 'Sprint 2 (bug fix)', why: 'A bus configured with 20 seats currently still renders a 40-cell seatmap. Either the seat count isn\'t threading into the map renderer, or the layout is hard-coded. Bug fix first; the deeper "vehicle category → default seatmap" question is a separate product call (see next item).' },
-    { title: 'Vehicle categorisation + default seatmaps', target: 'Sprint 2 or 3 (needs product decision)', why: 'Today every bus has an ad-hoc seatmap. Proposed taxonomy: Standard Bus (40 seats, 2+2 layout) · Deluxe (38, 2+2) · Sleeper (32 berths, 1+2) · Hiace (12-16) · Microbus (12-15) · Tourist AC (30-36). Each category ships with a default seatmap template the operator can tweak. Reduces "blank canvas" friction for new operators and makes it possible to filter search by vehicle type once we have inventory.' },
-    { title: 'Responsive design at tablet/scaled-down laptop widths', target: 'Sprint 5 (pre-launch polish)', why: 'Homepage, search, and probably others break at ~768-1024px viewport: text overlaps, search inputs run off-edge, route cards stack awkwardly. Doesn\'t affect mobile (which has its own breakpoint) or full-desktop. Polish before MVP launch.' },
-    { title: '🟡 Daily Firestore export to GCS — code complete, deploy pending', target: 'Pulled into Sprint 2 (Blaze now on)', why: 'Built as the <code>scheduledFirestoreBackup</code> Cloud Function (nightly, exports all collections to <code>gs://{project}-firestore-backups/{date}</code>). To go live: create the backup bucket and grant the functions service account <code>roles/datastore.importExportAdmin</code>, then <code>firebase deploy --only functions</code> (preview + prod).' },
+    { title: 'Operator seat management + payment-status override', target: 'Sprint 4-5 (pairs with the payment flows)', why: 'Operator should be able to (a) toggle individual seats between booked / confirmed / unavailable from their counter seat-map, and (b) change paymentStatus on any booking they own (e.g. flip a pay-at-counter booking to paid once cash is received). Both already have the data model behind them — <code>seatLocks</code> + the <code>markPaid</code>/<code>markPaymentFailed</code> helpers from Sprint 1 — just needs the UI.' },
+    { title: 'Seatmap layout mismatches actual seat count', target: 'Sprint 3 (fix before mid-route boarding raises seat-map traffic)', why: 'A bus configured with 20 seats currently still renders a 40-cell seatmap. Either the seat count isn\'t threading into the map renderer, or the layout is hard-coded. Bug fix first; the deeper "vehicle category → default seatmap" question is a separate product call (see next item).' },
+    { title: 'Vehicle categorisation + default seatmaps', target: 'Sprint 3 or 4 (product call; pairs with the stop-chain builder)', why: 'Today every bus has an ad-hoc seatmap. Proposed taxonomy: Standard Bus (40 seats, 2+2 layout) · Deluxe (38, 2+2) · Sleeper (32 berths, 1+2) · Hiace (12-16) · Microbus (12-15) · Tourist AC (30-36). Each category ships with a default seatmap template the operator can tweak. Reduces "blank canvas" friction for new operators and makes it possible to filter search by vehicle type once we have inventory.' },
+    { title: 'Responsive design at tablet/scaled-down laptop widths', target: 'Sprint 6-7 (pre-MVP-launch polish)', why: 'Homepage, search, and probably others break at ~768-1024px viewport: text overlaps, search inputs run off-edge, route cards stack awkwardly. Doesn\'t affect mobile (which has its own breakpoint) or full-desktop. Polish before MVP launch.' },
+    { title: '🟡 Daily Firestore export to GCS — code complete, deploy pending', target: 'Sprint 5 hard deadline (sp4-gcs); parked at Sprint-2 close', why: 'Built as the <code>scheduledFirestoreBackup</code> Cloud Function (nightly, exports all collections to <code>gs://{project}-firestore-backups/{date}</code>). To go live: create the backup bucket and grant the functions service account <code>roles/datastore.importExportAdmin</code>, then <code>firebase deploy --only functions</code> (preview + prod).' },
     { title: 'Guest checkout (book without ever signing in)', target: 'TBD · product call', why: 'Login is required at the moment a guest enters /booking — the gate now lives in <code>app/booking/layout.tsx</code>. Whether to one-day allow truly anonymous reservations is a separate product call (anti-fraud, no-show risk, post-MVP).' },
     { title: 'searchAllBuses verification filter → Firestore query', target: 'TBD', why: 'Client-side filter works for now. Composite index on (verificationStatus, status, fromCity, toCity) needed before scale.' },
     { title: 'FIREBASE_CLIENT_EMAIL service account', target: 'Before Sprint 1 migrations', why: 'Current env value is a personal Gmail, not a generated service account. Server-side /api/auth/* routes and Admin SDK scripts will fail until fixed.' },
     { title: 'pnpm vs npm lockfile coexistence', target: 'TBD', why: 'Both lockfiles in repo. Vercel uses pnpm. Local installs sometimes use npm. Drift is guaranteed. Pick pnpm, delete the other.' },
-    { title: 'Sentry source-map uploads', target: 'Before Sprint 5 launch', why: 'SENTRY_AUTH_TOKEN missing from Vercel env. Until set, prod errors will show minified stack traces.' },
+    { title: 'Sentry source-map uploads', target: 'Before the Sprint 7 (MVP) launch', why: 'SENTRY_AUTH_TOKEN missing from Vercel env. Until set, prod errors will show minified stack traces.' },
   ],
 
   sprints: [
@@ -3228,7 +3299,8 @@ const DATA = {
             desc: 'Wired <code>getStorage</code> (was never set up). <code>kyc/{uid}/*</code> owner-write/read; admin views via tokenised <code>getDownloadURL</code> stored on metadata (Storage rules can\'t read Firestore). <b>Limit set to 300KB</b> (PDFs/images). Deployed to preview.', status: 'done',
             annot: '300KB is tight for phone photos of documents — flagged to revisit (raise the cap or add client-side image compression) before real operators onboard.' },
           { id: 'sp2-t4', title: 'OPR-AUTH registration: three doc upload fields',
-            desc: 'Registration now captures license # + PAN/VAT # and three required uploads (companyCert / license / pan) via reusable <code>KycDocInput</code>. Registers → uploads under the new uid → redirects.', status: 'done' },
+            desc: 'Registration now captures license # + PAN/VAT # and three required uploads (companyCert / license / pan) via reusable <code>KycDocInput</code>. Registers → uploads under the new uid → redirects.', status: 'done',
+            annot: '<b>Relaxed 2026-07-13:</b> documents (and license/PAN numbers) are now <i>optional</i> at registration — zero-friction signup. The dashboard KYC banner became the document manager (see/add/replace in any non-approved state; a rejected operator re-enters the queue once all three exist again), and admin Approve is disabled until documents exist.' },
           { id: 'sp2-t5', title: 'Operator dashboard KYC status banner',
             desc: '<code>KycStatusBanner</code> pinned above every counter section: amber "in review" / red rejection-with-reason + inline re-upload / hidden once approved. <b>Also lists the documents the operator submitted</b> with view links (answers "let me see what I uploaded").', status: 'done' },
         ]},
@@ -3252,7 +3324,8 @@ const DATA = {
           { id: 'sp2-t17', title: 'NA seats blocked on user side (was deferred)',
             desc: 'Operator-marked N/A seats now render unavailable in user seat-selection AND are blocked server-side — the <code>seatLocks</code> create rule rejects any seat in the bus\'s <code>naSeats</code>, so they can\'t be booked even via the raw SDK.', status: 'done' },
           { id: 'sp2-t18', title: 'GCS daily Firestore backup (was Sprint 4)',
-            desc: 'Stood up the <code>functions/</code> Cloud Functions codebase; <code>scheduledFirestoreBackup</code> exports all collections nightly (18:15 UTC = midnight Nepal) to <code>gs://{project}-firestore-backups/{date}</code>. <b>Code complete; deploy pending infra</b> (create bucket + grant the export IAM role).', status: 'in-progress' },
+            desc: 'Stood up the <code>functions/</code> Cloud Functions codebase; <code>scheduledFirestoreBackup</code> exports all collections nightly (18:15 UTC = midnight Nepal) to <code>gs://{project}-firestore-backups/{date}</code>. <b>Code complete; deploy pending infra</b> (create bucket + grant the export IAM role).', status: 'deferred',
+            annot: 'Parked at Sprint-2 close (2026-07-13) per the GCS decision — the deploy (bucket + <code>roles/datastore.importExportAdmin</code> + <code>firebase deploy --only functions</code>) lands with the Sprint-5 hard deadline (sp4-gcs). Interim safety: manual Firestore export before any destructive prod op.' },
         ]},
         { title: 'Admin portal depth', tasks: [
           { id: 'sp2-t19', title: 'Operator KYC visible + enforced on buses page',
@@ -3266,15 +3339,35 @@ const DATA = {
         ]},
         { title: 'Compliance Vault UI (OPR-COMPLY) — deferred to a later pass', tasks: [
           { id: 'sp2-t12', title: 'Operator-facing document vault view',
-            desc: 'Full vault page with per-doc expiry colour states + upload/replace. <b>Data model is ready</b> (expiry-aware) and the operator can already view their KYC docs from the banner; the dedicated vault page is the remaining UI layer.', status: 'todo' },
+            desc: 'Full vault page with per-doc expiry colour states + upload/replace. <b>Data model is ready</b> (expiry-aware) and the operator can already view their KYC docs from the banner; the dedicated vault page is the remaining UI layer.', status: 'done',
+            annot: '<b>Shipped 2026-07-13</b> as the <b>Documents</b> sidebar section (<code>documents.page.tsx</code>): per-document view/upload/replace for the three company docs, KYC status card, auto re-queue on completed re-upload after rejection. Scope note: expiry colour states aren\'t rendered yet (company docs currently carry null expiry) — they land with the per-bus docs (sp2-t13/t14).' },
           { id: 'sp2-t13', title: 'Per-bus compliance docs on the bus model',
-            desc: '<code>buses/{id}/complianceDocs</code> for route permit / insurance / fitness / pollution — same expiry-aware shape (types already reserved in the model).', status: 'todo' },
+            desc: '<code>buses/{id}/complianceDocs</code> for route permit / insurance / fitness / pollution — same expiry-aware shape (types already reserved in the model).', status: 'deferred',
+            annot: 'Deferred with sp2-t12 — same later pass; the doc types are already reserved in <code>lib/compliance/types.ts</code>.' },
           { id: 'sp2-t14', title: 'Expiry surfacing (alert is a stretch)',
-            desc: 'Dashboard banner "N documents expire in the next 30 days" (P1); nightly email alert reusing Trigger Email (P2). <code>getDocExpiryState()</code> already implements the logic.', status: 'todo' },
+            desc: 'Dashboard banner "N documents expire in the next 30 days" (P1); nightly email alert reusing Trigger Email (P2). <code>getDocExpiryState()</code> already implements the logic.', status: 'deferred',
+            annot: 'Deferred with sp2-t12 — <code>getDocExpiryState()</code> already implements the colour logic, so this is wiring, not modelling.' },
         ]},
         { title: 'Buffer · ship', tasks: [
           { id: 'sp2-t11', title: 'End-to-end test with real operator',
-            desc: 'Walk register → upload → approve → bus-in-search-with-badge, plus the reject/resubmit path. Code + rules live on preview (uthbus-39a14); prod promotion pending.', status: 'in-progress' },
+            desc: 'Walk register → upload → approve → bus-in-search-with-badge, plus the reject/resubmit path. Code + rules live on preview (uthbus-39a14); prod promotion pending.', status: 'in-progress',
+            annot: 'The concrete runway to done lives in the Close-out group below (sp2-c1…c7).' },
+        ]},
+        { title: 'Close-out → v0.2-kyc (defined 2026-07-13)', tasks: [
+          { id: 'sp2-c1', title: 'Push sprint-2 + merge main + Vercel preview deploy',
+            desc: 'The branch has never been pushed — only Firebase rules/indexes/storage are on preview; the app UI itself isn\'t. Verified 2026-07-13: main has <b>zero content drift</b> since the branch point (the extra PR merge commits on main are topology only), so the merge is clean.', status: 'todo' },
+          { id: 'sp2-c2', title: 'Full E2E KYC walk on the Vercel preview',
+            desc: 'Register → upload 3 docs → admin approve → bus in search with badge → approve email arrives; then the reject → reason shown → re-upload → re-review path. <b>Plus the new no-docs path (2026-07-13):</b> register with zero docs → "Get verified" banner → upload from dashboard one at a time → admin Approve stays disabled until docs exist. Completes the preview half of sp2-t11.', status: 'todo' },
+          { id: 'sp2-c3', title: 'Prod console prep (uthbus-prod)',
+            desc: 'Enable Cloud Storage; install the Trigger Email extension with the Gmail SMTP creds. Console-only — no code, but blocks everything after it.', status: 'todo' },
+          { id: 'sp2-c4', title: 'Deploy Firebase config to prod + run backfill',
+            desc: '<code>firebase deploy --only firestore:rules,firestore:indexes,storage --project uthbus-prod</code>, then <code>node --env-file=.env.production scripts/backfill-kyc.mjs</code> (idempotent — existing operators/buses → approved).', status: 'todo' },
+          { id: 'sp2-c5', title: 'Merge to main → prod deploy → smoke test → tag v0.2-kyc',
+            desc: 'Vercel production deploys off main; one KYC smoke walk on uthbus.com, then tag. <b>Sprint 2 closes here.</b>', status: 'todo' },
+          { id: 'sp2-c6', title: 'Rotate the Gmail app password',
+            desc: 'The SMTP app password is a stopgap that has been sitting in env/extension config since 2026-06-14 — rotate it and confirm approve/reject mails still send. (The proper fix — Resend + own domain — stays post-MVP.)', status: 'todo' },
+          { id: 'sp2-c7', title: 'Decide the 300KB KYC doc cap before the first real operator',
+            desc: 'Phone photos of certificates routinely exceed 300KB. Either raise the cap (~1MB) in <code>storage.rules</code> + <code>KycDocInput</code>, or add client-side compression. Small change — decide before onboarding, not after the first failed upload.', status: 'todo' },
         ]},
       ],
       cut: "No 2FA on admin. No bulk approve. No \"request more info\" status. Didn't migrate the SEO route pages. The Compliance Vault UI (OPR-COMPLY) slipped to a later pass — only its expiry-aware data model shipped, as planned. (Audit-log UI was originally cut but got pulled in.)",
@@ -3282,12 +3375,65 @@ const DATA = {
     },
 
     // =================================================================
-    // SPRINT 3
+    // SPRINT 3 — ROUTES, STOPS & MID-ROUTE BOARDING (added 2026-07-12)
     // =================================================================
     {
-      id: 'SP-3', tag: 'Sprint 3', title: 'Fonepay Payment (one gateway only)',
+      id: 'SP-ROUTES', tag: 'Sprint 3', title: 'Routes, Stops & Mid-route Boarding',
+      goal: 'A route stops being two endpoints. A passenger in Itahari can find, price, and book the Biratnagar→Kathmandu bus that passes through their town.',
+      duration: '2-3 weeks (~70 hrs)', priority: 'p0', version: 'v0.3-routes',
+      groups: [
+        { title: 'Shipped ahead of sprint', tasks: [
+          { id: 'sp3r-t0', title: 'City dropdown: full list on open + highway towns (2026-07-13)',
+            desc: '<code>nepalCities</code> grew 26 → 61 (Lahan, Bardibas, Mugling, Kohalpur…; Narayangarh + Bhairahawa as Popular); <code>CitySelect</code> shows the full list on open and filters only once you type. Interim until the <code>places</code> registry (sp3r-t4) replaces the hardcoded list — this data seeds it.', status: 'done' },
+        ]},
+        { title: 'Week 1 · route model + operator side', tasks: [
+          { id: 'sp3r-t1', title: 'Ordered stop chain on the bus doc',
+            desc: '<code>stops: [{ name, order, time, dayOffset, fareFromOrigin, boardingPoints[], droppingPoints[] }]</code>. <code>dayOffset</code> handles overnight routes (Biratnagar 16:30 → Kathmandu 05:30 next day). <code>startPoint</code>/<code>endPoint</code> stay as <code>stops[0]</code>/<code>stops[last]</code> so nothing legacy breaks mid-cutover.', status: 'todo' },
+          { id: 'sp3r-t2', title: 'Denormalised searchKeys array',
+            desc: 'Precompute every ordered stop pair as <code>"From_To"</code> strings (cap ~12 stops → ≤66 keys). Firestore can\'t ask "array contains A and B with A before B" — precomputing the pairs makes segment search a single <code>array-contains</code> query. Same pattern as <code>operatorKycStatus</code>.', status: 'todo' },
+          { id: 'sp3r-t3', title: 'Stage-fare model',
+            desc: 'Segment fare = <code>fareFromOrigin[to] − fareFromOrigin[from]</code> (one number per stop — matches the fare charts operators already keep), plus an optional <code>fareOverrides: { "From_To": amount }</code> map for charts that don\'t decompose. Validate fares are non-decreasing along the chain.', status: 'todo' },
+          { id: 'sp3r-t4', title: 'Places master registry (admin-curated)',
+            desc: 'New <code>places</code> collection: name, district, aliases (Narayangarh = Bharatpur = "Chitwan"). Operator stop picker + user search autocomplete both read it; aliases normalise before key matching. Replaces the hardcoded <code>nepalCities</code> list as the source of truth. Free-text stop names disallowed — they silently break matching.', status: 'todo' },
+          { id: 'sp3r-t5', title: 'Operator bus form: stop-chain builder',
+            desc: 'Add/remove/reorder stops; per-stop time, fare-from-origin, boarding/dropping points. Replaces the flat startPoint/endPoint/boardingPoints fields in <code>buses.page.tsx</code>.', status: 'todo' },
+          { id: 'sp3r-t6', title: 'Migration script: legacy buses → 2-stop routes',
+            desc: 'Idempotent backfill (same discipline as the paymentStatus backfill): startPoint@departureTime fare 0 → endPoint@arrivalTime fare <code>price</code>; generates <code>stops</code> + <code>searchKeys</code> from existing fields. Preview first, verify, then prod.', status: 'todo' },
+        ]},
+        { title: 'Week 2 · search + booking funnel', tasks: [
+          { id: 'sp3r-t7', title: 'Segment search in both search paths',
+            desc: '<code>searchAllBuses</code> + counter <code>searchBuses</code> switch to <code>where("searchKeys", "array-contains", `${from}_${to}`)</code> + status filter; composite index declared. Existing client-side KYC/verification/unavailableDates filters unchanged.', status: 'todo' },
+          { id: 'sp3r-t8', title: 'Result card shows the segment truth',
+            desc: '"Departs Itahari 17:45" (not Biratnagar 16:30), the Itahari→Kathmandu stage fare, and the via-chain ("via Lahan · Bardibas · Hetauda") for confidence.', status: 'todo' },
+          { id: 'sp3r-t9', title: 'Booking cutoff moves to the boarding stop',
+            desc: '<code>lib/booking-cutoff.ts</code> + the firestore.rules mirror use the passenger\'s boarding-stop time incl. <code>dayOffset</code> — a day-2 stop on tonight\'s bus must not look already-departed.', status: 'todo' },
+          { id: 'sp3r-t10', title: 'Passenger details: per-stop boarding/dropping pickers',
+            desc: 'Pickers scoped to the chosen from/to stops\' own point lists — no more flat origin-city list.', status: 'todo' },
+          { id: 'sp3r-t11', title: 'Booking write stamps the segment',
+            desc: '<code>from</code>/<code>to</code> = actual segment, <code>fromStopIndex</code>/<code>toStopIndex</code>, chosen points, segment fare as <code>amount</code>. <b>seatLocks untouched — whole-trip lock is Phase A by design.</b> PNR already derives from from/to.', status: 'todo' },
+          { id: 'sp3r-t12', title: 'Counter booking + e-ticket speak segments',
+            desc: 'Counter clerk books any stop-pair at the right fare on the same seat map; ticket renders "Board at Itahari · Halgada Chowk · ~17:45".', status: 'todo' },
+        ]},
+        { title: 'Week 3 · buffer · manifest + regression', tasks: [
+          { id: 'sp3r-t13', title: 'Boarding manifest grouped by stop',
+            desc: 'Operator\'s per-trip passenger list in chain order — who boards where. Feeds Sprint 7 reconciliation and the future conductor app.', status: 'todo' },
+          { id: 'sp3r-t14', title: 'SEO route pages sanity pass',
+            desc: 'The hand-built pages (kathmandu-to-itahari-bus etc.) now surface pass-through buses too — verify copy and fares stay truthful.', status: 'todo' },
+          { id: 'sp3r-t15', title: 'Full-funnel regression + prod migration',
+            desc: 'Legacy 2-stop bus vs new multi-stop bus, side by side on preview: search → seats → book → ticket → counter → admin lists. Then run the migration + deploy on prod.', status: 'todo' },
+        ]},
+      ],
+      cut: 'No segment-level seat reselling — a sold seat blocks the whole trip (Phase B is its own post-MVP card). No per-date/dynamic pricing. No route templates shared across buses. No schedule-vs-trip refactor (OPR-TRIP\'s pending item stays pending). No GPS / live tracking. <b>Meanwhile: Fonepay merchant onboarding paperwork runs in parallel — start it day 1 of this sprint.</b>',
+      exit: 'Search "Itahari → Kathmandu" returns the Biratnagar bus with Itahari\'s own time and stage fare; web, counter, and ticket all speak segments; legacy buses migrated as 2-stop routes with zero behaviour change. <b>v0.3-routes.</b>',
+    },
+
+    // =================================================================
+    // SPRINT 4 — FONEPAY (was Sprint 3)
+    // =================================================================
+    {
+      id: 'SP-3', tag: 'Sprint 4', title: 'Fonepay Payment (one gateway only)',
       goal: 'A real traveler can pay real money.',
-      duration: '2-3 weeks (~75 hrs)', priority: 'p1', version: 'v0.3-payments',
+      duration: '2-3 weeks (~75 hrs)', priority: 'p1', version: 'v0.4-payments',
       groups: [
         { title: 'Pre-sprint (start now)', tasks: [
           { id: 'sp3-t1', title: 'Get Fonepay merchant onboarding + creds',
@@ -3345,9 +3491,9 @@ const DATA = {
     // SPRINT 4
     // =================================================================
     {
-      id: 'SP-4', tag: 'Sprint 4', title: 'Cancellation Policy + Manual Refund',
+      id: 'SP-4', tag: 'Sprint 5', title: 'Cancellation Policy + Manual Refund',
       goal: 'Users can cancel; money flows back (you press a button).',
-      duration: '2 weeks (~50 hrs)', priority: 'p1', version: 'v0.4-refunds',
+      duration: '2 weeks (~50 hrs)', priority: 'p1', version: 'v0.5-refunds',
       groups: [
         { title: 'Week 1 · policy + cancel UX', tasks: [
           { id: 'sp4-t1', title: 'Cancellation policy config (tiered refund %)',
@@ -3376,7 +3522,7 @@ const DATA = {
           { id: 'sp4-gcs', title: 'GCS daily Firestore backups (deferred from Sprint 0)',
             desc: 'Enable Blaze, configure scheduled export, verify weekly restore drill.',
             status: 'todo',
-            annot: '<b>Last chance before MVP launch.</b> Sprints 5-6 ship money + reconciliation — backups become non-negotiable before the Sprint 6 launch. Get CEO/COO approval ahead of this sprint so Blaze enablement is not the blocker.' },
+            annot: '<b>Last chance before MVP launch.</b> Sprints 6-7 ship money + reconciliation — backups become non-negotiable before the Sprint 7 launch. Get CEO/COO approval ahead of this sprint so Blaze enablement is not the blocker. (Note: the function itself was built in Sprint 2 — sp2-t18; what remains is bucket + IAM + deploy.)' },
         ]},
       ],
       cut: 'No automated gateway refund API. No partial-refund splits. No refund webhook. No reason-required field on cancel.',
@@ -3387,9 +3533,9 @@ const DATA = {
     // SPRINT 5 — MVP SHIPS
     // =================================================================
     {
-      id: 'SP-5', tag: 'Sprint 5', title: 'Commission Ledger',
+      id: 'SP-5', tag: 'Sprint 6', title: 'Commission Ledger',
       goal: 'You know what each operator earned. Feeds the reconciliation sheet next sprint.',
-      duration: '2 weeks (~55 hrs)', priority: 'p1', version: 'v0.5-ledger',
+      duration: '2 weeks (~55 hrs)', priority: 'p1', version: 'v0.6-ledger',
       groups: [
         { title: 'Week 1 · ledger', tasks: [
           { id: 'sp5-t1', title: 'Firestore ledgerEntries collection',
@@ -3413,21 +3559,21 @@ const DATA = {
             desc: 'Bank / eSewa / Khalti — text fields you copy when transferring.', status: 'todo' },
         ]},
       ],
-      cut: 'No automated settlement run. No CSV export. No multi-currency. No per-route commission. No promo cost allocation. <b>MVP does not ship here</b> — the reconciliation sheet (Sprint 6) is the last MVP piece.',
-      exit: 'Every paid booking writes a gross/commission/net ledger entry; operator and admin can each see balances. Numbers reconcile by hand on staging. <b>v0.5-ledger.</b>',
+      cut: 'No automated settlement run. No CSV export. No multi-currency. No per-route commission. No promo cost allocation. <b>MVP does not ship here</b> — the reconciliation sheet (Sprint 7) is the last MVP piece.',
+      exit: 'Every paid booking writes a gross/commission/net ledger entry; operator and admin can each see balances. Numbers reconcile by hand on staging. <b>v0.6-ledger.</b>',
     },
 
     // =================================================================
     // SPRINT 6 — DAILY RECONCILIATION → MVP SHIPS
     // =================================================================
     {
-      id: 'SP-6', tag: 'Sprint 6', title: 'Daily Reconciliation ("cash truth") → SHIP MVP',
+      id: 'SP-6', tag: 'Sprint 7', title: 'Daily Reconciliation ("cash truth") → SHIP MVP',
       goal: 'The operator sees, every day: seats sold, by whom, vs cash that should be in the drawer. Then ship.',
       duration: '2-3 weeks (~65 hrs)', priority: 'p1', version: 'v1.0-mvp',
       groups: [
         { title: 'Week 1 · attribution + capture (OPR-RECON)', tasks: [
           { id: 'sp6r-t1', title: 'soldBy channel tag on every booking write path',
-            desc: 'Stamp <code>soldBy: { channel: "online" | "counter" | "agent", actorId }</code> on every booking (online checkout, counter booking; <code>"agent"</code> is reserved now and goes live in Sprint 7). <b>This is the cheap agent-foundation seed</b> — reconciliation needs it, and agents inherit it for free.', status: 'todo' },
+            desc: 'Stamp <code>soldBy: { channel: "online" | "counter" | "agent", actorId }</code> on every booking (online checkout, counter booking; <code>"agent"</code> is reserved now and goes live in Sprint 8). <b>This is the cheap agent-foundation seed</b> — reconciliation needs it, and agents inherit it for free.', status: 'todo' },
           { id: 'sp6r-t2', title: 'Counter cash capture / shift close',
             desc: 'Counter clerk records cash taken per booking (already implied by pay-at-counter) and can "close the drawer" for a shift — total cash they are handing up.', status: 'todo' },
           { id: 'sp6r-t3', title: 'Reconciliation aggregation service',
@@ -3452,7 +3598,7 @@ const DATA = {
             desc: '<b>v1.0-mvp ships. First real money flows.</b>', status: 'todo' },
         ]},
       ],
-      cut: 'No agent channel yet (Sprint 7 — the soldBy slot is reserved). No automated bank settlement. No CSV export (screenshots are fine at MVP volume). No predictive variance/fraud scoring.',
+      cut: 'No agent channel yet (Sprint 8 — the soldBy slot is reserved). No automated bank settlement. No CSV export (screenshots are fine at MVP volume). No predictive variance/fraud scoring.',
       exit: '🚀 <b>MVP IS LIVE.</b> First verified operator, first real booking on prod, first settlement paid by you — and the operator can see their cash truth daily. The feature that makes operators stay.',
     },
 
@@ -3460,7 +3606,7 @@ const DATA = {
     // SPRINT 7 — SHARED INVENTORY + AGENTS (first thing after MVP)
     // =================================================================
     {
-      id: 'SP-7', tag: 'Sprint 7', title: 'Shared Inventory Engine + Agents',
+      id: 'SP-7', tag: 'Sprint 8', title: 'Shared Inventory Engine + Agents',
       goal: 'Bring agents inside the system so the people who oversell today draw from one live seat map.',
       duration: '3-4 weeks (~95 hrs)', priority: 'p1', version: 'v1.1-agents',
       groups: [
@@ -3482,15 +3628,35 @@ const DATA = {
         ]},
         { title: 'Week 3 · agent booking + money (AGT-BOOK / AGT-LEDGER)', tasks: [
           { id: 'sp7-t7', title: 'Agent booking reuses counter, scoped inventory',
-            desc: 'Agent books from the shared seat map; every booking stamps <code>soldBy: { channel: "agent", actorId }</code> — the slot reserved in Sprint 6.', status: 'todo' },
+            desc: 'Agent books from the shared seat map; every booking stamps <code>soldBy: { channel: "agent", actorId }</code> — the slot reserved in Sprint 7.', status: 'todo' },
           { id: 'sp7-t8', title: 'Agent wallet / credit ledger',
             desc: 'Prepaid wallet or credit limit; each booking draws it down; hitting the limit blocks selling until top-up. Protects the operator from an agent who sells and disappears.', status: 'todo' },
           { id: 'sp7-t9', title: 'Commission attribution → reconciliation + ADM-COMM',
-            desc: 'Agent commission flows into the same ledger + reconciliation sheet via the <code>soldBy</code> tag. No new money rails — reuse Sprint 5/6 plumbing.', status: 'todo' },
+            desc: 'Agent commission flows into the same ledger + reconciliation sheet via the <code>soldBy</code> tag. No new money rails — reuse Sprint 6/7 plumbing.', status: 'todo' },
         ]},
       ],
       cut: 'No agent-to-agent transfers. No automated agent payouts (manual, like operator settlement). No multi-operator agent dashboards beyond the shared-buses list. Mobile agent app is the same role-aware app, not a separate build.',
       exit: 'An agent in another city logs in, sees buses shared to them, sells from the live shared seat map, and the seat is gone everywhere instantly. Overselling between counters/agents/web is structurally impossible. <b>v1.1-agents.</b>',
+    },
+
+    // =================================================================
+    // POST-MVP — SEGMENT INVENTORY (Phase B of the Sprint-3 route model)
+    // =================================================================
+    {
+      id: 'SP-SEGINV', tag: 'Post-MVP', title: 'Segment seat inventory (Phase B) — resell freed seats',
+      goal: 'A seat that empties in Itahari sells again for Itahari→Kathmandu. The redBus/FlixBus revenue unlock on top of the Sprint-3 route model.',
+      duration: '~2-3 weeks', priority: 'p2',
+      groups: [{ title: 'Sketch — design when Phase A demand data exists', tasks: [
+        { id: 'segv-t1', title: 'seatLocks carry the segment',
+          desc: 'Lock gains <code>fromIdx</code>/<code>toIdx</code>; availability becomes an interval-overlap test (<code>a.from &lt; b.to && b.from &lt; a.to</code>) inside the existing booking transaction. Phase A locks are simply the (0, last) segment — additive, not a migration.', status: 'todo' },
+        { id: 'segv-t2', title: 'Per-segment seat map (user + counter)',
+          desc: 'Seat picker renders availability for the searched segment; a seat can be "booked till Itahari, free after".', status: 'todo' },
+        { id: 'segv-t3', title: 'firestore.rules overlap enforcement',
+          desc: 'The seatLocks create rule must reject overlapping segments server-side, the same way it enforces whole-trip duplicates and naSeats today.', status: 'todo' },
+        { id: 'segv-t4', title: 'Operator opt-in + conductor awareness',
+          desc: 'Per-bus opt-in. The manifest / conductor view must show mid-route seat handovers, or drivers will double-seat passengers at the roadside.', status: 'todo' },
+      ]}],
+      exit: 'Pull this only when Phase A search logs + seat utilisation show real inner-segment demand being turned away. It multiplies revenue per seat but is the hardest concurrency in the product — do not attempt before agents are stable.',
     },
 
     // =================================================================
@@ -3514,14 +3680,14 @@ const DATA = {
         { id: 'opos-t6', title: 'OPR-TRACK / USR-TRACK · Live GPS tracking',
           desc: 'Conductor phone as a GPS beacon. Passengers track "where&rsquo;s my bus", owner audits routes. Most-requested passenger feature in every Nepal transport survey.', status: 'todo' },
         { id: 'opos-t7', title: 'OPR-AGENTNET · Sub-agent commission network',
-          desc: 'Builds on Sprint 7 agents: agent ledgers, tiered commissions, distribution analytics. Own the operator&rsquo;s distribution, not just their counter.', status: 'todo' },
+          desc: 'Builds on Sprint 8 agents: agent ledgers, tiered commissions, distribution analytics. Own the operator&rsquo;s distribution, not just their counter.', status: 'todo' },
         { id: 'opos-t8', title: 'GOV layer (sketched, B2G) · route+fare registry, palo slots, ridership data',
           desc: 'GOV-ROUTE (standardized routes + govt fare ceilings), GOV-PALO (committee slot/"palo" allocation), GOV-DATA (anonymized ridership/demand for DoTM, municipalities, EV-transition planning). The eventual government story.', status: 'todo' },
       ]}],
       exit: 'This is the moat — operations data nobody else owns. Sequence it from real operator demand after agents land.',
     },
     {
-      id: 'SP-POST-6', tag: 'Sprint 8', title: 'Khalti as second payment',
+      id: 'SP-POST-6', tag: 'Sprint 9', title: 'Khalti as second payment',
       goal: 'If Fonepay is < 70% of intended payments.',
       duration: '~2 weeks', priority: 'p2',
       groups: [{ title: 'Tasks', tasks: [
@@ -3534,7 +3700,7 @@ const DATA = {
       exit: "If Fonepay converts well, this is low-priority. Don't build it preemptively.",
     },
     {
-      id: 'SP-POST-7', tag: 'Sprint 9', title: 'Bus photo upload pipeline',
+      id: 'SP-POST-7', tag: 'Sprint 10', title: 'Bus photo upload pipeline',
       goal: 'When operators ask for it or conversion is hurting.',
       duration: '~3 weeks', priority: 'p2',
       groups: [{ title: 'Tasks', tasks: [
@@ -3548,7 +3714,7 @@ const DATA = {
       exit: 'Until then: four brand-tier placeholder images per bus type.',
     },
     {
-      id: 'SP-POST-8', tag: 'Sprint 10', title: 'Email + WhatsApp notifications',
+      id: 'SP-POST-8', tag: 'Sprint 11', title: 'Email + WhatsApp notifications',
       goal: 'When manual WhatsApp from your phone stops scaling.',
       duration: '~2-3 weeks', priority: 'p2',
       groups: [{ title: 'Tasks', tasks: [
@@ -3565,7 +3731,7 @@ const DATA = {
       exit: 'Until then: Google Form + WhatsApp Business number checked 3x/day handles 5-10 bookings/day.',
     },
     {
-      id: 'SP-POST-9', tag: 'Sprint 11', title: 'Ratings & Reviews',
+      id: 'SP-POST-9', tag: 'Sprint 12', title: 'Ratings & Reviews',
       goal: 'When you have your first 50+ completed bookings.',
       duration: '~2 weeks', priority: 'p2',
       groups: [{ title: 'Tasks', tasks: [
@@ -3577,7 +3743,7 @@ const DATA = {
       ]}],
     },
     {
-      id: 'SP-POST-PERF', tag: 'Sprint 12', title: 'Performance & rendering modernisation',
+      id: 'SP-POST-PERF', tag: 'Sprint 13', title: 'Performance & rendering modernisation',
       goal: 'The app feels instant. No spinner on every click. Public pages render server-side.',
       duration: '~2-3 weeks', priority: 'p2',
       groups: [
@@ -3621,11 +3787,11 @@ const DATA = {
             status: 'todo' },
         ]},
       ],
-      cut: 'No PWA / offline (that\'s sp10-t6 in Sprint 13+). No service worker. No edge runtime migration. No React Compiler trial. No CDN re-shuffle.',
+      cut: 'No PWA / offline (that\'s sp10-t6 in Sprint 14+). No service worker. No edge runtime migration. No React Compiler trial. No CDN re-shuffle.',
       exit: 'Admin pages feel "instant" — no spinner between actions. Public SEO pages render server-side (Lighthouse perf &gt; 85, LCP &lt; 2.5s). Initial JS bundle measurably smaller. The win is qualitative more than numeric — clicks should respond, not load.',
     },
     {
-      id: 'SP-POST-10', tag: 'Sprint 13+', title: 'Everything else — replan',
+      id: 'SP-POST-10', tag: 'Sprint 14+', title: 'Everything else — replan',
       goal: 'Order depends on what hurts. Replan from MVP data.',
       duration: 'TBD', priority: 'p2',
       groups: [{ title: 'Menu, not a plan', tasks: [
