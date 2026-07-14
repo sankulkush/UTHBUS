@@ -3355,7 +3355,8 @@ const DATA = {
         ]},
         { title: 'Close-out → v0.2-kyc (defined 2026-07-13)', tasks: [
           { id: 'sp2-c1', title: 'Push sprint-2 + merge main + Vercel preview deploy',
-            desc: 'The branch has never been pushed — only Firebase rules/indexes/storage are on preview; the app UI itself isn\'t. Verified 2026-07-13: main has <b>zero content drift</b> since the branch point (the extra PR merge commits on main are topology only), so the merge is clean.', status: 'todo' },
+            desc: 'Verified 2026-07-13: main has <b>zero content drift</b> since the branch point (the extra PR merge commits on main are topology only), so nothing to merge in.', status: 'done',
+            annot: 'Pushed 2026-07-13 (0bde579 → 7f66496: Fonepay docs, city dropdown, optional-KYC + Documents section, tracker). The push triggers the Vercel preview build — sp2-c2\'s E2E walk runs against that URL.' },
           { id: 'sp2-c2', title: 'Full E2E KYC walk on the Vercel preview',
             desc: 'Register → upload 3 docs → admin approve → bus in search with badge → approve email arrives; then the reject → reason shown → re-upload → re-review path. <b>Plus the new no-docs path (2026-07-13):</b> register with zero docs → "Get verified" banner → upload from dashboard one at a time → admin Approve stays disabled until docs exist. Completes the preview half of sp2-t11.', status: 'todo' },
           { id: 'sp2-c3', title: 'Prod console prep (uthbus-prod)',
