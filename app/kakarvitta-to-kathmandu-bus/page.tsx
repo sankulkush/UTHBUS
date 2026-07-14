@@ -126,7 +126,7 @@ const whyUthbus = [
   {
     icon: CreditCardIcon,
     title: "Pay once, travel confirmed",
-    desc: "eSewa, Khalti, or card. Your e-ticket arrives immediately after payment. Present it at the bus park — no follow-up, no re-confirmation.",
+    desc: "Pay with Fonepay — scan the QR from any bank or wallet app. Your e-ticket arrives immediately after payment. Present it at the bus park — no follow-up, no re-confirmation.",
   },
 ]
 

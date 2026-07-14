@@ -31,15 +31,15 @@ function seatLockId(busId: string, date: string, seatNumber: string): string {
 // each combination — see app/booking/ticket/[id]/page.tsx.
 export type PaymentStatus =
   | "unpaid_pending_counter" // booking made, user will pay cash at the counter (default)
-  | "pending_gateway"        // user kicked off a gateway flow (eSewa/Khalti/Card), no callback yet
+  | "pending_gateway"        // user kicked off a gateway flow (Fonepay), not yet verified
   | "paid"                   // gateway callback verified, money received
   | "failed"                 // gateway returned failure, or signature verify failed
   | "refunded";              // money returned to user (cancellation, dispute)
 
 export type PaymentMode =
-  | "eSewa"
-  | "Khalti"
-  | "Card"
+  | "Fonepay" // MVP online gateway
+  | "Khalti" // post-MVP
+  | "Card" // post-MVP
   | "Cash"
   | "Counter";
 
@@ -169,8 +169,8 @@ export class ActiveBookingsService {
     if (!seats.length) throw new Error("At least one seat is required.");
 
     // Payment defaults: anything created here without an explicit paymentStatus
-    // is treated as "user will pay at the counter". Sprint 3 (eSewa) will pass
-    // paymentStatus: "pending_gateway" + paymentMode: "eSewa" on the gateway path.
+    // is treated as "user will pay at the counter". Sprint 3 (Fonepay) will pass
+    // paymentStatus: "pending_gateway" + paymentMode: "Fonepay" on the gateway path.
     const paymentStatus: PaymentStatus = booking.paymentStatus || DEFAULT_PAYMENT_STATUS;
     const paymentMode: PaymentMode | null = booking.paymentMode ?? null;
     const paymentTxnId: string | null = booking.paymentTxnId ?? null;
@@ -309,8 +309,8 @@ export class ActiveBookingsService {
   // be called from a gateway callback handler. Status, mode, txnId, and paidAt
   // move together so the model never lands in an inconsistent state.
 
-  /** Mark a booking as paid. Called by the gateway success callback (eSewa,
-   *  Khalti, Card) once signature + transaction status have been verified. */
+  /** Mark a booking as paid. Called by the gateway success path (Fonepay)
+   *  once the payment status has been server-verified via the status API. */
   async markPaid(
     id: string,
     paymentMode: PaymentMode,
@@ -337,7 +337,7 @@ export class ActiveBookingsService {
   }
 
   /** Money has been returned to the user. Called by the admin refund queue
-   *  (Sprint 4) after the operator confirms the refund happened in eSewa. */
+   *  (Sprint 4) after the operator confirms the refund happened in Fonepay. */
   async markRefunded(id: string): Promise<void> {
     const ref = docRef(firestore, "activeBookings", id);
     await updateDoc(ref, {

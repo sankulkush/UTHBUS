@@ -335,7 +335,10 @@ export default function AdminOperatorsPage() {
                         {docs === "loading" || docs === undefined ? (
                           <div className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading documents…</div>
                         ) : docs.length === 0 ? (
-                          <p className="text-xs text-muted-foreground">No documents uploaded.</p>
+                          <p className="text-xs text-muted-foreground">
+                            No documents uploaded yet — the operator can add them anytime from their
+                            dashboard. Approval stays disabled until documents exist.
+                          </p>
                         ) : (
                           <div className="grid sm:grid-cols-2 gap-3">
                             {docs.map((d) => <DocPreview key={d.type} doc={d} />)}
@@ -348,8 +351,9 @@ export default function AdminOperatorsPage() {
                         {op.kycStatus !== "approved" && (
                           <button
                             onClick={() => handleApprove(op.uid)}
-                            disabled={busy}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+                            disabled={busy || !Array.isArray(docs) || docs.length === 0}
+                            title={Array.isArray(docs) && docs.length === 0 ? "No documents uploaded — nothing to verify" : undefined}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />} Approve
                           </button>

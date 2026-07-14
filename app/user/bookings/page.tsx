@@ -506,7 +506,7 @@ export default function BookingsPage() {
         </div>
       )}
 
-      {/* Pay Now modal — Sprint 1 stub for Sprint 3 (eSewa) integration. */}
+      {/* Pay Now modal — Sprint 1 stub for Sprint 3 (Fonepay) integration. */}
       {payNowFor && (
         <PayNowModal
           isOpen={!!payNowFor}

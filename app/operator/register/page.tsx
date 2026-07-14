@@ -29,7 +29,9 @@ export default function OperatorRegister() {
     licenseNumber: "",
     panNumber: "",
   })
-  // KYC documents — all three required at registration (companyCert/license/pan).
+  // KYC documents — optional at registration. The operator can add or update
+  // them anytime from the dashboard KYC banner; verification only starts once
+  // documents exist, and buses only reach traveler search after approval.
   const [docs, setDocs] = useState<{ companyCert: File | null; license: File | null; pan: File | null }>({
     companyCert: null,
     license: null,
@@ -62,26 +64,20 @@ export default function OperatorRegister() {
       return false
     }
 
-    if (!formData.licenseNumber || !formData.panNumber) {
-      setError("Please enter your operator license and PAN/VAT numbers")
-      return false
-    }
-
-    // All three documents required, each within type/size limits.
+    // Documents are optional at registration — but any file that WAS chosen
+    // must pass the type/size limits (mirrors storage.rules).
     for (const [key, label] of [
       ["companyCert", DOC_TYPE_LABELS.companyCert],
       ["license", DOC_TYPE_LABELS.license],
       ["pan", DOC_TYPE_LABELS.pan],
     ] as const) {
       const file = docs[key]
-      if (!file) {
-        setError(`Please upload your ${label}`)
-        return false
-      }
-      const fileError = validateComplianceFile(file)
-      if (fileError) {
-        setError(`${label}: ${fileError}`)
-        return false
+      if (file) {
+        const fileError = validateComplianceFile(file)
+        if (fileError) {
+          setError(`${label}: ${fileError}`)
+          return false
+        }
       }
     }
 
@@ -111,14 +107,14 @@ export default function OperatorRegister() {
         panNumber: formData.panNumber,
       })
 
-      // Upload the three KYC documents under the new operator's uid. The account
-      // already exists at this point, so a later upload failure leaves a
-      // recoverable state (operator can re-upload from their dashboard).
-      await Promise.all([
-        kycService.uploadKycDoc(uid, "companyCert", docs.companyCert!),
-        kycService.uploadKycDoc(uid, "license", docs.license!),
-        kycService.uploadKycDoc(uid, "pan", docs.pan!),
-      ])
+      // Upload whichever KYC documents were chosen (possibly none) under the
+      // new operator's uid. The account already exists at this point, so an
+      // upload failure leaves a recoverable state — the operator can add or
+      // re-upload everything from the dashboard KYC banner.
+      const chosen = (["companyCert", "license", "pan"] as const).filter((t) => docs[t])
+      if (chosen.length > 0) {
+        await Promise.all(chosen.map((t) => kycService.uploadKycDoc(uid, t, docs[t]!)))
+      }
 
       setSuccess(true)
 
@@ -167,8 +163,9 @@ export default function OperatorRegister() {
             <CheckCircle className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
             <h2 className="font-display text-2xl font-bold text-foreground mb-2">Account created!</h2>
             <p className="text-muted-foreground mb-4">
-              Your documents are in for verification. We&apos;ll review them shortly — your buses go
-              live on search once you&apos;re approved. Taking you to your dashboard…
+              {docs.companyCert || docs.license || docs.pan
+                ? "Your documents are in for verification. We'll review them shortly — your buses go live on search once you're approved. Taking you to your dashboard…"
+                : "You can upload your verification documents anytime from your dashboard — your buses go live on traveler search once you're verified. Taking you to your dashboard…"}
             </p>
             <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto" />
           </CardContent>
@@ -301,28 +298,26 @@ export default function OperatorRegister() {
               {/* License + PAN/VAT — paired on wider screens */}
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="licenseNumber">Operator License Number *</Label>
+                  <Label htmlFor="licenseNumber">Operator License Number</Label>
                   <Input
                     id="licenseNumber"
                     name="licenseNumber"
                     value={formData.licenseNumber}
                     onChange={handleChange}
-                    required
                     disabled={loading}
-                    placeholder="e.g. DoTM-2024-001"
+                    placeholder="e.g. DoTM-2024-001 (can add later)"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="panNumber">PAN / VAT Number *</Label>
+                  <Label htmlFor="panNumber">PAN / VAT Number</Label>
                   <Input
                     id="panNumber"
                     name="panNumber"
                     value={formData.panNumber}
                     onChange={handleChange}
-                    required
                     disabled={loading}
-                    placeholder="e.g. 301234567"
+                    placeholder="e.g. 301234567 (can add later)"
                   />
                 </div>
               </div>
@@ -340,15 +335,17 @@ export default function OperatorRegister() {
                 />
               </div>
 
-              {/* Verification documents — required for KYC. */}
+              {/* Verification documents — optional at registration; manageable later from the dashboard. */}
               <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
                 <div className="flex items-start gap-2">
                   <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0 text-primary" />
                   <div>
-                    <p className="text-sm font-semibold text-foreground">Verification documents</p>
+                    <p className="text-sm font-semibold text-foreground">
+                      Verification documents <span className="font-normal text-muted-foreground">(optional)</span>
+                    </p>
                     <p className="text-xs text-muted-foreground">
-                      Required to verify your company. Your buses go live on search once we approve these.
-                      PDF or image, max 5MB each.
+                      Add them now or anytime later from your dashboard. Your buses appear on traveler
+                      search only after we verify these. PDF or image, max 300KB each.
                     </p>
                   </div>
                 </div>
@@ -358,7 +355,6 @@ export default function OperatorRegister() {
                   value={docs.companyCert}
                   onChange={(file) => setDocs((d) => ({ ...d, companyCert: file }))}
                   disabled={loading}
-                  required
                 />
                 <KycDocInput
                   type="license"
@@ -366,7 +362,6 @@ export default function OperatorRegister() {
                   value={docs.license}
                   onChange={(file) => setDocs((d) => ({ ...d, license: file }))}
                   disabled={loading}
-                  required
                 />
                 <KycDocInput
                   type="pan"
@@ -374,7 +369,6 @@ export default function OperatorRegister() {
                   value={docs.pan}
                   onChange={(file) => setDocs((d) => ({ ...d, pan: file }))}
                   disabled={loading}
-                  required
                 />
               </div>
 

@@ -15,6 +15,7 @@ const RoutesPage = lazy(() => import("../pages/routes.page").then((m) => ({ defa
 const SeatsPage = lazy(() => import("../pages/seats.page").then((m) => ({ default: m.SeatsPage })));
 const ReportsPage = lazy(() => import("../pages/reports.page").then((m) => ({ default: m.ReportsPage })));
 const NotificationsPage = lazy(() => import("../pages/notifications.page").then((m) => ({ default: m.NotificationsPage })));
+const DocumentsPage = lazy(() => import("../pages/documents.page").then((m) => ({ default: m.DocumentsPage })));
 const SettingsPage = lazy(() => import("../pages/settings.page").then((m) => ({ default: m.SettingsPage })));
 
 interface MainContentProps {
@@ -43,6 +44,7 @@ export function MainContent({ activeSection, onSectionChange, onToggleMobileSide
       case "seats":        return <SeatsPage />;
       case "reports":      return <ReportsPage />;
       case "notifications":return <NotificationsPage />;
+      case "documents":    return <DocumentsPage />;
       case "settings":     return <SettingsPage />;
       default:             return <DashboardPage onSectionChange={onSectionChange} />;
     }
@@ -58,6 +60,7 @@ export function MainContent({ activeSection, onSectionChange, onToggleMobileSide
     seats: "Seats",
     reports: "Reports",
     notifications: "Notifications",
+    documents: "Documents",
     settings: "Settings",
   };
 
@@ -76,8 +79,11 @@ export function MainContent({ activeSection, onSectionChange, onToggleMobileSide
 
       {/* Page content */}
       <div className="flex-1 overflow-y-auto">
-        {/* KYC status — pinned above every section until the operator is approved */}
-        <KycStatusBanner />
+        {/* KYC status — pinned above every section until the operator is approved.
+            Hidden on the Documents section itself (that page shows the full status). */}
+        {activeSection !== "documents" && (
+          <KycStatusBanner onManageDocuments={() => onSectionChange("documents")} />
+        )}
         <Suspense fallback={<PageLoader />}>
           {renderPage()}
         </Suspense>

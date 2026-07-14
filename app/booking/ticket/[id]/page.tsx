@@ -375,7 +375,7 @@ export default function TicketPage() {
               </div>
 
               {/* Payment / fare details — renders by paymentStatus.
-                  Sprint 1: data foundation. Sprint 3 (eSewa) populates the
+                  Sprint 1: data foundation. Sprint 3 (Fonepay) populates the
                   paid/pending_gateway branches; cancellation flow populates
                   refunded. */}
               <div className="px-5 py-4">

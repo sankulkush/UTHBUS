@@ -8,7 +8,7 @@ This website is fully made my using AI tools.
 This project is a full-stack booking platform with:
 - User and operator auth
 - Firestore data storage
-- Payment routing (eSewa/Khalti integration points)
+- Payment routing (Fonepay integration points; Khalti/card post-MVP)
 - Next.js app router and API routes
 - Vercel deployment
 
