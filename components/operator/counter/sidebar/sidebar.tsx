@@ -10,6 +10,7 @@ import {
   Grid3x3,
   BarChart3,
   Bell,
+  FileText,
   Settings,
   Ticket,
   LogOut,
@@ -41,6 +42,7 @@ const navItems = [
   { id: "seats" as ActiveSection, label: "Seats", icon: Grid3x3, group: "ops" },
   { id: "reports" as ActiveSection, label: "Reports", icon: BarChart3, group: "more" },
   { id: "notifications" as ActiveSection, label: "Notifications", icon: Bell, group: "more" },
+  { id: "documents" as ActiveSection, label: "Documents", icon: FileText, group: "more" },
   { id: "settings" as ActiveSection, label: "Settings", icon: Settings, group: "more" },
 ];
 

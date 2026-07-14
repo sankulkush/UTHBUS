@@ -3,20 +3,20 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import type { IActiveBooking } from "@/components/operator/counter/services/active-booking.service"
-import { Wallet, CreditCard, Banknote, Info } from "lucide-react"
+import { Wallet, CreditCard, Banknote, Info, QrCode } from "lucide-react"
 
-// Sprint 1 stub. UI shape of the future Sprint 3 (eSewa) and Sprint 6 (Khalti,
-// Card) integrations. Today the three gateway options are visibly disabled so
-// the user understands they're coming, and the existing "Pay at counter"
-// fallback is surfaced as an explicit confirmed-state explanation rather than
-// a button that does anything (the booking already IS reserved-pay-at-counter).
+// Sprint 1 stub. UI shape of the future Sprint 3 (Fonepay) and post-MVP (Khalti,
+// Card) integrations. Today the gateway options are visibly disabled so the
+// user understands they're coming, and the existing "Pay at counter" fallback
+// is surfaced as an explicit confirmed-state explanation rather than a button
+// that does anything (the booking already IS reserved-pay-at-counter).
 //
-// To wire up a gateway later: replace the disabled <button> for that option
-// with a handler that calls the gateway's initiate route, then handles the
-// returned redirect URL.
+// To wire up Fonepay later: replace its disabled <button> with a handler that
+// calls the QR-generate route, renders the returned Fonepay QR, and resolves
+// payment via the status-check API (see USR-PAY / Sprint 3 in the tracker).
 
 type Gateway = {
-  id: "esewa" | "khalti" | "card"
+  id: "fonepay" | "khalti" | "card"
   label: string
   description: string
   badge: string
@@ -24,22 +24,22 @@ type Gateway = {
 
 const GATEWAYS: Gateway[] = [
   {
-    id: "esewa",
-    label: "eSewa",
-    description: "Pay from your eSewa wallet",
+    id: "fonepay",
+    label: "Fonepay",
+    description: "Scan the QR with any mobile-banking or wallet app",
     badge: "Coming Sprint 3",
   },
   {
     id: "khalti",
     label: "Khalti",
     description: "Pay from your Khalti wallet",
-    badge: "Coming after Sprint 3",
+    badge: "Post-MVP",
   },
   {
     id: "card",
     label: "Card (Visa / Mastercard)",
     description: "International or domestic debit/credit card",
-    badge: "Coming after Sprint 3",
+    badge: "Post-MVP",
   },
 ]
 
@@ -76,6 +76,8 @@ export function PayNowModal({
               <div className="w-9 h-9 rounded-md bg-background border border-border flex items-center justify-center shrink-0">
                 {gw.id === "card" ? (
                   <CreditCard className="w-4 h-4 text-muted-foreground" />
+                ) : gw.id === "fonepay" ? (
+                  <QrCode className="w-4 h-4 text-muted-foreground" />
                 ) : (
                   <Wallet className="w-4 h-4 text-muted-foreground" />
                 )}
@@ -114,7 +116,7 @@ export function PayNowModal({
         <div className="flex items-start gap-2 text-xs text-muted-foreground pt-2">
           <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
           <p>
-            Online payment options become available once we integrate eSewa
+            Online payment becomes available once we integrate Fonepay
             (Sprint 3). Until then, pay-at-counter is the only path — your seat
             is held either way.
           </p>

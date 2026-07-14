@@ -125,7 +125,7 @@ const whyUthbus = [
   {
     icon: CreditCardIcon,
     title: "Pay online, no follow-up needed",
-    desc: "eSewa, Khalti, or card. Once payment goes through, your e-ticket is confirmed immediately. No calling the operator back, no re-confirming at the counter.",
+    desc: "Pay with Fonepay — scan the QR from any bank or wallet app. Once payment goes through, your e-ticket is confirmed immediately. No calling the operator back, no re-confirming at the counter.",
   },
 ]
 

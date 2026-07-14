@@ -8,6 +8,7 @@ export type ActiveSection =
   | "seats"
   | "reports"
   | "notifications"
+  | "documents"
   | "settings"
   | "book-ticket"
 

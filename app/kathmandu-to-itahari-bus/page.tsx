@@ -100,7 +100,7 @@ const whyUthbus = [
   {
     icon: CreditCardIcon,
     title: "Pay once, confirmed immediately",
-    desc: "eSewa, Khalti, or card. Your e-ticket arrives the moment payment clears. Nothing else required at the bus park.",
+    desc: "Pay with Fonepay — scan the QR from any bank or wallet app. Your e-ticket arrives the moment payment clears. Nothing else required at the bus park.",
   },
 ]
 
